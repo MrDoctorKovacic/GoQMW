@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
@@ -8,6 +9,28 @@ import (
 	s "github.com/MrDoctorKovacic/GoQMW/sessions"
 	"github.com/gorilla/mux"
 )
+
+func init() {
+
+	// Start with program arguments
+	var (
+		sqlHost     string
+		sqlDatabase string
+		sqlUser     string
+		sqlPassword string
+		btAddress   string
+	)
+	flag.StringVar(&sqlHost, "host", "localhost", "SQL Host, defaults to localhost")
+	flag.StringVar(&sqlDatabase, "database", "", "SQL Database, defaults to ")
+	flag.StringVar(&sqlUser, "user", "", "SQL Username")
+	flag.StringVar(&sqlPassword, "password", "", "SQL Password")
+	flag.StringVar(&btAddress, "bt-device", "", "Bluetooth Media device to connect and use as default")
+	flag.Parse()
+
+	// Pass arguments to their rightful owners
+	s.SQLConnect(sqlHost, sqlDatabase, sqlUser, sqlPassword)
+	b.SetAddress(btAddress)
+}
 
 // define our router and subsequent routes here
 func main() {

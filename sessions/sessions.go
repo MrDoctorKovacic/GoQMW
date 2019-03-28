@@ -3,7 +3,6 @@ package sessions
 import (
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -31,20 +30,6 @@ var DB sql.DB
 var sqlEnabled = false
 
 func init() {
-
-	// Start with MySQL values
-	var (
-		sqlHost     string
-		sqlDatabase string
-		sqlUser     string
-		sqlPassword string
-	)
-	flag.StringVar(&sqlHost, "host", "localhost", "SQL Host, defaults to localhost")
-	flag.StringVar(&sqlDatabase, "database", "", "SQL Database, defaults to ")
-	flag.StringVar(&sqlUser, "user", "", "SQL Username")
-	flag.StringVar(&sqlPassword, "password", "", "SQL Password")
-	flag.Parse()
-
 	//
 	// Fetch and append old session from disk
 	//
@@ -57,13 +42,13 @@ func init() {
 		byteValue, _ := ioutil.ReadAll(jsonFile)
 		json.Unmarshal(byteValue, &Session)
 	}
+}
 
-	//
-	// Connect to MySQL, provide global DB for future queries
-	//
-	if sqlDatabase != "" && sqlUser != "" && sqlPassword != "" {
+// SQLConnect to MySQL, provide global DB for future queries
+func SQLConnect(host string, database string, user string, password string) {
+	if host != "" && database != "" && user != "" && password != "" {
 		sqlEnabled = true
-		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@%s/%s", sqlUser, sqlPassword, sqlHost, sqlDatabase))
+		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@%s/%s", user, password, host, database))
 		if err != nil {
 			log.Println(err.Error())
 			sqlEnabled = false
@@ -73,6 +58,10 @@ func init() {
 			log.Println(err.Error())
 			sqlEnabled = false
 		}
+
+		log.Println("Successfully connected to " + database)
+	} else {
+		log.Println("Not logging to MySQL.")
 	}
 }
 
