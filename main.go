@@ -10,7 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func init() {
+// define our router and subsequent routes here
+func main() {
 
 	// Start with program arguments
 	var (
@@ -28,10 +29,7 @@ func init() {
 	// Pass arguments to their rightful owners
 	s.SQLConnect(sqlDatabase, sqlUser, sqlPassword)
 	b.SetAddress(btAddress)
-}
 
-// define our router and subsequent routes here
-func main() {
 	// Init router
 	router := mux.NewRouter()
 
