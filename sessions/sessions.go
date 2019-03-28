@@ -98,7 +98,11 @@ func UpdateSessionValue(w http.ResponseWriter, r *http.Request) {
 			log.Println(err.Error())
 			sqlEnabled = false
 			DB.Close()
+		} else {
+			log.Println("Logged " + params["Name"] + " to sql db")
 		}
+	} else {
+		log.Println("Recieved, but SQL logging not enabled")
 	}
 
 	// Respond with inserted values
