@@ -14,7 +14,6 @@ func init() {
 
 	// Start with program arguments
 	var (
-		sqlHost     string
 		sqlDatabase string
 		sqlUser     string
 		sqlPassword string
