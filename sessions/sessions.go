@@ -45,10 +45,10 @@ func init() {
 }
 
 // SQLConnect to MySQL, provide global DB for future queries
-func SQLConnect(host string, database string, user string, password string) {
-	if host != "" && database != "" && user != "" && password != "" {
+func SQLConnect(database string, user string, password string) {
+	if database != "" && user != "" && password != "" {
 		sqlEnabled = true
-		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@%s/%s", user, password, host, database))
+		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", user, password, database))
 		if err != nil {
 			log.Println(err.Error())
 			sqlEnabled = false

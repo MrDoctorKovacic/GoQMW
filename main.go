@@ -20,15 +20,14 @@ func init() {
 		sqlPassword string
 		btAddress   string
 	)
-	flag.StringVar(&sqlHost, "host", "localhost", "SQL Host, defaults to localhost")
-	flag.StringVar(&sqlDatabase, "database", "", "SQL Database, defaults to ")
+	flag.StringVar(&sqlDatabase, "database", "", "SQL Database on localhost to log with")
 	flag.StringVar(&sqlUser, "user", "", "SQL Username")
 	flag.StringVar(&sqlPassword, "password", "", "SQL Password")
 	flag.StringVar(&btAddress, "bt-device", "", "Bluetooth Media device to connect and use as default")
 	flag.Parse()
 
 	// Pass arguments to their rightful owners
-	s.SQLConnect(sqlHost, sqlDatabase, sqlUser, sqlPassword)
+	s.SQLConnect(sqlDatabase, sqlUser, sqlPassword)
 	b.SetAddress(btAddress)
 }
 
