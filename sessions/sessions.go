@@ -3,7 +3,6 @@ package sessions
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -26,7 +25,7 @@ type SessionData struct {
 var Session map[string]SessionData
 
 // DB MySQL variables
-var DB sql.DB
+var DB *sql.DB
 var sqlEnabled = false
 
 func init() {
@@ -45,24 +44,8 @@ func init() {
 }
 
 // SQLConnect to MySQL, provide global DB for future queries
-func SQLConnect(database string, user string, password string) {
-	if database != "" && user != "" && password != "" {
-		sqlEnabled = true
-		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", user, password, database))
-		if err != nil {
-			log.Println(err.Error())
-			sqlEnabled = false
-		}
-		err = DB.Ping()
-		if err != nil {
-			log.Println(err.Error())
-			sqlEnabled = false
-		}
-
-		log.Println("Successfully connected to " + database)
-	} else {
-		log.Println("Not logging to MySQL.")
-	}
+func SQLConnect(database *sql.DB) {
+	DB = database
 }
 
 // GetSession returns the entire current session

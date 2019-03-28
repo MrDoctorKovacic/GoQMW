@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -26,8 +28,32 @@ func main() {
 	flag.StringVar(&btAddress, "bt-device", "", "Bluetooth Media device to connect and use as default")
 	flag.Parse()
 
-	// Pass arguments to their rightful owners
-	s.SQLConnect(sqlDatabase, sqlUser, sqlPassword)
+	if sqlDatabase != "" && sqlUser != "" && sqlPassword != "" {
+		var sqlEnabled = true
+		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", sqlUser, sqlPassword, sqlDatabase))
+		if err != nil {
+			log.Println(err.Error())
+			sqlEnabled = false
+		} else {
+			defer DB.Close()
+		}
+
+		err = DB.Ping()
+		if err != nil {
+			log.Println(err.Error())
+			sqlEnabled = false
+		}
+
+		log.Println("Successfully connected to " + sqlDatabase)
+
+		if sqlEnabled {
+			s.SQLConnect(DB)
+		}
+	} else {
+		log.Println("Not logging to MySQL.")
+	}
+
+	// Pass argument to its rightful owner
 	b.SetAddress(btAddress)
 
 	// Init router
