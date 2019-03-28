@@ -46,6 +46,7 @@ func init() {
 // SQLConnect to MySQL, provide global DB for future queries
 func SQLConnect(database *sql.DB) {
 	DB = database
+	sqlEnabled = true
 }
 
 // GetSession returns the entire current session
@@ -75,7 +76,7 @@ func UpdateSessionValue(w http.ResponseWriter, r *http.Request) {
 	// Check if MySQL logging has been turned off
 	if sqlEnabled {
 		// Insert into MySQL table
-		_, err := DB.Exec("INSERT INTO log_session (timestamp, entry, value) values (?, ?, ?)", timestamp, params["Name"], newdata.Value)
+		_, err := DB.Exec("INSERT INTO log_serial (timestamp, entry, value) values (?, ?, ?)", timestamp, params["Name"], newdata.Value)
 
 		if err != nil {
 			log.Println(err.Error())
