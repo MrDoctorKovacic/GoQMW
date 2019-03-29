@@ -12,7 +12,6 @@ import (
 	// Import driver for MySQL
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	zmq "github.com/pebbe/zmq4"
 )
 
 // SessionData holds the name, data, last update info for each session value
@@ -26,7 +25,6 @@ var Session map[string]SessionData
 
 // DB MySQL variables
 var DB *sql.DB
-var sqlEnabled = false
 
 func init() {
 	//
@@ -46,7 +44,6 @@ func init() {
 // SQLConnect to MySQL, provide global DB for future queries
 func SQLConnect(database *sql.DB) {
 	DB = database
-	sqlEnabled = true
 }
 
 // GetSession returns the entire current session
@@ -57,11 +54,11 @@ func GetSession(w http.ResponseWriter, r *http.Request) {
 // GetSessionValue returns a specific session value
 func GetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	json.NewEncoder(w).Encode(Session[params["Name"]])
+	json.NewEncoder(w).Encode(Session[params["name"]])
 }
 
-// UpdateSessionValue updates or posts a new session value to the common session
-func UpdateSessionValue(w http.ResponseWriter, r *http.Request) {
+// SetSessionValue updates or posts a new session value to the common session
+func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var newdata SessionData
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
@@ -71,51 +68,45 @@ func UpdateSessionValue(w http.ResponseWriter, r *http.Request) {
 	newdata.LastUpdate = timestamp
 
 	// Add / update value in global session
-	Session[params["Name"]] = newdata
+	Session[params["name"]] = newdata
 
-	// Check if MySQL logging has been turned off
-	if sqlEnabled {
-		// Insert into MySQL table
-		_, err := DB.Exec("INSERT INTO log_serial (timestamp, entry, value) values (?, ?, ?)", timestamp, params["Name"], newdata.Value)
+	// Insert into MySQL table
+	_, err := DB.Exec("INSERT INTO log_serial (timestamp, entry, value) values (?, ?, ?)", timestamp, params["name"], newdata.Value)
 
-		if err != nil {
-			log.Println(err.Error())
-			sqlEnabled = false
-			DB.Close()
-		} else {
-			log.Println("Logged " + params["Name"] + " to sql db")
-		}
+	if err != nil {
+		log.Println(err.Error())
 	} else {
-		log.Println("Recieved, but SQL logging not enabled")
+		log.Println("Logged " + params["name"] + " to sql db")
 	}
 
 	// Respond with inserted values
 	json.NewEncoder(w).Encode(newdata)
 }
 
-// SendPyBus queries a (hopefully) running pyBus program to run a directive
-func SendPyBus(msg string) {
-	context, _ := zmq.NewContext()
-	socket, _ := context.NewSocket(zmq.REQ)
-	defer socket.Close()
+// LogALPR creates a new entry in running SQL DB
+func LogALPR(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
 
-	log.Printf("Connecting to pyBus ZMQ Server")
-	socket.Connect("tcp://localhost:4884")
+	// Decode plate/time/etc values
+	plate := params["plate"]
+	value := params["value"]
 
-	// Send command
-	socket.Send(msg, 0)
-	println("Sending PyBus command: ", msg)
+	// Insert into MySQL table
+	// TODO: add location data
+	_, err := DB.Exec("INSERT INTO log_alpr (timestamp, plate, percent) values (?, ?, ?)", time.Now().Format("2006-01-02 15:04:05.999"), plate, value)
 
-	// Wait for reply:
-	reply, _ := socket.Recv(0)
-	println("Received: ", string(reply))
+	if err != nil {
+		log.Println("Error executing SQL insert:")
+		log.Println(err.Error())
+	} else {
+		log.Println("Logged " + plate + " to sql db")
+	}
+
+	// Respond with inserted values
+	json.NewEncoder(w).Encode(plate)
 }
 
-// PyBus handles gateway to PyBus goroutine
-func PyBus(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	json.NewEncoder(w).Encode(Session[params["command"]])
-
-	go SendPyBus(params["command"])
-	json.NewEncoder(w).Encode(params["command"])
+// RestartALPR posts remote device to restart ALPR service
+func RestartALPR(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode("OK")
 }
