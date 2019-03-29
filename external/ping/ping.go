@@ -25,12 +25,13 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 	// Ensure we have a server (and a DB) to connect to
 	if remote != "" {
 		params := mux.Vars(r)
-		_, err := http.Get("1.1.1.1")
+		onlineResp, err := http.Get("1.1.1.1")
 
 		if err != nil {
 			//
 			// Log locally
 			//
+			defer onlineResp.Body.Close()
 			_, err := DB.Exec("INSERT INTO log_ping (timestamp, device, ip) values (?, ?, ?)", time.Now().Format("2006-01-02 15:04:05.999"), params["device"], params["ip"])
 
 			if err != nil {
@@ -44,8 +45,9 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			//
 			// FWD request to server since we have internet
 			//
-			_, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
+			pingResp, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
 			if err != nil {
+				defer pingResp.Body.Close()
 				log.Println("Error when forwarding ping:")
 				log.Println(err)
 			}
