@@ -22,9 +22,10 @@ func Setup(inf influx.Influx, remoteAddress string) {
 
 // Ping will fwd to remote server if connected to internet, otherwise will log locally
 func Ping(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
 	// Ensure we have a server (and a DB) to connect to
 	if remote != "" {
-		params := mux.Vars(r)
 		onlineResp, err := http.Get("1.1.1.1")
 
 		if err != nil {
@@ -32,6 +33,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// Log locally
 			//
 			defer onlineResp.Body.Close()
+			log.Println("[PING] Logging " + params["device"] + " to database")
 
 			// Insert into database
 			err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
@@ -46,6 +48,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			//
 			// FWD request to server since we have internet
 			//
+			log.Println("[PING] Forwarding " + params["device"] + " to server")
 			pingResp, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
 			if err != nil {
 				defer pingResp.Body.Close()

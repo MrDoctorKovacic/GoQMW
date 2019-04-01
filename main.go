@@ -45,6 +45,8 @@ func main() {
 
 			if remotePingAddress != "" {
 				ping.Setup(DB, remotePingAddress)
+			} else {
+				log.Println("Not accepting pings.")
 			}
 		}
 	} else {
@@ -78,7 +80,7 @@ func main() {
 	//
 	// ALPR Routes
 	//
-	router.HandleFunc("/alpr/{plate}", sessions.LogALPR).Methods("GET")
+	router.HandleFunc("/alpr/{plate}", sessions.LogALPR).Methods("POST")
 	router.HandleFunc("/alpr/restart", sessions.RestartALPR).Methods("GET")
 
 	//

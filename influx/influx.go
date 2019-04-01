@@ -32,7 +32,7 @@ func (db *Influx) Ping() error {
 
 // Write to influx DB server with data pairs
 func (db *Influx) Write(msg string) error {
-	log.Println("Sending " + msg)
+	//log.Println("Sending " + msg)
 	request := gorequest.New()
 	resp, body, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
 	if errs != nil {
@@ -81,7 +81,9 @@ func (db *Influx) CreateDatabase() error {
 		return errs[0]
 	}
 
-	log.Println(fmt.Sprintf("Create Database request response: %d", resp.StatusCode))
-	log.Println("Recieved: " + body)
+	if resp.StatusCode != 200 {
+		log.Println(fmt.Sprintf("Create Database request response: %d", resp.StatusCode))
+		log.Println("Recieved: " + body)
+	}
 	return nil
 }

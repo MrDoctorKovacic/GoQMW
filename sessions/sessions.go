@@ -19,6 +19,12 @@ type SessionData struct {
 	LastUpdate string `json:"lastUpdate,omitempty"`
 }
 
+// ALPRData holds the plate and percent for each new ALPR value
+type ALPRData struct {
+	Plate   string `json:"plate,omitempty"`
+	Percent int    `json:"percent,omitempty"`
+}
+
 // Session is the global session accessed by incoming requests
 var Session map[string]SessionData
 
@@ -85,21 +91,34 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 // LogALPR creates a new entry in running SQL DB
 func LogALPR(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-
-	// Decode plate/time/etc values
-	plate := params["plate"]
-
-	// Insert into database
-	err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=\"%s\"", plate, params["percent"]))
-
+	//r.ParseForm()
+	//r.Form.Get("Percent")
+	decoder := json.NewDecoder(r.Body)
+	var newplate ALPRData
+	err := decoder.Decode(&newplate)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
 	} else {
-		log.Println("[ALPR] Logged " + plate + " to database")
-	}
+		// Decode plate/time/etc values
+		plate := params["plate"]
+		percent := newplate.Percent
 
-	// Respond with inserted values
-	json.NewEncoder(w).Encode(plate)
+		if plate != "" {
+			// Insert into database
+			err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
+
+			if err != nil {
+				log.Println(err.Error())
+			} else {
+				log.Println("[ALPR] Logged " + plate + " to database")
+			}
+		} else {
+			log.Println(fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))
+		}
+
+		// Respond with inserted values
+		json.NewEncoder(w).Encode(plate)
+	}
 }
 
 // RestartALPR posts remote device to restart ALPR service
