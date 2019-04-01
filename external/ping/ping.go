@@ -1,22 +1,22 @@
 package ping
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"time"
 
+	"github.com/MrDoctorKovacic/GoQMW/influx"
 	"github.com/gorilla/mux"
 )
 
-// DB MySQL variables
-var DB *sql.DB
+// DB variables
+var DB influx.Influx
 var remote string
 
-// Setup MySQL for future queries, setup fwding address
-func Setup(database *sql.DB, remoteAddress string) {
-	DB = database
+// Setup Database for future queries, setup fwding address
+func Setup(inf influx.Influx, remoteAddress string) {
+	DB = inf
 	remote = remoteAddress
 }
 
@@ -32,13 +32,14 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// Log locally
 			//
 			defer onlineResp.Body.Close()
-			_, err := DB.Exec("INSERT INTO log_ping (timestamp, device, ip) values (?, ?, ?)", time.Now().Format("2006-01-02 15:04:05.999"), params["device"], params["ip"])
+
+			// Insert into database
+			err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
 
 			if err != nil {
-				log.Println("Error executing SQL insert:")
 				log.Println(err.Error())
 			} else {
-				log.Println("Logged " + params["device"] + " to sql db")
+				log.Println("Logged " + params["device"] + " to database")
 			}
 
 		} else {

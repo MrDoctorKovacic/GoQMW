@@ -1,15 +1,14 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/MrDoctorKovacic/GoQMW/external/bluetooth"
 	"github.com/MrDoctorKovacic/GoQMW/external/ping"
 	"github.com/MrDoctorKovacic/GoQMW/external/pybus"
+	"github.com/MrDoctorKovacic/GoQMW/influx"
 	"github.com/MrDoctorKovacic/GoQMW/sessions"
 	"github.com/gorilla/mux"
 )
@@ -19,47 +18,37 @@ func main() {
 
 	// Start with program arguments
 	var (
-		sqlDatabase       string
-		sqlUser           string
-		sqlPassword       string
+		dbHost            string
+		dbName            string
 		btAddress         string
 		remotePingAddress string
 	)
-	flag.StringVar(&sqlDatabase, "database", "", "SQL Database on localhost to log with")
-	flag.StringVar(&sqlUser, "user", "", "SQL Username")
-	flag.StringVar(&sqlPassword, "password", "", "SQL Password")
+	flag.StringVar(&dbHost, "db-host", "", "Influx Database fully qualified url on localhost to log with")
+	flag.StringVar(&dbName, "db-name", "", "Influx Database name on localhost to log with")
 	flag.StringVar(&btAddress, "bt-device", "", "Bluetooth Media device to connect and use as default")
 	flag.StringVar(&remotePingAddress, "ping-host", "", "Remote address to fwd pings to")
 	flag.Parse()
 
-	if sqlDatabase != "" && sqlUser != "" && sqlPassword != "" {
+	if dbHost != "" {
 		var sqlEnabled = true
-		DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@/%s", sqlUser, sqlPassword, sqlDatabase))
-		if err != nil {
-			log.Println(err.Error())
-			sqlEnabled = false
-		} else {
-			defer DB.Close()
-		}
+		DB := influx.Influx{Host: dbHost, Database: dbName}
+		err := DB.Ping()
 
-		err = DB.Ping()
 		if err != nil {
 			log.Println(err.Error())
 			sqlEnabled = false
 		}
-
-		log.Println("Successfully connected to " + sqlDatabase)
 
 		if sqlEnabled {
 			// Pass DB pool to imports
-			sessions.SQLConnect(DB)
+			sessions.Setup(DB)
 
 			if remotePingAddress != "" {
 				ping.Setup(DB, remotePingAddress)
 			}
 		}
 	} else {
-		log.Println("Not logging to MySQL.")
+		log.Println("Not logging to influx.")
 	}
 
 	// Pass argument to its rightful owner

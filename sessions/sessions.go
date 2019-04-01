@@ -1,16 +1,15 @@
 package sessions
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	// Import driver for MySQL
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/MrDoctorKovacic/GoQMW/influx"
 	"github.com/gorilla/mux"
 )
 
@@ -23,8 +22,8 @@ type SessionData struct {
 // Session is the global session accessed by incoming requests
 var Session map[string]SessionData
 
-// DB MySQL variables
-var DB *sql.DB
+// DB variables
+var DB influx.Influx
 
 func init() {
 	//
@@ -41,8 +40,8 @@ func init() {
 	}
 }
 
-// SQLConnect to MySQL, provide global DB for future queries
-func SQLConnect(database *sql.DB) {
+// Setup provides global DB for future queries, other planned setup instructions as well
+func Setup(database influx.Influx) {
 	DB = database
 }
 
@@ -70,13 +69,13 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	// Add / update value in global session
 	Session[params["name"]] = newdata
 
-	// Insert into MySQL table
-	_, err := DB.Exec("INSERT INTO log_serial (timestamp, entry, value) values (?, ?, ?)", timestamp, params["name"], newdata.Value)
+	// Insert into database
+	err := DB.Write(fmt.Sprintf("pybus,name=%s value=\"%s\"", params["name"], newdata.Value))
 
 	if err != nil {
 		log.Println(err.Error())
 	} else {
-		log.Println("Logged " + params["name"] + " to sql db")
+		log.Println("[Session] Logged " + params["name"] + " to database")
 	}
 
 	// Respond with inserted values
@@ -89,17 +88,14 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 
 	// Decode plate/time/etc values
 	plate := params["plate"]
-	value := params["value"]
 
-	// Insert into MySQL table
-	// TODO: add location data
-	_, err := DB.Exec("INSERT INTO log_alpr (timestamp, plate, percent) values (?, ?, ?)", time.Now().Format("2006-01-02 15:04:05.999"), plate, value)
+	// Insert into database
+	err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=\"%s\"", plate, params["percent"]))
 
 	if err != nil {
-		log.Println("Error executing SQL insert:")
 		log.Println(err.Error())
 	} else {
-		log.Println("Logged " + plate + " to sql db")
+		log.Println("[ALPR] Logged " + plate + " to database")
 	}
 
 	// Respond with inserted values
