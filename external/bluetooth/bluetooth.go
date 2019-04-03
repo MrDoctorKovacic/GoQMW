@@ -15,8 +15,8 @@ func SetAddress(address string) {
 	// Format address for dbus
 	if address != "" {
 		btAddress = strings.Replace(address, ":", "_", -1)
+		log.Println("[Bluetooth] Accepting connections initially from " + btAddress)
 	}
-	log.Println("[Bluetooth] Accepting connections initially from " + btAddress)
 }
 
 // RestartService will attempt to restart the bluetooth service
@@ -31,114 +31,62 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Connect new bluetooth device
-func Connect(w http.ResponseWriter, r *http.Request) {
+// SendDBusCommand used as a general BT control function for these endpoints
+func SendDBusCommand(args []string) string {
 	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress, "org.bluez.Device1.Connect").Output()
+		// Fill in the meta nonsense
+		args = append([]string{"--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
+		out, err := exec.Command("dbus-send", args...).Output()
 
 		if err != nil {
 			log.Println(err)
-			json.NewEncoder(w).Encode(err)
+			return err.Error()
 		} else {
-			json.NewEncoder(w).Encode(out)
+			return string(out)
 		}
 	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
+		return "No valid BT Address to run command"
 	}
+}
+
+// Connect new bluetooth device
+func Connect(w http.ResponseWriter, r *http.Request) {
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"})
+	json.NewEncoder(w).Encode(out)
 }
 
 // GetDeviceInfo attempts to get metadata about connected device
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
-	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status").Output()
-
-		if err != nil {
-			log.Println(err)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			json.NewEncoder(w).Encode(out)
-		}
-	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
-	}
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"})
+	json.NewEncoder(w).Encode(out)
 }
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
-	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track").Output()
-
-		if err != nil {
-			log.Println(err)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			json.NewEncoder(w).Encode(out)
-		}
-	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
-	}
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"})
+	json.NewEncoder(w).Encode(out)
 }
 
 // Prev skips to previous track
 func Prev(w http.ResponseWriter, r *http.Request) {
-	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.bluez.MediaPlayer1.Previous").Output()
-
-		if err != nil {
-			log.Println(err)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			json.NewEncoder(w).Encode(out)
-		}
-	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
-	}
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"})
+	json.NewEncoder(w).Encode(out)
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
-	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.bluez.MediaPlayer1.Next").Output()
-
-		if err != nil {
-			log.Println(err)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			json.NewEncoder(w).Encode(out)
-		}
-	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
-	}
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"})
+	json.NewEncoder(w).Encode(out)
 }
 
 // Play attempts to play bluetooth media
 func Play(w http.ResponseWriter, r *http.Request) {
-	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.bluez.MediaPlayer1.Play").Output()
-
-		if err != nil {
-			log.Println(err)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			json.NewEncoder(w).Encode(out)
-		}
-	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
-	}
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"})
+	json.NewEncoder(w).Encode(out)
 }
 
 // Pause attempts to pause bluetooth media
 func Pause(w http.ResponseWriter, r *http.Request) {
-	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.bluez.MediaPlayer1.Pause").Output()
-
-		if err != nil {
-			log.Println(err)
-			json.NewEncoder(w).Encode(err)
-		} else {
-			json.NewEncoder(w).Encode(out)
-		}
-	} else {
-		json.NewEncoder(w).Encode("No valid BT Address to run command")
-	}
+	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"})
+	json.NewEncoder(w).Encode(out)
 }
