@@ -16,6 +16,7 @@ func SetAddress(address string) {
 	if address != "" {
 		btAddress = strings.Replace(address, ":", "_", -1)
 	}
+	log.Println("[Bluetooth] Accepting connections initially from " + btAddress)
 }
 
 // RestartService will attempt to restart the bluetooth service
