@@ -51,42 +51,42 @@ func SendDBusCommand(args []string) string {
 
 // Connect new bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"})
+	json.NewEncoder(w).Encode("OK")
 }
 
 // GetDeviceInfo attempts to get metadata about connected device
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"})
+	json.NewEncoder(w).Encode("OK")
 }
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"})
+	json.NewEncoder(w).Encode("OK")
 }
 
 // Prev skips to previous track
 func Prev(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"})
+	json.NewEncoder(w).Encode("OK")
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"})
+	json.NewEncoder(w).Encode("OK")
 }
 
 // Play attempts to play bluetooth media
 func Play(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"})
+	json.NewEncoder(w).Encode("OK")
 }
 
 // Pause attempts to pause bluetooth media
 func Pause(w http.ResponseWriter, r *http.Request) {
-	out := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"})
-	json.NewEncoder(w).Encode(out)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"})
+	json.NewEncoder(w).Encode("OK")
 }
