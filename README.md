@@ -6,4 +6,6 @@ RESTful API written in GOLANG for providing and logging vehicle session data. Es
 
 ## Installation 
 
+Having [InfluxDB & the rest of the TICK stack](https://www.influxdata.com/blog/running-the-tick-stack-on-a-raspberry-pi/) is recommended, although this will run fine without them.
+
 ```go get github.com/MrDoctorKovacic/GoQMW/``` 
