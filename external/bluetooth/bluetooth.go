@@ -34,7 +34,7 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 // Connect new bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
 	if btAddress != "" {
-		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress+"/player0", "org.bluez.Device1.Connect").Output()
+		out, err := exec.Command("dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez", "/org/bluez/hci0/dev_"+btAddress, "org.bluez.Device1.Connect").Output()
 
 		if err != nil {
 			log.Println(err)
