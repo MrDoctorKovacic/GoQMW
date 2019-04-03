@@ -31,19 +31,19 @@ func SendPyBus(msg string) {
 
 // rollWindowsUp sends popWindowsUp 3 consecutive times
 func rollWindowsUp() {
-	SendPyBus("popWindowsDown")
-	time.Sleep(3 * time.Second)
-	SendPyBus("popWindowsDown")
-	time.Sleep(3 * time.Second)
-	SendPyBus("popWindowsDown")
+	SendPyBus("popWindowsUp")
+	time.Sleep(2 * time.Second)
+	SendPyBus("popWindowsUp")
+	time.Sleep(2 * time.Second)
+	SendPyBus("popWindowsUp")
 }
 
 // rollWindowsDown sends popWindowsDown 3 consecutive times
 func rollWindowsDown() {
 	SendPyBus("popWindowsDown")
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	SendPyBus("popWindowsDown")
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	SendPyBus("popWindowsDown")
 }
 
@@ -51,7 +51,7 @@ func rollWindowsDown() {
 func StartPyBusRoutine(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	// TODO : Get a list of available
+	// TODO : Get a list of available utilities to check against
 	if params["command"] != "" {
 		// Some commands need special timing functions
 		switch params["command"] {
