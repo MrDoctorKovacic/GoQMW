@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"time"
 
 	"github.com/gorilla/mux"
 	zmq "github.com/pebbe/zmq4"
@@ -28,11 +29,42 @@ func SendPyBus(msg string) {
 	println("Received: ", string(reply))
 }
 
+// rollWindowsUp sends popWindowsUp 3 consecutive times
+func rollWindowsUp() {
+	SendPyBus("popWindowsDown")
+	time.Sleep(3 * time.Second)
+	SendPyBus("popWindowsDown")
+	time.Sleep(3 * time.Second)
+	SendPyBus("popWindowsDown")
+}
+
+// rollWindowsDown sends popWindowsDown 3 consecutive times
+func rollWindowsDown() {
+	SendPyBus("popWindowsDown")
+	time.Sleep(3 * time.Second)
+	SendPyBus("popWindowsDown")
+	time.Sleep(3 * time.Second)
+	SendPyBus("popWindowsDown")
+}
+
 // StartPyBusRoutine handles PyBus goroutine
 func StartPyBusRoutine(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	go SendPyBus(params["command"])
-	json.NewEncoder(w).Encode(params["command"])
+
+	// TODO : Get a list of available
+	if params["command"] != "" {
+		// Some commands need special timing functions
+		switch params["command"] {
+		case "rollWindowsUp":
+			go rollWindowsUp()
+		case "rollWindowsDown":
+			go rollWindowsDown()
+		default:
+			go SendPyBus(params["command"])
+		}
+
+		json.NewEncoder(w).Encode(params["command"])
+	}
 }
 
 // RestartService will attempt to restart the pybus service

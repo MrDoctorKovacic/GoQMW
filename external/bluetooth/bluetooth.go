@@ -41,12 +41,12 @@ func SendDBusCommand(args []string) string {
 		if err != nil {
 			log.Println(err)
 			return err.Error()
-		} else {
-			return string(out)
 		}
-	} else {
-		return "No valid BT Address to run command"
+
+		return string(out)
 	}
+
+	return "No valid BT Address to run command"
 }
 
 // Connect new bluetooth device
