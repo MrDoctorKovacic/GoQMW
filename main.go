@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
+	"os/exec"
 
 	"github.com/MrDoctorKovacic/GoQMW/external/bluetooth"
 	"github.com/MrDoctorKovacic/GoQMW/external/ping"
@@ -12,6 +14,12 @@ import (
 	"github.com/MrDoctorKovacic/GoQMW/sessions"
 	"github.com/gorilla/mux"
 )
+
+// Reboot the machine
+func reboot(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode("OK")
+	exec.Command("reboot", "now")
+}
 
 // define our router and subsequent routes here
 func main() {
