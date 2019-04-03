@@ -81,7 +81,7 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err.Error())
 	} else {
-		log.Println("[Session] Logged " + params["name"] + " to database")
+		log.Println("[Session] Logged " + params["name"] + "=" + newdata.Value + " to database")
 	}
 
 	// Respond with inserted values

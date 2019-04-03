@@ -17,12 +17,13 @@ type Influx struct {
 func (db *Influx) Ping() error {
 	// Ping db instance
 	request := gorequest.New()
-	resp, body, errs := request.Get(db.Host + "/ping").End()
+	resp, _, errs := request.Get(db.Host + "/ping").End()
 	if errs != nil {
-		log.Println(fmt.Sprintf("Ping request response: %d", resp.StatusCode))
-		log.Println("Recieved: " + body)
+		log.Println("Errored: " + errs[0].Error())
 		return errs[0]
 	}
+
+	log.Println(fmt.Sprintf("[Influx] Ping response: %d", resp.StatusCode))
 
 	// Create Database if it doesn't exist
 	db.CreateDatabase()
