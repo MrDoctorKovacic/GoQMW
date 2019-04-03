@@ -28,27 +28,36 @@ type ALPRData struct {
 // Session is the global session accessed by incoming requests
 var Session map[string]SessionData
 
-// DB variables
+// DB variable for influx
 var DB influx.Influx
 
-func init() {
-	//
-	// Fetch and append old session from disk
-	//
-	Session = make(map[string]SessionData)
-	jsonFile, err := os.Open("session.json")
+// SessionFile will designate where to output session to a file
+var SessionFile string
 
-	if err != nil {
-		log.Println("error opening JSON file on disk")
-	} else {
-		byteValue, _ := ioutil.ReadAll(jsonFile)
-		json.Unmarshal(byteValue, &Session)
-	}
+func init() {
+	// Init session
+	Session = make(map[string]SessionData)
 }
 
 // Setup provides global DB for future queries, other planned setup instructions as well
-func Setup(database influx.Influx) {
+func Setup(database influx.Influx, file string) {
 	DB = database
+	SessionFile = file
+
+	// Fetch and append old session from disk if allowed
+	if SessionFile != "" {
+		jsonFile, err := os.Open(SessionFile)
+
+		if err != nil {
+			log.Println("error opening JSON file on disk")
+			log.Println(err.Error())
+		} else {
+			byteValue, _ := ioutil.ReadAll(jsonFile)
+			json.Unmarshal(byteValue, &Session)
+		}
+	} else {
+		log.Println("[Session] Not saving or recovering from file")
+	}
 }
 
 // GetSession returns the entire current session

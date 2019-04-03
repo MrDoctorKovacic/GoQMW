@@ -26,11 +26,13 @@ func main() {
 
 	// Start with program arguments
 	var (
+		sessionFile       string
 		dbHost            string
 		dbName            string
 		btAddress         string
 		remotePingAddress string
 	)
+	flag.StringVar(&sessionFile, "session-file", "", "File to save and recover the last-known session to.")
 	flag.StringVar(&dbHost, "db-host", "", "Influx Database fully qualified url on localhost to log with")
 	flag.StringVar(&dbName, "db-name", "", "Influx Database name on localhost to log with")
 	flag.StringVar(&btAddress, "bt-device", "", "Bluetooth Media device to connect and use as default")
@@ -49,7 +51,7 @@ func main() {
 
 		if sqlEnabled {
 			// Pass DB pool to imports
-			sessions.Setup(DB)
+			sessions.Setup(DB, sessionFile)
 
 			if remotePingAddress != "" {
 				ping.Setup(DB, remotePingAddress)
