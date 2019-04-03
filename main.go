@@ -68,6 +68,11 @@ func main() {
 	router := mux.NewRouter()
 
 	//
+	// Main routes
+	//
+	router.HandleFunc("/restart", reboot).Methods("GET")
+
+	//
 	// Ping routes
 	//
 	router.HandleFunc("/ping/{device}", ping.Ping).Methods("POST")

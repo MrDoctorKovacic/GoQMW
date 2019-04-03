@@ -32,7 +32,7 @@ func SendPyBus(msg string) {
 // rollWindowsUp sends popWindowsUp 3 consecutive times
 func rollWindowsUp() {
 	SendPyBus("popWindowsUp")
-	time.Sleep(1500 * time.Millisecond)
+	time.Sleep(1200 * time.Millisecond)
 	SendPyBus("popWindowsUp")
 }
 
