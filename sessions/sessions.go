@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/MrDoctorKovacic/GoQMW/influx"
@@ -19,6 +20,18 @@ type SessionData struct {
 	LastUpdate string `json:"lastUpdate,omitempty"`
 }
 
+// GPSData holds various data points we expect to receive
+type GPSData struct {
+	Latitude  string   `json:"latitude,omitempty"`
+	Longitude string   `json:"longitude,omitempty"`
+	Time      string   `json:"time,omitempty"` // This will help measure latency :)
+	Altitude  *float32 `json:"altitude,omitempty"`
+	EPV       *float32 `json:"epv,omitempty"`
+	EPT       *float32 `json:"ept,omitempty"`
+	Speed     *float32 `json:"speed,omitempty"`
+	Climb     *float32 `json:"climb,omitempty"`
+}
+
 // ALPRData holds the plate and percent for each new ALPR value
 type ALPRData struct {
 	Plate   string `json:"plate,omitempty"`
@@ -27,6 +40,9 @@ type ALPRData struct {
 
 // Session is the global session accessed by incoming requests
 var Session map[string]SessionData
+
+// GPS is the last posted GPS fix
+var GPS GPSData
 
 // DB variable for influx
 var DB influx.Influx
@@ -97,14 +113,71 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newdata)
 }
 
+// SetGPSValue posts a new GPS fix
+func SetGPSValue(w http.ResponseWriter, r *http.Request) {
+	var newdata GPSData
+	_ = json.NewDecoder(r.Body).Decode(&newdata)
+
+	// Prepare new value
+	var postingString strings.Builder
+
+	// Update value for global session if the data is newer (not nil)
+	// Can't find a better way to go about this
+	if newdata.Latitude != "" {
+		GPS.Latitude = newdata.Latitude
+		postingString.WriteString(fmt.Sprintf("latitude=\"%s\",", newdata.Latitude))
+	}
+	if newdata.Longitude != "" {
+		GPS.Longitude = newdata.Longitude
+		postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
+	}
+	if newdata.Altitude != nil {
+		GPS.Altitude = newdata.Altitude
+		log.Println(fmt.Sprintf("%f", *newdata.Altitude))
+		postingString.WriteString(fmt.Sprintf("altitude=%f,", *newdata.Altitude))
+	}
+	if newdata.Speed != nil {
+		GPS.Speed = newdata.Speed
+		postingString.WriteString(fmt.Sprintf("speed=%f,", *newdata.Speed))
+	}
+	if newdata.Climb != nil {
+		GPS.Climb = newdata.Climb
+		postingString.WriteString(fmt.Sprintf("climb=%f,", *newdata.Climb))
+	}
+	if newdata.Time != "" {
+		GPS.Time = newdata.Time
+		// This is ultimately a waste of space
+		//postingString.WriteString(fmt.Sprintf("timestamp=\"%s\",", newdata.Time))
+	}
+	if newdata.EPV != nil {
+		GPS.EPV = newdata.EPV
+		postingString.WriteString(fmt.Sprintf("EPV=%f,", *newdata.EPV))
+	}
+	if newdata.EPT != nil {
+		GPS.EPT = newdata.EPT
+		postingString.WriteString(fmt.Sprintf("EPT=%f,", *newdata.EPT))
+	}
+
+	// Insert into database
+	err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
+
+	if err != nil {
+		log.Println("[ERROR: GPS]" + err.Error())
+	} else {
+		log.Println("Writing: " + postingString.String())
+	}
+
+	// Respond with inserted values
+	json.NewEncoder(w).Encode("OK")
+}
+
 // LogALPR creates a new entry in running SQL DB
 func LogALPR(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	//r.ParseForm()
-	//r.Form.Get("Percent")
 	decoder := json.NewDecoder(r.Body)
 	var newplate ALPRData
 	err := decoder.Decode(&newplate)
+
 	if err != nil {
 		log.Println(err)
 	} else {

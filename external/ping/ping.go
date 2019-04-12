@@ -33,7 +33,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// Log locally
 			//
 			defer onlineResp.Body.Close()
-			log.Println("[PING] Logging " + params["device"] + " to database")
+			log.Println("[Ping] Logging " + params["device"] + " to database")
 
 			// Insert into database
 			err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
@@ -48,7 +48,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			//
 			// FWD request to server since we have internet
 			//
-			log.Println("[PING] Forwarding " + params["device"] + " to server")
+			log.Println("[Ping] Forwarding " + params["device"] + " to server")
 			pingResp, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
 			if err != nil {
 				defer pingResp.Body.Close()

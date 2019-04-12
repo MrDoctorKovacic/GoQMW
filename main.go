@@ -56,11 +56,11 @@ func main() {
 			if remotePingAddress != "" {
 				ping.Setup(DB, remotePingAddress)
 			} else {
-				log.Println("Not accepting pings.")
+				log.Println("[Ping] Not accepting pings.")
 			}
 		}
 	} else {
-		log.Println("Not logging to influx.")
+		log.Println("[Influx] Not logging to influx db.")
 	}
 
 	// Pass argument to its rightful owner
@@ -84,6 +84,7 @@ func main() {
 	//
 	router.HandleFunc("/session", sessions.GetSession).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.GetSessionValue).Methods("GET")
+	router.HandleFunc("/session/gps", sessions.SetGPSValue).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.SetSessionValue).Methods("POST")
 
 	//
