@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"time"
 
 	"github.com/MrDoctorKovacic/GoQMW/external/bluetooth"
 	"github.com/MrDoctorKovacic/GoQMW/external/ping"
@@ -41,12 +42,25 @@ func main() {
 
 	if dbHost != "" {
 		var sqlEnabled = true
+		var tries = 0
 		DB := influx.Influx{Host: dbHost, Database: dbName}
-		err := DB.Ping()
 
+		// Initial connection
+		err := DB.Ping()
+		// Retry connection every second
 		if err != nil {
-			log.Println(err.Error())
-			sqlEnabled = false
+			for tries < 5 {
+				err := DB.Ping()
+				if err == nil {
+					break
+				}
+				time.Sleep(1 * time.Second)
+				tries++
+			}
+			if err != nil {
+				log.Println(err.Error())
+				sqlEnabled = false
+			}
 		}
 
 		if sqlEnabled {
