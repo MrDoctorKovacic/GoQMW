@@ -49,11 +49,12 @@ func main() {
 		err := DB.Ping()
 		// Retry connection every second
 		if err != nil {
-			for tries < 5 {
+			for tries < 15 {
 				err := DB.Ping()
 				if err == nil {
 					break
 				}
+				log.Println("Failed to connect to DB, retrying.")
 				time.Sleep(1 * time.Second)
 				tries++
 			}
