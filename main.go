@@ -55,7 +55,7 @@ func main() {
 					break
 				}
 				log.Println("Failed to connect to DB, retrying.")
-				time.Sleep(1 * time.Second)
+				time.Sleep(2 * time.Second)
 				tries++
 			}
 			if err != nil {
