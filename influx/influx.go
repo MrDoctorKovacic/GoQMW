@@ -37,6 +37,7 @@ func (db *Influx) Write(msg string) error {
 	request := gorequest.New()
 	resp, body, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
 	if errs != nil {
+		log.Println(fmt.Sprintf("Error when writing to DB: %s/write?db=%s with message %s", db.Host, db.Database, msg))
 		return errs[0]
 	}
 
