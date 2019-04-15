@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/GoQMW/external/status"
 	"github.com/MrDoctorKovacic/GoQMW/influx"
 	"github.com/gorilla/mux"
 )
@@ -50,6 +51,9 @@ var DB influx.Influx
 // SessionFile will designate where to output session to a file
 var SessionFile string
 
+// SessionStatus will control logging and reporting of status / warnings / errors
+var SessionStatus = status.NewStatus("Session")
+
 func init() {
 	// Init session
 	Session = make(map[string]SessionData)
@@ -65,14 +69,13 @@ func Setup(database influx.Influx, file string) {
 		jsonFile, err := os.Open(SessionFile)
 
 		if err != nil {
-			log.Println("error opening JSON file on disk")
-			log.Println(err.Error())
+			SessionStatus.Log(status.Warning(), "Error opening JSON file on disk: "+err.Error())
 		} else {
 			byteValue, _ := ioutil.ReadAll(jsonFile)
 			json.Unmarshal(byteValue, &Session)
 		}
 	} else {
-		log.Println("[Session] Not saving or recovering from file")
+		SessionStatus.Log(status.OK(), "Not saving or recovering from file")
 	}
 }
 
@@ -104,9 +107,9 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	err := DB.Write(fmt.Sprintf("pybus,name=%s value=\"%s\"", params["name"], newdata.Value))
 
 	if err != nil {
-		log.Println(err.Error())
+		SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
 	} else {
-		log.Println("[Session] Logged " + params["name"] + "=" + newdata.Value + " to database")
+		SessionStatus.Log(status.OK(), "Logged "+params["name"]+"="+newdata.Value+" to database")
 	}
 
 	// Respond with inserted values
@@ -162,9 +165,9 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 	if err != nil {
-		log.Println("[ERROR: GPS]" + err.Error())
+		SessionStatus.Log(status.Error(), "Error writing string "+postingString.String()+" to influx DB: "+err.Error())
 	} else {
-		log.Println("Writing: " + postingString.String())
+		SessionStatus.Log(status.OK(), "Logged "+postingString.String()+" to database")
 	}
 
 	// Respond with inserted values
@@ -190,9 +193,9 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 			err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
 
 			if err != nil {
-				log.Println(err.Error())
+				SessionStatus.Log(status.Error(), "Error writing "+plate+" to influx DB: "+err.Error())
 			} else {
-				log.Println("[ALPR] Logged " + plate + " to database")
+				SessionStatus.Log(status.OK(), "Logged "+plate+" to database")
 			}
 		} else {
 			log.Println(fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))

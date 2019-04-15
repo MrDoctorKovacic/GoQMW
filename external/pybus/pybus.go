@@ -2,14 +2,17 @@ package pybus
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os/exec"
 	"time"
 
+	"github.com/MrDoctorKovacic/GoQMW/external/status"
 	"github.com/gorilla/mux"
 	zmq "github.com/pebbe/zmq4"
 )
+
+// PybusStatus will control logging and reporting of status / warnings / errors
+var PybusStatus = status.NewStatus("Pybus")
 
 // SendPyBus queries a (hopefully) running pyBus program to run a directive
 func SendPyBus(msg string) {
@@ -17,16 +20,16 @@ func SendPyBus(msg string) {
 	socket, _ := context.NewSocket(zmq.REQ)
 	defer socket.Close()
 
-	log.Printf("Connecting to pyBus ZMQ Server")
+	PybusStatus.Log(status.OK(), "Connecting to pyBus ZMQ Server at localhost:4884")
 	socket.Connect("tcp://localhost:4884")
 
 	// Send command
 	socket.Send(msg, 0)
-	println("Sending PyBus command: ", msg)
+	PybusStatus.Log(status.OK(), "Sending PyBus command: "+msg)
 
 	// Wait for reply:
 	reply, _ := socket.Recv(0)
-	println("Received: ", string(reply))
+	PybusStatus.Log(status.OK(), "Received: "+string(reply))
 }
 
 // rollWindowsUp sends popWindowsUp 3 consecutive times
@@ -68,7 +71,7 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 	out, err := exec.Command("/home/pi/le/auto/pyBus/startup_pybus.sh").Output()
 
 	if err != nil {
-		log.Println(err)
+		PybusStatus.Log(status.Error(), "Error restarting PyBus: "+err.Error())
 		json.NewEncoder(w).Encode(err)
 	} else {
 		json.NewEncoder(w).Encode(out)

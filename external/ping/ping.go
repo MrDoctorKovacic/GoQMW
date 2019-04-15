@@ -3,9 +3,9 @@ package ping
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
+	"github.com/MrDoctorKovacic/GoQMW/external/status"
 	"github.com/MrDoctorKovacic/GoQMW/influx"
 	"github.com/gorilla/mux"
 )
@@ -13,6 +13,9 @@ import (
 // DB variables
 var DB influx.Influx
 var remote string
+
+// PingStatus will control logging and reporting of status / warnings / errors
+var PingStatus = status.NewStatus("Ping")
 
 // Setup Database for future queries, setup fwding address
 func Setup(inf influx.Influx, remoteAddress string) {
@@ -33,27 +36,26 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// Log locally
 			//
 			defer onlineResp.Body.Close()
-			log.Println("[Ping] Logging " + params["device"] + " to database")
+			PingStatus.Log(status.OK(), "Logging "+params["device"]+" to database")
 
 			// Insert into database
 			err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
 
 			if err != nil {
-				log.Println(err.Error())
+				PingStatus.Log(status.Error(), "Error when logging "+params["device"]+" to database: "+err.Error())
 			} else {
-				log.Println("Logged " + params["device"] + " to database")
+				PingStatus.Log(status.OK(), "Logged "+params["device"]+" to database")
 			}
 
 		} else {
 			//
 			// FWD request to server since we have internet
 			//
-			log.Println("[Ping] Forwarding " + params["device"] + " to server")
+			PingStatus.Log(status.OK(), "Forwarding "+params["device"]+" to server")
 			pingResp, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
 			if err != nil {
 				defer pingResp.Body.Close()
-				log.Println("Error when forwarding ping:")
-				log.Println(err)
+				PingStatus.Log(status.Error(), "Error when forwarding ping: "+err.Error())
 			}
 		}
 	}

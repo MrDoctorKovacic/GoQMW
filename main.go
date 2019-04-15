@@ -10,6 +10,7 @@ import (
 	"github.com/MrDoctorKovacic/GoQMW/external/bluetooth"
 	"github.com/MrDoctorKovacic/GoQMW/external/ping"
 	"github.com/MrDoctorKovacic/GoQMW/external/pybus"
+	"github.com/MrDoctorKovacic/GoQMW/external/status"
 	"github.com/MrDoctorKovacic/GoQMW/influx"
 	"github.com/MrDoctorKovacic/GoQMW/sessions"
 	"github.com/gorilla/mux"
@@ -71,11 +72,11 @@ func main() {
 			if remotePingAddress != "" {
 				ping.Setup(DB, remotePingAddress)
 			} else {
-				log.Println("[Ping] Not accepting pings.")
+				log.Println("[Config] Not accepting pings.")
 			}
 		}
 	} else {
-		log.Println("[Influx] Not logging to influx db.")
+		log.Println("[Config] Not logging to influx db.")
 	}
 
 	// Pass argument to its rightful owner
@@ -126,6 +127,11 @@ func main() {
 	router.HandleFunc("/bluetooth/pause", bluetooth.Pause).Methods("GET")
 	router.HandleFunc("/bluetooth/play", bluetooth.Play).Methods("GET")
 	router.HandleFunc("/bluetooth/restart", bluetooth.RestartService).Methods("GET")
+
+	// Status Routes
+	router.HandleFunc("/status", status.GetStatus).Methods("GET")
+	router.HandleFunc("/status/{name}", status.GetStatusValue).Methods("GET")
+	router.HandleFunc("/status/{name}", status.SetStatus).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":5353", router))
 }

@@ -2,20 +2,24 @@ package bluetooth
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os/exec"
 	"strings"
+
+	"github.com/MrDoctorKovacic/GoQMW/external/status"
 )
 
 var btAddress string
+
+// BluetoothStatus will control logging and reporting of status / warnings / errors
+var BluetoothStatus = status.NewStatus("Bluetooth")
 
 // SetAddress makes address given in args available to all dbus functions
 func SetAddress(address string) {
 	// Format address for dbus
 	if address != "" {
 		btAddress = strings.Replace(address, ":", "_", -1)
-		log.Println("[Bluetooth] Accepting connections initially from " + btAddress)
+		BluetoothStatus.Log(status.OK(), "[Bluetooth] Accepting connections initially from "+btAddress)
 	}
 }
 
@@ -24,7 +28,7 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 	out, err := exec.Command("/home/pi/le/auto/restart_bluetooth.sh").Output()
 
 	if err != nil {
-		log.Println(err)
+		BluetoothStatus.Log(status.Error(), err.Error())
 		json.NewEncoder(w).Encode(err)
 	} else {
 		json.NewEncoder(w).Encode(out)
@@ -39,12 +43,14 @@ func SendDBusCommand(args []string) string {
 		out, err := exec.Command("dbus-send", args...).Output()
 
 		if err != nil {
-			log.Println(err)
+			BluetoothStatus.Log(status.Error(), err.Error())
 			return err.Error()
 		}
 
 		return string(out)
 	}
+
+	BluetoothStatus.Log(status.Warning(), "No valid BT Address to run command")
 
 	return "No valid BT Address to run command"
 }
