@@ -60,11 +60,13 @@ func Setup(useSettingsFile string) {
 
 			// Log settings
 			out, err := json.Marshal(Settings)
-			if err != nil {
-				panic(err)
+			if err == nil {
+				SettingsStatus.Log(status.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
+				return
 			}
-			SettingsStatus.Log(status.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
-			return
+
+			// If err is set, re-marshaling the settings failed
+			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
 		} else if initSettings == nil {
 			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
 		}
