@@ -15,6 +15,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//
+// Is Influx logging a core aspect of the route? It's probably in here then.
+//
+
 // SessionData holds the name, data, last update info for each session value
 type SessionData struct {
 	Value      string `json:"value,omitempty"`
@@ -193,7 +197,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&newplate)
 
 	if err != nil {
-		log.Println(err)
+		SessionStatus.Log(status.Error(), "Error decoding incoming ALPR data: "+err.Error())
 	} else {
 		// Decode plate/time/etc values
 		plate := strings.Replace(params["plate"], " ", "_", -1)
@@ -211,7 +215,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			log.Println(fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))
+			SessionStatus.Log(status.Error(), fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))
 		}
 
 		// Respond with inserted values
