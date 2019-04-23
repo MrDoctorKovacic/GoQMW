@@ -11,6 +11,10 @@ import (
 	zmq "github.com/pebbe/zmq4"
 )
 
+// Registered pybusRoutines, to make sure we're not calling something that doesn't exist
+// (or isn't allowed...)
+var pybusRoutines = make(map[string]bool, 0)
+
 // PybusStatus will control logging and reporting of status / warnings / errors
 var PybusStatus = status.NewStatus("Pybus")
 
@@ -46,12 +50,39 @@ func rollWindowsDown() {
 	SendPyBus("popWindowsDown")
 }
 
-// StartPyBusRoutine handles PyBus goroutine
-func StartPyBusRoutine(w http.ResponseWriter, r *http.Request) {
+// RegisterPybusRoutine handles PyBus goroutine
+func RegisterPybusRoutine(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	// TODO : Get a list of available utilities to check against
+	// Append new routine into mapping
+	pybusRoutines[params["command"]] = true
+
+	// Log success
+	PybusStatus.Log(status.OK(), "Registered new routine: "+params["command"])
+	json.NewEncoder(w).Encode("OK")
+}
+
+// DisablePybusRoutine handles PyBus goroutine
+func DisablePybusRoutine(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	pybusRoutines[params["command"]] = false
+
+	// Log success
+	PybusStatus.Log(status.OK(), "Disabled routine: "+params["command"])
+	json.NewEncoder(w).Encode("OK")
+}
+
+// StartPybusRoutine handles PyBus goroutine
+func StartPybusRoutine(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
 	if params["command"] != "" {
+		// Ensure command exists in routines map, and that it's currently enabled
+		if _, ok := pybusRoutines[params["command"]]; !ok || !pybusRoutines[params["command"]] {
+			json.NewEncoder(w).Encode(params["command"] + " is not allowed.")
+			return
+		}
+
 		// Some commands need special timing functions
 		switch params["command"] {
 		case "rollWindowsUp":
@@ -62,7 +93,9 @@ func StartPyBusRoutine(w http.ResponseWriter, r *http.Request) {
 			go SendPyBus(params["command"])
 		}
 
-		json.NewEncoder(w).Encode(params["command"])
+		json.NewEncoder(w).Encode("OK")
+	} else {
+		json.NewEncoder(w).Encode("Invalid command")
 	}
 }
 

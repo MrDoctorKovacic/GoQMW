@@ -144,7 +144,8 @@ func main() {
 	//
 	// PyBus Routes
 	//
-	router.HandleFunc("/pybus/{command}", pybus.StartPyBusRoutine).Methods("GET")
+	router.HandleFunc("/pybus/{command}", pybus.RegisterPybusRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{command}", pybus.StartPybusRoutine).Methods("GET")
 	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
 
 	//
