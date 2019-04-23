@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/GoQMW/external/status"
-	"github.com/MrDoctorKovacic/GoQMW/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
 )
 
@@ -47,6 +47,7 @@ var GPS GPSData
 
 // DB variable for influx
 var DB influx.Influx
+var databaseEnabled = false
 
 // SessionFile will designate where to output session to a file
 var SessionFile string
@@ -59,9 +60,8 @@ func init() {
 	Session = make(map[string]SessionData)
 }
 
-// Setup provides global DB for future queries, other planned setup instructions as well
-func Setup(database influx.Influx, file string) {
-	DB = database
+// Setup is a debugging function, which initializes the session with some dummy values
+func Setup(file string) {
 	SessionFile = file
 
 	// Fetch and append old session from disk if allowed
@@ -77,6 +77,12 @@ func Setup(database influx.Influx, file string) {
 	} else {
 		SessionStatus.Log(status.OK(), "Not saving or recovering from file")
 	}
+}
+
+// SetupDatabase provides global DB for future queries
+func SetupDatabase(database influx.Influx) {
+	DB = database
+	databaseEnabled = true
 }
 
 // GetSession returns the entire current session
@@ -104,12 +110,14 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	Session[params["name"]] = newdata
 
 	// Insert into database
-	err := DB.Write(fmt.Sprintf("pybus,name=%s value=\"%s\"", params["name"], newdata.Value))
+	if databaseEnabled {
+		err := DB.Write(fmt.Sprintf("pybus,name=%s value=\"%s\"", strings.Replace(params["name"], " ", "_", -1), newdata.Value))
 
-	if err != nil {
-		SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
-	} else {
-		SessionStatus.Log(status.OK(), "Logged "+params["name"]+"="+newdata.Value+" to database")
+		if err != nil {
+			SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
+		} else {
+			SessionStatus.Log(status.OK(), "Logged "+params["name"]+"="+newdata.Value+" to database")
+		}
 	}
 
 	// Respond with inserted values
@@ -162,12 +170,14 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert into database
-	err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
+	if databaseEnabled {
+		err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
-	if err != nil {
-		SessionStatus.Log(status.Error(), "Error writing string "+postingString.String()+" to influx DB: "+err.Error())
-	} else {
-		SessionStatus.Log(status.OK(), "Logged "+postingString.String()+" to database")
+		if err != nil {
+			SessionStatus.Log(status.Error(), "Error writing string "+postingString.String()+" to influx DB: "+err.Error())
+		} else {
+			SessionStatus.Log(status.OK(), "Logged "+postingString.String()+" to database")
+		}
 	}
 
 	// Respond with inserted values
@@ -185,17 +195,19 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	} else {
 		// Decode plate/time/etc values
-		plate := params["plate"]
+		plate := strings.Replace(params["plate"], " ", "_", -1)
 		percent := newplate.Percent
 
 		if plate != "" {
 			// Insert into database
-			err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
+			if databaseEnabled {
+				err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
 
-			if err != nil {
-				SessionStatus.Log(status.Error(), "Error writing "+plate+" to influx DB: "+err.Error())
-			} else {
-				SessionStatus.Log(status.OK(), "Logged "+plate+" to database")
+				if err != nil {
+					SessionStatus.Log(status.Error(), "Error writing "+plate+" to influx DB: "+err.Error())
+				} else {
+					SessionStatus.Log(status.OK(), "Logged "+plate+" to database")
+				}
 			}
 		} else {
 			log.Println(fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))
