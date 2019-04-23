@@ -3,18 +3,30 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 
-	"github.com/MrDoctorKovacic/GoQMW/external/bluetooth"
-	"github.com/MrDoctorKovacic/GoQMW/external/ping"
-	"github.com/MrDoctorKovacic/GoQMW/external/pybus"
-	"github.com/MrDoctorKovacic/GoQMW/external/status"
-	"github.com/MrDoctorKovacic/GoQMW/influx"
-	"github.com/MrDoctorKovacic/GoQMW/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/bluetooth"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/ping"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 )
+
+// Config controls program settings and general persistent settings
+type Config struct {
+	DatabaseHost     string
+	DatabaseName     string
+	BluetoothAddress string
+	PingHost         string
+	SettingsFile     string
+}
 
 // Reboot the machine
 func reboot(w http.ResponseWriter, r *http.Request) {
@@ -22,65 +34,62 @@ func reboot(w http.ResponseWriter, r *http.Request) {
 	exec.Command("reboot", "now")
 }
 
+// parseConfig will open and interpret program settings,
+// as well as return the generic settings from last session
+func parseConfig(configFile string) Config {
+	// Open settings file
+	file, _ := os.Open(configFile)
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	config := Config{}
+	err := decoder.Decode(&config)
+	if err != nil {
+		fmt.Println("[ERROR] Config: ", err)
+	}
+
+	return config
+}
+
 // define our router and subsequent routes here
 func main() {
 
 	// Start with program arguments
 	var (
-		sessionFile       string
-		dbHost            string
-		dbName            string
-		btAddress         string
-		remotePingAddress string
+		configFile  string
+		sessionFile string // This is for debugging ONLY
 	)
-	flag.StringVar(&sessionFile, "session-file", "", "File to save and recover the last-known session to.")
-	flag.StringVar(&dbHost, "db-host", "", "Influx Database fully qualified url on localhost to log with")
-	flag.StringVar(&dbName, "db-name", "", "Influx Database name on localhost to log with")
-	flag.StringVar(&btAddress, "bt-device", "", "Bluetooth Media device to connect and use as default")
-	flag.StringVar(&remotePingAddress, "ping-host", "", "Remote address to fwd pings to")
+	flag.StringVar(&configFile, "config-file", "", "File to recover the last-known settings.")
+	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
 	flag.Parse()
 
-	if dbHost != "" {
-		var sqlEnabled = true
-		//var tries = 0
-		DB := influx.Influx{Host: dbHost, Database: dbName}
+	// Parse settings file
+	config := parseConfig(configFile)
 
-		// Initial connection
-		/*
-			err := DB.Ping()
-			// Retry connection every second
-			if err != nil {
-				for tries < 15 {
-					err := DB.Ping()
-					if err == nil {
-						break
-					}
-					log.Println("Failed to connect to DB, retrying.")
-					time.Sleep(2 * time.Second)
-					tries++
-				}
-				if err != nil {
-					log.Println(err.Error())
-					sqlEnabled = false
-				}
-			}*/
+	// Pass settings to be interpreted
+	settings.Setup(config.SettingsFile)
 
-		if sqlEnabled {
-			// Pass DB pool to imports
-			sessions.Setup(DB, sessionFile)
+	// Init session tracking (with or without Influx)
+	sessions.Setup(sessionFile)
 
-			if remotePingAddress != "" {
-				ping.Setup(DB, remotePingAddress)
-			} else {
-				log.Println("[Config] Not accepting pings.")
-			}
+	if config.DatabaseHost != "" {
+		DB := influx.Influx{Host: config.DatabaseHost, Database: config.DatabaseName}
+
+		//
+		// Pass DB pool to imports
+		//
+		settings.SetupDatabase(DB)
+		sessions.SetupDatabase(DB)
+
+		// Proprietary pinging for component tracking
+		if config.PingHost != "" {
+			ping.Setup(DB, config.PingHost)
 		}
 	} else {
 		log.Println("[Config] Not logging to influx db.")
 	}
 
 	// Pass argument to its rightful owner
-	bluetooth.SetAddress(btAddress)
+	bluetooth.SetAddress(config.BluetoothAddress)
 
 	// Init router
 	router := mux.NewRouter()
@@ -102,6 +111,14 @@ func main() {
 	router.HandleFunc("/session/{name}", sessions.GetSessionValue).Methods("GET")
 	router.HandleFunc("/session/gps", sessions.SetGPSValue).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.SetSessionValue).Methods("POST")
+
+	//
+	// Settings routes
+	//
+	router.HandleFunc("/settings", settings.GetAllSettings).Methods("GET")
+	router.HandleFunc("/settings/{component}", settings.GetSetting).Methods("GET")
+	router.HandleFunc("/settings/{component}/{name}", settings.GetSettingValue).Methods("GET")
+	router.HandleFunc("/settings/{component}/{name}/{value}", settings.SetSettingValue).Methods("POST")
 
 	//
 	// PyBus Routes

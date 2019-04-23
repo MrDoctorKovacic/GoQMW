@@ -1,0 +1,7 @@
+{
+	"SettingsFile": "./session.json",
+	"DatabaseHost": "http://localhost:8086",
+	"DatabaseName": "vehicle",
+	"BluetoothAddress": "",
+	"PingHost": ""
+}

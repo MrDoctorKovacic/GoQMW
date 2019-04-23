@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/MrDoctorKovacic/GoQMW/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/parnurzeal/gorequest"
 )
 

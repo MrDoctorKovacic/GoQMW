@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/MrDoctorKovacic/GoQMW/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/gorilla/mux"
 	zmq "github.com/pebbe/zmq4"
 )

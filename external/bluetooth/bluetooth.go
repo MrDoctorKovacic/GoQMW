@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/MrDoctorKovacic/GoQMW/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 )
 
 var btAddress string

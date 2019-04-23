@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MrDoctorKovacic/GoQMW/external/status"
-	"github.com/MrDoctorKovacic/GoQMW/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
 )
 

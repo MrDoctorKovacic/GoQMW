@@ -1,4 +1,4 @@
-# GoQMW
+# MDroid
 RESTful API written in GOLANG for providing and logging vehicle session data. Essentially a backend to interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus).
 
 ## Requirements
@@ -8,17 +8,50 @@ RESTful API written in GOLANG for providing and logging vehicle session data. Es
 
 Having [InfluxDB & the rest of the TICK stack](https://www.influxdata.com/blog/running-the-tick-stack-on-a-raspberry-pi/) is recommended, although this will run fine without them.
 
-```go get github.com/MrDoctorKovacic/GoQMW/``` 
+```go get github.com/MrDoctorKovacic/MDroid-Core/``` 
 
 ## Usage
 
-Any and all the options can be omitted to disable their specific functionality. In the case of missing database options, the program will still keep track of the current session but it won't log the time series data. 
-
-```GoQMW --db-host http://localhost:8086 --db-name vehicle --session-file ./session.json --bt-address [BT PLAYER MAC ADDR] --ping-host https://ping.quinncasey.com``` 
+```MDroid-Core --settings-file ./settings.json``` 
 
 ## Options 
 
-* **db-host and db-name** control access to the Influx database for logging time series data. User auth is not supported. 
-* **session-file** can save / recover from the most recent session, formatted in JSON. This is not a log, rather a freeze frame of the entire latest session. 
-* **bt-address** is the MAC addr of a device that should be used by default. TODO: Allow for dynamic address change based on what is actually connected.
-* **ping-host** should not really be used. All of my devices ping a master server on a regular interval to 'check in', measuring downtime and broken nodes. 
+The settings file is a simple json formatted document for program init and generic settings that should persist through multiple runs. If the settings file argument is omitted, or the file is not found, one will be created.
+
+Any and all options can be omitted to disable their specific functionality. In the case of missing database options, the program will still keep track of the current session but it won't log the time series data. 
+
+```
+// COMMENTS ARE NOT VALID JSON, AN UNCOMMENTED VERSION OF THE BELOW IS PROVIDED IN THE REPO
+// Core Configuration
+{
+	"config": {
+		"DatabaseHost": "http://localhost:8086", // Influx DB with port
+		"DatabaseName": "vehicle", // Influx DB name to aggregate data under
+		"BluetoothAddress": "", // This is NOT the host's BT Addr, rather the default media device
+		"PingHost": "", // Mostly proprietary, safe to ignore
+		"SettingsFile": "./session.json" // 
+	}
+}
+``` 
+
+## Settings File
+
+Inferred settings will appear here. Allows for posting generic setting fields and values, which can be retrieved later by others in the network. This MUST be a 2D array, matching the (settings[Component][Field] = Value) style. Inner casing is however user defines, but I generally prefer upper. Publish / Subscribe for settings is a planned feature.
+
+Here's an example of a generated JSON settings structure:
+
+```
+{
+	"settings": {
+		// Example: set angel eyes to be turned on. As of now, the controller should be listening on this value
+		"ANGEL_EYES": {
+			"POWER": 1,
+			"TURN_OFF_WHEN": "NIGHT"
+		},
+		"BACKUP_CAMERA": {
+			...
+		}
+		...
+	}
+}
+```
