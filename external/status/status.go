@@ -57,11 +57,11 @@ var StatusStatus = NewStatus("Status")
 
 // NewStatus will create and return a new program status
 func NewStatus(name string) ProgramStatus {
-	s, ok := StatusMap[name]
 
+	// Check if program status already exists
+	s, ok := StatusMap[name]
 	if ok {
-		log.Println(name + " already exists in the StatusMap")
-		log.Println(StatusMap)
+		log.Println("[WARNING] Status: " + name + " already exists in the StatusMap")
 		return s
 	}
 

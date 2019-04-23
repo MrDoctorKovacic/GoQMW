@@ -20,7 +20,7 @@ type streamData struct {
 var Streams map[string]streamData
 
 // StreamStatus will control logging and reporting of status / warnings / errors
-var StreamStatus = status.NewStatus("Session")
+var StreamStatus = status.NewStatus("Streams")
 
 // GetAllStreams returns all the registered incoming streams
 func GetAllStreams(w http.ResponseWriter, r *http.Request) {
