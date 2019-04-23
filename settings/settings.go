@@ -29,22 +29,24 @@ var databaseEnabled = false
 
 // parseSettings will open and interpret program settings,
 // as well as return the generic settings from last session
-func parseSettings(settingsFile string) map[string]map[string]string {
-	type settingsData struct {
-		Data map[string]map[string]string
-	}
+func parseSettings(settingsFile string) (map[string]map[string]string, error) {
+	var data map[string]map[string]string
 
 	// Open settings file
-	file, _ := os.Open(settingsFile)
+	file, err := os.Open(settingsFile)
+	if err != nil {
+		SettingsStatus.Log(status.Error(), "Error opening file '"+settingsFile+"': "+err.Error())
+		return nil, err
+	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
-	settings := settingsData{}
-	err := decoder.Decode(&settings)
+	err = decoder.Decode(&data)
 	if err != nil {
-		fmt.Println("[ERROR] Config: ", err)
+		SettingsStatus.Log(status.Error(), "Error parsing json from file '"+settingsFile+"': "+err.Error())
+		return nil, err
 	}
 
-	return settings.Data
+	return data, nil
 }
 
 // Setup will handle the initialization of settings,
@@ -52,10 +54,19 @@ func parseSettings(settingsFile string) map[string]map[string]string {
 func Setup(useSettingsFile string) {
 	if useSettingsFile != "" {
 		settingsFile = useSettingsFile
-		initSettings := parseSettings(settingsFile)
-		if len(initSettings) != 0 {
+		initSettings, err := parseSettings(settingsFile)
+		if err == nil && initSettings != nil && len(initSettings) != 0 {
 			Settings = initSettings
+
+			// Log settings
+			out, err := json.Marshal(Settings)
+			if err != nil {
+				panic(err)
+			}
+			SettingsStatus.Log(status.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
 			return
+		} else if initSettings == nil {
+			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
 		}
 	}
 
@@ -74,7 +85,7 @@ func WriteSettings() error {
 	settingsJSON, _ := json.Marshal(Settings)
 	err := ioutil.WriteFile(settingsFile, settingsJSON, 0644)
 	if err != nil {
-		SettingsStatus.Log(status.Error(), "Failed to write Settings to "+settingsFile+". Error: "+err.Error())
+		SettingsStatus.Log(status.Error(), "Failed to write Settings to "+settingsFile+": "+err.Error())
 		return err
 	}
 

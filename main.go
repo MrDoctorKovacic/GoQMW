@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -28,6 +27,9 @@ type Config struct {
 	SettingsFile     string
 }
 
+// MainStatus will control logging and reporting of status / warnings / errors
+var MainStatus = status.NewStatus("Main")
+
 // Reboot the machine
 func reboot(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
@@ -44,8 +46,11 @@ func parseConfig(configFile string) Config {
 	config := Config{}
 	err := decoder.Decode(&config)
 	if err != nil {
-		fmt.Println("[ERROR] Config: ", err)
+		MainStatus.Log(status.OK(), "Error parsing config file '"+configFile+"': "+err.Error())
 	}
+
+	// Log our success
+	MainStatus.Log(status.OK(), "Parsed config file '"+configFile+"'")
 
 	return config
 }
@@ -64,6 +69,13 @@ func main() {
 
 	// Parse settings file
 	config := parseConfig(configFile)
+
+	// Log config
+	out, err := json.Marshal(config)
+	if err != nil {
+		panic(err)
+	}
+	MainStatus.Log(status.OK(), "Using config: "+string(out))
 
 	// Pass settings to be interpreted
 	settings.Setup(config.SettingsFile)

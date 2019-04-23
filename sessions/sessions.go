@@ -83,6 +83,7 @@ func Setup(file string) {
 func SetupDatabase(database influx.Influx) {
 	DB = database
 	databaseEnabled = true
+	SessionStatus.Log(status.OK(), "Initialized Database")
 }
 
 // GetSession returns the entire current session
