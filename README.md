@@ -29,7 +29,7 @@ Any and all options can be omitted to disable their specific functionality. In t
 		"DatabaseName": "vehicle", // Influx DB name to aggregate data under
 		"BluetoothAddress": "", // This is NOT the host's BT Addr, rather the default media device
 		"PingHost": "", // Mostly proprietary, safe to ignore
-		"SettingsFile": "./session.json" // 
+		"SettingsFile": "./settings.json" // Where persistient settings should be stored
 	}
 }
 ``` 
