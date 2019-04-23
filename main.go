@@ -12,6 +12,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/external/ping"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/streams"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
@@ -131,6 +132,14 @@ func main() {
 	router.HandleFunc("/settings/{component}", settings.GetSetting).Methods("GET")
 	router.HandleFunc("/settings/{component}/{name}", settings.GetSettingValue).Methods("GET")
 	router.HandleFunc("/settings/{component}/{name}/{value}", settings.SetSettingValue).Methods("POST")
+
+	//
+	// Stream Routes
+	//
+	router.HandleFunc("/streams", streams.GetAllStreams).Methods("GET")
+	router.HandleFunc("/streams/{name}", streams.GetStream).Methods("GET")
+	router.HandleFunc("/streams/{name}", streams.RegisterStream).Methods("POST")
+	router.HandleFunc("/streams/{name}/restart", streams.RestartStream).Methods("GET")
 
 	//
 	// PyBus Routes
