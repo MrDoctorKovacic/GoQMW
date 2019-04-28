@@ -1,4 +1,7 @@
 # MDroid
+
+[![Go Report Card](https://goreportcard.com/report/github.com/MrDoctorKovacic/MDroid-Core)](https://goreportcard.com/report/github.com/MrDoctorKovacic/MDroid-Core)
+
 RESTful API written in GOLANG for providing and logging vehicle session data. Essentially a backend to interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus).
 
 ## Requirements
