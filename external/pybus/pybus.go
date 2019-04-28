@@ -4,50 +4,37 @@ import (
 	"encoding/json"
 	"net/http"
 	"os/exec"
-	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/gorilla/mux"
-	zmq "github.com/pebbe/zmq4"
 )
 
 // Registered pybusRoutines, to make sure we're not calling something that doesn't exist
 // (or isn't allowed...)
 var pybusRoutines = make(map[string]bool, 0)
 
+var pybusQueue []string
+
 // PybusStatus will control logging and reporting of status / warnings / errors
 var PybusStatus = status.NewStatus("Pybus")
 
-// SendPyBus queries a (hopefully) running pyBus program to run a directive
-func SendPyBus(msg string) {
-	context, _ := zmq.NewContext()
-	socket, _ := context.NewSocket(zmq.REQ)
-	defer socket.Close()
-
-	PybusStatus.Log(status.OK(), "Connecting to pyBus ZMQ Server at localhost:4884")
-	socket.Connect("tcp://localhost:4884")
-
-	// Send command
-	socket.Send(msg, 0)
-	PybusStatus.Log(status.OK(), "Sending PyBus command: "+msg)
-
-	// Wait for reply:
-	reply, _ := socket.Recv(0)
-	PybusStatus.Log(status.OK(), "Received: "+string(reply))
+// QueuePybus adds a directive to the pybus queue
+func QueuePybus(msg string) {
+	pybusQueue = append(pybusQueue, msg)
+	PybusStatus.Log(status.OK(), "Added "+msg+" to the Pybus Queue")
 }
 
-// rollWindowsUp sends popWindowsUp 3 consecutive times
-func rollWindowsUp() {
-	SendPyBus("popWindowsUp")
-	time.Sleep(1200 * time.Millisecond)
-	SendPyBus("popWindowsUp")
-}
+// SendPybus pops a directive off the queue after confirming it occured
+func SendPybus(w http.ResponseWriter, r *http.Request) {
+	if len(pybusQueue) > 0 {
+		PybusStatus.Log(status.OK(), "Dumping "+pybusQueue[0]+" from Pybus queue to get request")
+		json.NewEncoder(w).Encode(pybusQueue[0])
 
-// rollWindowsDown sends popWindowsDown 3 consecutive times
-func rollWindowsDown() {
-	SendPyBus("popWindowsDown")
-	time.Sleep(1500 * time.Millisecond)
-	SendPyBus("popWindowsDown")
+		// Pop off queue
+		pybusQueue = pybusQueue[1:]
+	} else {
+		json.NewEncoder(w).Encode("{}")
+	}
 }
 
 // RegisterPybusRoutine handles PyBus goroutine
@@ -86,11 +73,13 @@ func StartPybusRoutine(w http.ResponseWriter, r *http.Request) {
 		// Some commands need special timing functions
 		switch params["command"] {
 		case "rollWindowsUp":
-			go rollWindowsUp()
+			QueuePybus("popWindowsUp")
+			QueuePybus("popWindowsUp")
 		case "rollWindowsDown":
-			go rollWindowsDown()
+			QueuePybus("popWindowsDown")
+			QueuePybus("popWindowsDown")
 		default:
-			go SendPyBus(params["command"])
+			go QueuePybus(params["command"])
 		}
 
 		json.NewEncoder(w).Encode("OK")

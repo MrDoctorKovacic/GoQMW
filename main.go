@@ -146,6 +146,7 @@ func main() {
 	//
 	router.HandleFunc("/pybus/{command}", pybus.RegisterPybusRoutine).Methods("POST")
 	router.HandleFunc("/pybus/{command}", pybus.StartPybusRoutine).Methods("GET")
+	router.HandleFunc("/pybus/queue", pybus.SendPybus).Methods("GET")
 	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
 
 	//
