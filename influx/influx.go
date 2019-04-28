@@ -48,7 +48,7 @@ func (db *Influx) Write(msg string) error {
 
 	if resp.StatusCode != 204 {
 		InfluxStatus.Log(status.Warning(), fmt.Sprintf("Write/Post request response: %d", resp.StatusCode))
-		InfluxStatus.Log(status.Warning(), "Recieved: "+body)
+		InfluxStatus.Log(status.Warning(), "Received: "+body)
 	}
 
 	return nil
@@ -63,7 +63,7 @@ func (db *Influx) Query(msg string) (string, error) {
 	}
 
 	InfluxStatus.Log(status.OK(), fmt.Sprintf("Query request response: %d", resp.StatusCode))
-	InfluxStatus.Log(status.OK(), "Recieved: "+body)
+	InfluxStatus.Log(status.OK(), "Received: "+body)
 	return body, nil
 }
 
@@ -76,7 +76,7 @@ func (db *Influx) ShowDatabases() (string, error) {
 	}
 
 	InfluxStatus.Log(status.OK(), fmt.Sprintf("Show Database request response: %d", resp.StatusCode))
-	InfluxStatus.Log(status.OK(), "Recieved: "+body)
+	InfluxStatus.Log(status.OK(), "Received: "+body)
 	return body, nil
 }
 
@@ -90,7 +90,7 @@ func (db *Influx) CreateDatabase() error {
 
 	if resp.StatusCode != 200 {
 		InfluxStatus.Log(status.OK(), fmt.Sprintf("Create Database request response: %d", resp.StatusCode))
-		InfluxStatus.Log(status.OK(), "Recieved: "+body)
+		InfluxStatus.Log(status.OK(), "Received: "+body)
 	}
 	return nil
 }
