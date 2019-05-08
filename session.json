@@ -4,11 +4,11 @@
  		"LastUpdate": "2019-03-07 09:29:08.890"		
  	},		
  	"RPM": {		
- 		"Value": 2100,
+ 		"Value": "2100",
  		"LastUpdate": "2019-03-07 09:29:14.936"		
  	},		
  	"OUTSIDE_TEMP": {		
- 		"Value": 17,		
+ 		"Value": "17",		
  		"LastUpdate": "2019-03-07 09:29:07.492"		
  	},		
  	"DIAGNOSTIC": {		
@@ -20,7 +20,7 @@
  		"LastUpdate": "2019-03-07 09:29:07.492"		
  	},		
  	"SESSION": {		
- 		"Value": true,		
+ 		"Value": "true",		
  		"LastUpdate": "2019-03-07 09:29:07.492"		
  	},		
  	"CLIMATE_CONTROL_STATUS": {		
@@ -28,19 +28,19 @@
  		"LastUpdate": "2019-03-07 09:29:07.447"		
  	},		
  	"OUTSIDE_TEMP_2": {		
- 		"Value": 33,		
+ 		"Value": "33",		
  		"LastUpdate": "2019-03-07 09:29:08.161"		
  	},		
  	"SPEED": {		
- 		"Value": 58,		
+ 		"Value": "58",		
  		"LastUpdate": "2019-03-07 09:29:14.936"		
  	},		
  	"OIL_TEMP": {		
- 		"Value": 0,		
+ 		"Value": "0",		
  		"LastUpdate": "2019-03-07 09:29:08.161"		
  	},		
  	"COOLANT_TEMP": {		
- 		"Value": 81,		
+ 		"Value": "81",		
  		"LastUpdate": "2019-03-07 09:29:08.161"		
  	}		
  } 

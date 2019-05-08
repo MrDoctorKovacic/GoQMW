@@ -37,6 +37,11 @@ func SendPybus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetPybusRoutines fetches all registered Pybus routines
+func GetPybusRoutines(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(pybusRoutines)
+}
+
 // RegisterPybusRoutine handles PyBus goroutine
 func RegisterPybusRoutine(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
