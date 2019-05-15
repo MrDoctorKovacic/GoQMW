@@ -58,6 +58,8 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 				PingStatus.Log(status.Error(), "Error when forwarding ping: "+err.Error())
 			}
 		}
+
+		json.NewEncoder(w).Encode("OK")
 	}
 
 	// Devices will not act on response anyway, anything but 200 is a waste
