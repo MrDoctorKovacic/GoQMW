@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
@@ -45,6 +46,7 @@ type ALPRData struct {
 
 // Session is the global session accessed by incoming requests
 var Session map[string]SessionData
+var sessionLock sync.Mutex
 
 // GPS is the last posted GPS fix
 var GPS GPSData
@@ -111,8 +113,14 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	var timestamp = time.Now().Format("2006-01-02 15:04:05.999")
 	newdata.LastUpdate = timestamp
 
+	// Lock access to session
+	sessionLock.Lock()
+
 	// Add / update value in global session
 	Session[params["name"]] = newdata
+
+	// Immediately unlock, since defer could take a while
+	sessionLock.Unlock()
 
 	// Insert into database
 	if databaseEnabled {
