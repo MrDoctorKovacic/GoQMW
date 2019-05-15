@@ -125,8 +125,7 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Respond with inserted values
-	json.NewEncoder(w).Encode(newdata)
+	json.NewEncoder(w).Encode("OK")
 }
 
 // SetGPSValue posts a new GPS fix
@@ -185,7 +184,6 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Respond with inserted values
 	json.NewEncoder(w).Encode("OK")
 }
 
@@ -217,10 +215,9 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 		} else {
 			SessionStatus.Log(status.Error(), fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))
 		}
-
-		// Respond with inserted values
-		json.NewEncoder(w).Encode(plate)
 	}
+
+	json.NewEncoder(w).Encode("OK")
 }
 
 // RestartALPR posts remote device to restart ALPR service
