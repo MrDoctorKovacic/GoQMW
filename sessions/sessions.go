@@ -61,8 +61,8 @@ var SessionFile string
 // SessionStatus will control logging and reporting of status / warnings / errors
 var SessionStatus = status.NewStatus("Session")
 
+// Init session
 func init() {
-	// Init session
 	Session = make(map[string]SessionData)
 }
 
@@ -136,6 +136,15 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
 }
 
+//
+// GPS Functions
+//
+
+// GetGPSValue returns the latest GPS fix
+func GetGPSValue(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(GPS)
+}
+
 // SetGPSValue posts a new GPS fix
 func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	var newdata GPSData
@@ -169,8 +178,6 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	}
 	if newdata.Time != "" {
 		GPS.Time = newdata.Time
-		// This is ultimately a waste of space
-		//postingString.WriteString(fmt.Sprintf("timestamp=\"%s\",", newdata.Time))
 	}
 	if newdata.EPV != nil {
 		GPS.EPV = newdata.EPV
@@ -194,6 +201,10 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode("OK")
 }
+
+//
+// ALPR Functions
+//
 
 // LogALPR creates a new entry in running SQL DB
 func LogALPR(w http.ResponseWriter, r *http.Request) {
