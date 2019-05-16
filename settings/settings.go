@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
@@ -18,7 +19,9 @@ import (
 var settingsFile = "./settings.json"
 
 // Settings control generic user defined field:value mappings, which will persist each run
+// The mutex should be unnecessary, but is provided just in case
 var Settings map[string]map[string]string
+var settingsLock sync.Mutex
 
 // SettingsStatus will control logging and reporting of status / warnings / errors
 var SettingsStatus = status.NewStatus("Settings")
@@ -47,6 +50,11 @@ func parseSettings(settingsFile string) (map[string]map[string]string, error) {
 	}
 
 	return data, nil
+}
+
+// Formats in upper case with underscores replacing spaces
+func formatSetting(text string) string {
+	return strings.ToUpper(strings.Replace(text, " ", "_", -1))
 }
 
 // Setup will handle the initialization of settings,
@@ -87,8 +95,16 @@ func SetupDatabase(database influx.Influx) {
 
 // WriteSettings to given file, create one if it doesn't exist
 func WriteSettings() error {
-	settingsJSON, _ := json.Marshal(Settings)
-	err := ioutil.WriteFile(settingsFile, settingsJSON, 0644)
+	settingsLock.Lock()
+	settingsJSON, err := json.Marshal(Settings)
+	settingsLock.Unlock()
+
+	if err != nil {
+		SettingsStatus.Log(status.Error(), "Failed to marshall Settings")
+		return err
+	}
+
+	err = ioutil.WriteFile(settingsFile, settingsJSON, 0644)
 	if err != nil {
 		SettingsStatus.Log(status.Error(), "Failed to write Settings to "+settingsFile+": "+err.Error())
 		return err
@@ -107,47 +123,54 @@ func GetAllSettings(w http.ResponseWriter, r *http.Request) {
 // GetSetting returns all the values of a specific setting
 func GetSetting(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	json.NewEncoder(w).Encode(Settings[params["component"]])
+	json.NewEncoder(w).Encode(Settings[formatSetting(params["componentName"])])
 }
 
 // GetSettingValue returns a specific setting value
 func GetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	json.NewEncoder(w).Encode(Settings[params["component"]][params["name"]])
+	json.NewEncoder(w).Encode(Settings[formatSetting(params["componentName"])][formatSetting(params["name"])])
 }
 
 // SetSettingValue updates or posts a new setting value
 func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	// Insert component into Map if not exists
-	if _, ok := Settings[params["component"]]; !ok {
-		Settings[params["component"]] = make(map[string]string, 0)
+	// Parse out params
+	componentName := formatSetting(params["componentName"])
+	settingName := formatSetting(params["name"])
+	settingValue := params["value"]
+
+	// Insert componentName into Map if not exists
+	settingsLock.Lock()
+	if _, ok := Settings[componentName]; !ok {
+		Settings[componentName] = make(map[string]string, 0)
 	}
 
 	// Update setting in inner map
-	Settings[params["component"]][params["name"]] = params["value"]
+	Settings[componentName][settingName] = settingValue
+	settingsLock.Unlock()
 
 	// Insert into database
 	if databaseEnabled {
 		// Format as string, if it is. Influx will complain about booleans / ints formatted as strings
-		var value = params["value"]
-		_, err := strconv.Atoi(params["value"])
+		var value = settingValue
+		_, err := strconv.Atoi(settingValue)
 		if err != nil {
-			value = "\"" + params["value"] + "\""
+			value = "\"" + settingValue + "\""
 		}
 
-		err = DB.Write(fmt.Sprintf("settings,component=%s %s=%s", strings.Replace(params["component"], " ", "_", -1), params["name"], value))
+		err = DB.Write(fmt.Sprintf("settings,component=%s %s=%s", componentName, settingName, value))
 
 		if err != nil {
-			SettingsStatus.Log(status.Error(), fmt.Sprintf("Error writing %s[%s] = %s to influx DB: %s", params["component"], params["name"], params["value"], err.Error()))
+			SettingsStatus.Log(status.Error(), fmt.Sprintf("Error writing %s[%s] = %s to influx DB: %s", componentName, settingName, settingValue, err.Error()))
 		} else {
-			SettingsStatus.Log(status.OK(), fmt.Sprintf("Logged %s[%s] = %s to database", params["component"], params["name"], params["value"]))
+			SettingsStatus.Log(status.OK(), fmt.Sprintf("Logged %s[%s] = %s to database", componentName, settingName, settingValue))
 		}
 	}
 
 	// Log our success
-	SettingsStatus.Log(status.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", params["component"], params["name"], params["value"]))
+	SettingsStatus.Log(status.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
 	WriteSettings()
