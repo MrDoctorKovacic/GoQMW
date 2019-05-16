@@ -77,7 +77,7 @@ func main() {
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
 			if config["PING_HOST"] != "" {
-				statuss.RemotePingAddress = config["PING_HOST"])
+				status.RemotePingAddress = config["PING_HOST"]
 			}
 
 		} else {
