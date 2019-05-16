@@ -55,8 +55,8 @@ var StatusMap = make(map[string]ProgramStatus, 0)
 // Holy meta batman
 var StatusStatus = NewStatus("Status")
 
-// Remote address to forward pings to
-var remote string
+// RemotePingAddress to forward pings to
+var RemotePingAddress string
 
 // NewStatus will create and return a new program status
 func NewStatus(name string) ProgramStatus {
@@ -166,7 +166,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Ensure we have a server (and a DB) to connect to
-	if remote != "" {
+	if RemotePingAddress != "" {
 		onlineResp, err := http.Get("1.1.1.1")
 
 		if err != nil {
@@ -190,7 +190,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// FWD request to server since we have internet
 			//
 			StatusStatus.Log(OK(), "Forwarding "+params["device"]+" to server")
-			pingResp, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
+			pingResp, err := http.Get(RemotePingAddress + "?name=" + params["device"] + "&local_ip=" + params["ip"])
 			if err != nil {
 				defer pingResp.Body.Close()
 				StatusStatus.Log(Error(), "Error when forwarding ping: "+err.Error())

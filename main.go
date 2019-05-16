@@ -5,11 +5,9 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/external/ping"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/streams"
@@ -25,7 +23,6 @@ type Config struct {
 	DatabaseName     string
 	BluetoothAddress string
 	PingHost         string
-	SettingsFile     string
 }
 
 // MainStatus will control logging and reporting of status / warnings / errors
@@ -37,72 +34,64 @@ func reboot(w http.ResponseWriter, r *http.Request) {
 	exec.Command("reboot", "now")
 }
 
-// parseConfig will open and interpret program settings,
-// as well as return the generic settings from last session
-func parseConfig(configFile string) Config {
-	// Open settings file
-	file, _ := os.Open(configFile)
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	config := Config{}
-	err := decoder.Decode(&config)
-	if err != nil {
-		MainStatus.Log(status.OK(), "Error parsing config file '"+configFile+"': "+err.Error())
-	}
-
-	// Log our success
-	MainStatus.Log(status.OK(), "Parsed config file '"+configFile+"'")
-
-	return config
-}
-
 // define our router and subsequent routes here
 func main() {
 
 	// Start with program arguments
 	var (
-		configFile  string
-		sessionFile string // This is for debugging ONLY
+		settingsFile string
+		sessionFile  string // This is for debugging ONLY
 	)
-	flag.StringVar(&configFile, "config-file", "", "File to recover the last-known settings.")
+	flag.StringVar(&settingsFile, "settings-file", "", "File to recover the persistent settings.")
 	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
 	flag.Parse()
 
 	// Parse settings file
-	config := parseConfig(configFile)
+	settingsData := settings.Setup(settingsFile)
 
-	// Log config
-	out, err := json.Marshal(config)
+	// Log settings
+	out, err := json.Marshal(settingsData)
 	if err != nil {
 		panic(err)
 	}
-	MainStatus.Log(status.OK(), "Using config: "+string(out))
-
-	// Pass settings to be interpreted
-	settings.Setup(config.SettingsFile)
+	MainStatus.Log(status.OK(), "Using settings: "+string(out))
 
 	// Init session tracking (with or without Influx)
 	sessions.Setup(sessionFile)
 
-	if config.DatabaseHost != "" {
-		DB := influx.Influx{Host: config.DatabaseHost, Database: config.DatabaseName}
+	// Parse through config if found in settings file
+	config, ok := settingsData["CONFIG"]
+	if ok {
 
-		//
-		// Pass DB pool to imports
-		//
-		settings.SetupDatabase(DB)
-		sessions.SetupDatabase(DB)
+		// Set up InfluxDB time series logging
+		databaseHost, usingDatabase := config["DATABASE_HOST"]
+		if usingDatabase {
+			DB := influx.Influx{Host: databaseHost, Database: config["DATABASE_NAME"]}
 
-		// Proprietary pinging for component tracking
-		if config.PingHost != "" {
-			ping.Setup(DB, config.PingHost)
+			//
+			// Pass DB pool to imports
+			//
+			settings.SetupDatabase(DB)
+			sessions.SetupDatabase(DB)
+
+			// Set up ping functionality
+			// Proprietary pinging for component tracking
+			if config["PING_HOST"] != "" {
+				statuss.RemotePingAddress = config["PING_HOST"])
+			}
+
+		} else {
+			MainStatus.Log(status.OK(), "Not logging to influx db")
+		}
+
+		// Set up bluetooth
+		bluetoothAddress, usingBluetooth := config["BLUETOOTH_ADDRESS"]
+		if usingBluetooth {
+			bluetooth.SetAddress(bluetoothAddress)
 		}
 	} else {
-		log.Println("[Config] Not logging to influx db.")
+		MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
 	}
-
-	// Pass argument to its rightful owner
-	bluetooth.SetAddress(config.BluetoothAddress)
 
 	// Init router
 	router := mux.NewRouter()
@@ -115,7 +104,7 @@ func main() {
 	//
 	// Ping routes
 	//
-	router.HandleFunc("/ping/{device}", ping.Ping).Methods("POST")
+	router.HandleFunc("/ping/{device}", status.Ping).Methods("POST")
 
 	//
 	// Session routes
