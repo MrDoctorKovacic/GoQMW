@@ -51,7 +51,7 @@ func parseSettings(settingsFile string) (map[string]map[string]string, error) {
 
 // Setup will handle the initialization of settings,
 // either from past mapping or by creating a new one
-func Setup(useSettingsFile string) {
+func Setup(useSettingsFile string) map[string]map[string]string {
 	if useSettingsFile != "" {
 		settingsFile = useSettingsFile
 		initSettings, err := parseSettings(settingsFile)
@@ -62,7 +62,7 @@ func Setup(useSettingsFile string) {
 			out, err := json.Marshal(Settings)
 			if err == nil {
 				SettingsStatus.Log(status.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
-				return
+				return Settings
 			}
 
 			// If err is set, re-marshaling the settings failed
@@ -74,9 +74,12 @@ func Setup(useSettingsFile string) {
 
 	// Default to empty map
 	Settings = make(map[string]map[string]string, 0)
+
+	// Return empty map
+	return Settings
 }
 
-// SetupDatabase is optional, but enables
+// SetupDatabase is optional, but enables logging POST requests to see where things are coming from
 func SetupDatabase(database influx.Influx) {
 	DB = database
 	databaseEnabled = true
