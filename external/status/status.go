@@ -55,6 +55,9 @@ var StatusMap = make(map[string]ProgramStatus, 0)
 // Holy meta batman
 var StatusStatus = NewStatus("Status")
 
+// Remote address to forward pings to
+var remote string
+
 // NewStatus will create and return a new program status
 func NewStatus(name string) ProgramStatus {
 
@@ -151,4 +154,58 @@ func SetStatus(w http.ResponseWriter, r *http.Request) {
 
 	// Respond with inserted values
 	json.NewEncoder(w).Encode(s)
+}
+
+//
+// TODO:
+// COPIED FROM PINGS.GO, WILL FIX LATER
+//
+
+// Ping will fwd to remote server if connected to internet, otherwise will log locally
+func Ping(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	// Ensure we have a server (and a DB) to connect to
+	if remote != "" {
+		onlineResp, err := http.Get("1.1.1.1")
+
+		if err != nil {
+			//
+			// Log locally
+			//
+			defer onlineResp.Body.Close()
+			StatusStatus.Log(OK(), "Logging "+params["device"]+" to database")
+
+			// Insert into database
+			//err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
+
+			if err != nil {
+				StatusStatus.Log(Error(), "Error when logging "+params["device"]+" to database: "+err.Error())
+			} else {
+				StatusStatus.Log(OK(), "Logged "+params["device"]+" to database")
+			}
+
+		} else {
+			//
+			// FWD request to server since we have internet
+			//
+			StatusStatus.Log(OK(), "Forwarding "+params["device"]+" to server")
+			pingResp, err := http.Get(remote + "?name=" + params["device"] + "&local_ip=" + params["ip"])
+			if err != nil {
+				defer pingResp.Body.Close()
+				StatusStatus.Log(Error(), "Error when forwarding ping: "+err.Error())
+			}
+		}
+
+		json.NewEncoder(w).Encode("OK")
+	}
+
+	// Devices will not act on response anyway, anything but 200 is a waste
+	json.NewEncoder(w).Encode("OK")
+}
+
+// DumpPings is ideally run when reconnected to internet.
+// Will dump local pings to remote server
+func DumpPings(w http.ResponseWriter, r *http.Request) {
+
 }
