@@ -6,3 +6,22 @@
 
 # REGULAR GO BUILD
 #go build -o ./bin/MDroid-Core
+
+language: go
+
+go:
+- 1.11
+- 1.12
+
+before_install:
+  - go get -u -v "github.com/gorilla/mux"
+  - go get -u -v "github.com/parnurzeal/gorequest"
+
+install:
+  - go get -t -v ./...
+
+notifications:
+  email:
+    recipients: quinn@quinncasey.com
+    on_success: change
+    on_failure: always
