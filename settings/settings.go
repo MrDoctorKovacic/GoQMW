@@ -30,6 +30,11 @@ var SettingsStatus = status.NewStatus("Settings")
 var DB influx.Influx
 var databaseEnabled = false
 
+// Formats in upper case with underscores replacing spaces
+func formatSetting(text string) string {
+	return strings.ToUpper(strings.Replace(text, " ", "_", -1))
+}
+
 // parseSettings will open and interpret program settings,
 // as well as return the generic settings from last session
 func parseSettings(settingsFile string) (map[string]map[string]string, error) {
@@ -52,9 +57,26 @@ func parseSettings(settingsFile string) (map[string]map[string]string, error) {
 	return data, nil
 }
 
-// Formats in upper case with underscores replacing spaces
-func formatSetting(text string) string {
-	return strings.ToUpper(strings.Replace(text, " ", "_", -1))
+// writeSettings to given file, create one if it doesn't exist
+func writeSettings(file string) error {
+	settingsLock.Lock()
+	settingsJSON, err := json.Marshal(Settings)
+	settingsLock.Unlock()
+
+	if err != nil {
+		SettingsStatus.Log(status.Error(), "Failed to marshall Settings")
+		return err
+	}
+
+	err = ioutil.WriteFile(file, settingsJSON, 0644)
+	if err != nil {
+		SettingsStatus.Log(status.Error(), "Failed to write Settings to "+file+": "+err.Error())
+		return err
+	}
+
+	// Log success
+	SettingsStatus.Log(status.OK(), "Successfully wrote Settings to "+file)
+	return nil
 }
 
 // Setup will handle the initialization of settings,
@@ -91,28 +113,6 @@ func Setup(useSettingsFile string) map[string]map[string]string {
 func SetupDatabase(database influx.Influx) {
 	DB = database
 	databaseEnabled = true
-}
-
-// WriteSettings to given file, create one if it doesn't exist
-func WriteSettings() error {
-	settingsLock.Lock()
-	settingsJSON, err := json.Marshal(Settings)
-	settingsLock.Unlock()
-
-	if err != nil {
-		SettingsStatus.Log(status.Error(), "Failed to marshall Settings")
-		return err
-	}
-
-	err = ioutil.WriteFile(settingsFile, settingsJSON, 0644)
-	if err != nil {
-		SettingsStatus.Log(status.Error(), "Failed to write Settings to "+settingsFile+": "+err.Error())
-		return err
-	}
-
-	// Log success
-	SettingsStatus.Log(status.OK(), "Successfully wrote Settings to "+settingsFile)
-	return nil
 }
 
 // GetAllSettings returns all current settings
@@ -173,7 +173,7 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	SettingsStatus.Log(status.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
-	WriteSettings()
+	writeSettings(settingsFile)
 
 	// Respond with ack
 	json.NewEncoder(w).Encode("OK")
