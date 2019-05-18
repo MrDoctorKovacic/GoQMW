@@ -132,7 +132,7 @@ func GetSettingValue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Settings[formatSetting(params["componentName"])][formatSetting(params["name"])])
 }
 
-// SetSettingValue updates or posts a new setting value
+// SetSettingValue is the http wrapper for our setting setter
 func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -141,6 +141,15 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	settingName := formatSetting(params["name"])
 	settingValue := params["value"]
 
+	// Do the dirty work elsewhere
+	SetSetting(componentName, settingName, settingValue)
+
+	// Respond with ack
+	json.NewEncoder(w).Encode("OK")
+}
+
+// SetSetting will handle actually updates or posts a new setting value
+func SetSetting(componentName string, settingName string, settingValue string) {
 	// Insert componentName into Map if not exists
 	settingsLock.Lock()
 	if _, ok := Settings[componentName]; !ok {
@@ -174,7 +183,4 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 
 	// Write out all settings to a file
 	writeSettings(settingsFile)
-
-	// Respond with ack
-	json.NewEncoder(w).Encode("OK")
 }
