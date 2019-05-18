@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
 var btAddress string
@@ -14,24 +16,56 @@ var btAddress string
 // BluetoothStatus will control logging and reporting of status / warnings / errors
 var BluetoothStatus = status.NewStatus("Bluetooth")
 
+// EnableAutoRefresh continously refreshes bluetooth media devices
+func EnableAutoRefresh() {
+	BluetoothStatus.Log(status.OK(), "Enabling auto refresh of BT address")
+	go startAutoRefresh()
+}
+
+// startAutoRefresh will begin go routine for refreshing bt media device address
+func startAutoRefresh() {
+	for {
+		getConnectedAddress()
+		time.Sleep(1000 * time.Millisecond)
+	}
+}
+
+// ForceRefresh to immediately reload bt address
+func ForceRefresh(w http.ResponseWriter, r *http.Request) {
+	BluetoothStatus.Log(status.OK(), "Forcing refresh of BT address")
+	go getConnectedAddress()
+}
+
+// getConnectedAddress will find and replace the playing media device
+// this should be run continuously to check for changes in connection
+func getConnectedAddress() string {
+	args := "busctl tree org.bluez | grep /fd | head -n 1 | sed -n 's/.*\\/org\\/bluez\\/hci0\\/dev_\\(.*\\)\\/.*/\\1/p'"
+	out, err := exec.Command("bash", "-c", args).Output()
+
+	if err != nil {
+		BluetoothStatus.Log(status.Error(), err.Error())
+		return err.Error()
+	}
+
+	// Use new device if found
+	newAddress := strings.TrimSpace(string(out))
+	if newAddress != "" && btAddress != newAddress {
+		BluetoothStatus.Log(status.OK(), "Found new connected media device with address: "+newAddress)
+		SetAddress(newAddress)
+	}
+
+	return string(out)
+}
+
 // SetAddress makes address given in args available to all dbus functions
 func SetAddress(address string) {
 	// Format address for dbus
 	if address != "" {
-		btAddress = strings.Replace(address, ":", "_", -1)
-		BluetoothStatus.Log(status.OK(), "[Bluetooth] Accepting connections initially from "+btAddress)
-	}
-}
+		btAddress = strings.Replace(strings.TrimSpace(address), ":", "_", -1)
+		BluetoothStatus.Log(status.OK(), "Now routing Bluetooth commands to "+btAddress)
 
-// RestartService will attempt to restart the bluetooth service
-func RestartService(w http.ResponseWriter, r *http.Request) {
-	out, err := exec.Command("/home/pi/le/auto/restart_bluetooth.sh").Output()
-
-	if err != nil {
-		BluetoothStatus.Log(status.Error(), err.Error())
-		json.NewEncoder(w).Encode(err)
-	} else {
-		json.NewEncoder(w).Encode(out)
+		// Set new address to persist in settings file
+		settings.SetSetting("CONFIG", "BLUETOOTH_ADDRESS", btAddress)
 	}
 }
 
