@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
@@ -104,6 +105,10 @@ func Setup(useSettingsFile string) map[string]map[string]string {
 
 	// Default to empty map
 	Settings = make(map[string]map[string]string, 0)
+
+	if useSettingsFile != "" {
+		SetSetting("CONFIG", "LAST_USED", time.Now().String())
+	}
 
 	// Return empty map
 	return Settings
