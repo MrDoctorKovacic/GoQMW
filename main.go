@@ -86,6 +86,7 @@ func main() {
 		// Set up bluetooth
 		bluetoothAddress, usingBluetooth := config["BLUETOOTH_ADDRESS"]
 		if usingBluetooth {
+			bluetooth.EnableAutoRefresh()
 			bluetooth.SetAddress(bluetoothAddress)
 		}
 	} else {
@@ -148,7 +149,7 @@ func main() {
 	router.HandleFunc("/bluetooth/next", bluetooth.Next).Methods("GET")
 	router.HandleFunc("/bluetooth/pause", bluetooth.Pause).Methods("GET")
 	router.HandleFunc("/bluetooth/play", bluetooth.Play).Methods("GET")
-	router.HandleFunc("/bluetooth/restart", bluetooth.RestartService).Methods("GET")
+	router.HandleFunc("/bluetooth/refresh", bluetooth.ForceRefresh).Methods("GET")
 
 	// Status Routes
 	router.HandleFunc("/status", status.GetStatus).Methods("GET")
