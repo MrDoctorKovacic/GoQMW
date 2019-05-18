@@ -77,10 +77,12 @@ func main() {
 			// Proprietary pinging for component tracking
 			if config["PING_HOST"] != "" {
 				status.RemotePingAddress = config["PING_HOST"]
+			} else {
+				MainStatus.Log(status.OK(), "[DISABLED] Not forwarding pings to host")
 			}
 
 		} else {
-			MainStatus.Log(status.OK(), "Not logging to influx db")
+			MainStatus.Log(status.OK(), "[DISABLED] Not logging to influx db")
 		}
 
 		// Set up bluetooth
