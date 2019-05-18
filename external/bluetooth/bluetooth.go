@@ -70,7 +70,7 @@ func SetAddress(address string) {
 }
 
 // SendDBusCommand used as a general BT control function for these endpoints
-func SendDBusCommand(args []string) string {
+func SendDBusCommand(args []string, printOutput bool) string {
 	if btAddress != "" {
 		// Fill in the meta nonsense
 		args = append([]string{"--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
@@ -80,6 +80,8 @@ func SendDBusCommand(args []string) string {
 			BluetoothStatus.Log(status.Error(), err.Error())
 			return err.Error()
 		}
+
+		BluetoothStatus.Log(status.OK(), string(out))
 
 		return string(out)
 	}
@@ -91,42 +93,48 @@ func SendDBusCommand(args []string) string {
 
 // Connect new bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"})
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // GetDeviceInfo attempts to get metadata about connected device
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"})
+	BluetoothStatus.Log(status.OK(), "Getting device info...")
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"})
+	BluetoothStatus.Log(status.OK(), "Getting media info...")
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Prev skips to previous track
 func Prev(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"})
+	BluetoothStatus.Log(status.OK(), "Going to previous track...")
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"})
+	BluetoothStatus.Log(status.OK(), "Going to next track...")
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Play attempts to play bluetooth media
 func Play(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"})
+	BluetoothStatus.Log(status.OK(), "Attempting to play media...")
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Pause attempts to pause bluetooth media
 func Pause(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"})
+	BluetoothStatus.Log(status.OK(), "Attempting to pause media...")
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
