@@ -10,7 +10,6 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/godbus/dbus"
 )
 
 var btAddress string
@@ -19,6 +18,7 @@ var btAddress string
 var BluetoothStatus = status.NewStatus("Bluetooth")
 
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
+var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
@@ -107,10 +107,6 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	if ok {
 		strings.Fields(result)
-		nv, err := dbus.ParseVariant(result, dbus.Signature{})
-		if err != nil {
-			json.NewEncoder(w).Encode(nv)
-		}
 	} else {
 		json.NewEncoder(w).Encode("Error")
 	}
@@ -122,13 +118,20 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 	if ok {
 		s := re.ReplaceAllString(result, "")
-		BluetoothStatus.Log(status.Error(), s)
-		nv, err := dbus.ParseVariant(s, dbus.Signature{})
-		if err != nil {
-			BluetoothStatus.Log(status.Error(), err.Error())
-			json.NewEncoder(w).Encode(err.Error())
+		BluetoothStatus.Log(status.OK(), s)
+		outputArray := re_find.FindAllString(s, -1)
+
+		for i, value := range outputArray {
+			if i%2 == 0 {
+				BluetoothStatus.Log(status.OK(), "key: "+value)
+			}
+			BluetoothStatus.Log(status.OK(), "value: "+value)
+		}
+
+		if outputArray != nil {
+			json.NewEncoder(w).Encode(outputArray)
 		} else {
-			json.NewEncoder(w).Encode(nv)
+			json.NewEncoder(w).Encode("Error")
 		}
 	} else {
 		json.NewEncoder(w).Encode("Error")
