@@ -136,7 +136,7 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(status.OK(), "Getting device info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	if ok {
-		strings.Fields(result)
+		json.NewEncoder(w).Encode(cleanDBusOutput(result))
 	} else {
 		json.NewEncoder(w).Encode("Error")
 	}
