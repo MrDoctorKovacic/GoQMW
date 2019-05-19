@@ -20,7 +20,7 @@ var BluetoothStatus = status.NewStatus("Bluetooth")
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
 
 //var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
-var re_find = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+\s+`)
+var re_find = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
