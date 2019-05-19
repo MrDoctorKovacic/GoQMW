@@ -37,11 +37,11 @@ func cleanDBusOutput(output string) map[string]string {
 		for i, value := range outputArray {
 			newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
 			if i%2 == 1 {
-				if newValue == "" {
-					newValue = "Meta"
-				}
 				key = newValue
 			} else {
+				if key == "" {
+					key = "Meta"
+				}
 				outputMap[key] = newValue
 			}
 		}
