@@ -20,7 +20,7 @@ var BluetoothStatus = status.NewStatus("Bluetooth")
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
 
 //var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
-var re_find = regexp.MustCompile(`(string\s"(.*)"|uint32\s(\d)+\s)+`)
+var re_find = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+\s+`)
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
@@ -126,8 +126,9 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 			for i, value := range outputArray {
 				if i%2 == 1 {
 					BluetoothStatus.Log(status.OK(), "key: "+value)
+				} else {
+					BluetoothStatus.Log(status.OK(), "value: "+value)
 				}
-				BluetoothStatus.Log(status.OK(), "value: "+value)
 			}
 
 			json.NewEncoder(w).Encode(outputArray)
