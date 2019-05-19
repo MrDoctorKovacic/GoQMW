@@ -18,7 +18,9 @@ var btAddress string
 var BluetoothStatus = status.NewStatus("Bluetooth")
 
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
-var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
+
+//var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
+var re_find = regexp.MustCompile(`(string\s"(.*)"|uint32\s(\d)+\s)+`)
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
@@ -118,17 +120,16 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 	if ok {
 		s := re.ReplaceAllString(result, "")
-		BluetoothStatus.Log(status.OK(), s)
 		outputArray := re_find.FindAllString(s, -1)
 
-		for i, value := range outputArray {
-			if i%2 == 0 {
-				BluetoothStatus.Log(status.OK(), "key: "+value)
-			}
-			BluetoothStatus.Log(status.OK(), "value: "+value)
-		}
-
 		if outputArray != nil {
+			for i, value := range outputArray {
+				if i%2 == 1 {
+					BluetoothStatus.Log(status.OK(), "key: "+value)
+				}
+				BluetoothStatus.Log(status.OK(), "value: "+value)
+			}
+
 			json.NewEncoder(w).Encode(outputArray)
 		} else {
 			json.NewEncoder(w).Encode("Error")
