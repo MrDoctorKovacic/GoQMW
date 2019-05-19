@@ -18,7 +18,7 @@ var btAddress string
 // BluetoothStatus will control logging and reporting of status / warnings / errors
 var BluetoothStatus = status.NewStatus("Bluetooth")
 
-var re = regexp.MustCompile(`(?sU)(.*reply_serial=2\n)`)
+var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
