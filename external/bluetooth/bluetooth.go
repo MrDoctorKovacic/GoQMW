@@ -122,11 +122,13 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 	if ok {
 		s := re.ReplaceAllString(result, `$1`)
+		BluetoothStatus.Log(status.OK(), s)
 		nv, err := dbus.ParseVariant(s, dbus.Signature{})
 		if err != nil {
-			json.NewEncoder(w).Encode(nv)
-		} else {
+			BluetoothStatus.Log(status.OK(), err.Error())
 			json.NewEncoder(w).Encode(err.Error())
+		} else {
+			json.NewEncoder(w).Encode(nv)
 		}
 	} else {
 		json.NewEncoder(w).Encode("Error")
