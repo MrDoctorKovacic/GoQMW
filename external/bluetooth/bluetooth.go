@@ -43,6 +43,8 @@ func cleanDBusOutput(output string) map[string]string {
 				invert = 1
 				key = "Meta"
 			}
+
+			// Define key or insert into map if defined
 			if i%2 == invert {
 				key = newValue
 			} else {
