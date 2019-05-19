@@ -9,6 +9,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/godbus/dbus"
 )
 
 var btAddress string
@@ -70,7 +71,7 @@ func SetAddress(address string) {
 }
 
 // SendDBusCommand used as a general BT control function for these endpoints
-func SendDBusCommand(args []string, printOutput bool) string {
+func SendDBusCommand(args []string, printOutput bool) (string, bool) {
 	if btAddress != "" {
 		// Fill in the meta nonsense
 		args = append([]string{"--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
@@ -78,17 +79,17 @@ func SendDBusCommand(args []string, printOutput bool) string {
 
 		if err != nil {
 			BluetoothStatus.Log(status.Error(), err.Error())
-			return err.Error()
+			return err.Error(), false
 		}
 
 		BluetoothStatus.Log(status.OK(), string(out))
 
-		return string(out)
+		return string(out), true
 	}
 
 	BluetoothStatus.Log(status.Warning(), "No valid BT Address to run command")
 
-	return "No valid BT Address to run command"
+	return "No valid BT Address to run command", false
 }
 
 // Connect new bluetooth device
@@ -100,15 +101,31 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 // GetDeviceInfo attempts to get metadata about connected device
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(status.OK(), "Getting device info...")
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
-	json.NewEncoder(w).Encode("OK")
+	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
+	if ok {
+		strings.Fields(result)
+		nv, err := dbus.ParseVariant(result, dbus.Signature{})
+		if err != nil {
+			json.NewEncoder(w).Encode(nv)
+		}
+	} else {
+		json.NewEncoder(w).Encode("Error")
+	}
 }
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(status.OK(), "Getting media info...")
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
-	json.NewEncoder(w).Encode("OK")
+	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
+	if ok {
+		strings.Fields(result)
+		nv, err := dbus.ParseVariant(result, dbus.Signature{})
+		if err != nil {
+			json.NewEncoder(w).Encode(nv)
+		}
+	} else {
+		json.NewEncoder(w).Encode("Error")
+	}
 }
 
 // Prev skips to previous track
