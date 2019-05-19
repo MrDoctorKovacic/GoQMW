@@ -19,10 +19,36 @@ var BluetoothStatus = status.NewStatus("Bluetooth")
 
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
 
-//var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
-var re_find = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
+//var reFind = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
+var reFind = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
 
 var reClean = regexp.MustCompile(`(string|uint32|\")+`)
+
+// Parse the variant output from DBus into map of string
+func cleanDBusOutput(output string) map[string]string {
+	outputMap := make(map[string]string, 0)
+
+	// Start regex replacing for important values
+	s := re.ReplaceAllString(output, "")
+	outputArray := reFind.FindAllString(s, -1)
+
+	if outputArray != nil {
+		var key string
+		for i, value := range outputArray {
+			newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
+			if i%2 == 1 {
+				key = newValue
+			} else {
+				outputMap[key] = newValue
+			}
+		}
+
+	} else {
+		BluetoothStatus.Log(status.Error(), "Error parsing dbus output")
+	}
+
+	return outputMap
+}
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
@@ -121,23 +147,7 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(status.OK(), "Getting media info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 	if ok {
-		s := re.ReplaceAllString(result, "")
-		outputArray := re_find.FindAllString(s, -1)
-
-		if outputArray != nil {
-			for i, value := range outputArray {
-				newValue := reClean.ReplaceAllString(value, "")
-				if i%2 == 1 {
-					BluetoothStatus.Log(status.OK(), "key: "+newValue)
-				} else {
-					BluetoothStatus.Log(status.OK(), "value: "+newValue)
-				}
-			}
-
-			json.NewEncoder(w).Encode(outputArray)
-		} else {
-			json.NewEncoder(w).Encode("Error")
-		}
+		json.NewEncoder(w).Encode(cleanDBusOutput(result))
 	} else {
 		json.NewEncoder(w).Encode("Error")
 	}
