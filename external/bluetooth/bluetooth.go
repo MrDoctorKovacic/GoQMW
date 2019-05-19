@@ -32,13 +32,15 @@ func cleanDBusOutput(output string) map[string]string {
 
 	if outputArray != nil {
 		var key string
-		var invert = 1
+		var invert = 0
 		// The regex should cut things down to an alternating key:value after being trimmed
 		// We add these to the map, and add a "Meta" key when it would normally be empty (as the first in the array)
 		for i, value := range outputArray {
 			newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
+			// Some devices have this meta value as the first entry (iOS mainly)
+			// we should swap key/value pairs if so
 			if i == 0 && newValue == "Item" {
-				invert = 0
+				invert = 1
 				key = "Meta"
 			}
 			if i%2 == invert {
