@@ -17,11 +17,9 @@ var btAddress string
 // BluetoothStatus will control logging and reporting of status / warnings / errors
 var BluetoothStatus = status.NewStatus("Bluetooth")
 
+// Regex expressions for parsing dbus output
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
-
-//var reFind = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
 var reFind = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
-
 var reClean = regexp.MustCompile(`(string|uint32|\")+`)
 
 // Parse the variant output from DBus into map of string
@@ -34,9 +32,14 @@ func cleanDBusOutput(output string) map[string]string {
 
 	if outputArray != nil {
 		var key string
+		// The regex should cut things down to an alternating key:value after being trimmed
+		// We add these to the map, and add a "Meta" key when it would normally be empty (as the first in the array)
 		for i, value := range outputArray {
 			newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
 			if i%2 == 1 {
+				if newValue == "" {
+					newValue = "Meta"
+				}
 				key = newValue
 			} else {
 				outputMap[key] = newValue
@@ -104,7 +107,7 @@ func SetAddress(address string) {
 }
 
 // SendDBusCommand used as a general BT control function for these endpoints
-func SendDBusCommand(args []string, printOutput bool) (string, bool) {
+func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 	if btAddress != "" {
 		// Fill in the meta nonsense
 		args = append([]string{"--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
@@ -115,7 +118,9 @@ func SendDBusCommand(args []string, printOutput bool) (string, bool) {
 			return err.Error(), false
 		}
 
-		BluetoothStatus.Log(status.OK(), string(out))
+		if !hideOutput {
+			BluetoothStatus.Log(status.OK(), string(out))
+		}
 
 		return string(out), true
 	}
