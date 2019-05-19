@@ -22,6 +22,8 @@ var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
 //var re_find = regexp.MustCompile(`(?sU)(string\s".*"|uint32\s\d+\s)+`)
 var re_find = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
 
+var reClean = regexp.MustCompile(`(string|uint32|\")+`)
+
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
 	BluetoothStatus.Log(status.OK(), "Enabling auto refresh of BT address")
@@ -124,10 +126,11 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 
 		if outputArray != nil {
 			for i, value := range outputArray {
+				newValue := reClean.ReplaceAllString(value, "")
 				if i%2 == 1 {
-					BluetoothStatus.Log(status.OK(), "key: "+value)
+					BluetoothStatus.Log(status.OK(), "key: "+newValue)
 				} else {
-					BluetoothStatus.Log(status.OK(), "value: "+value)
+					BluetoothStatus.Log(status.OK(), "value: "+newValue)
 				}
 			}
 
