@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ var btAddress string
 
 // BluetoothStatus will control logging and reporting of status / warnings / errors
 var BluetoothStatus = status.NewStatus("Bluetooth")
+
+var re = regexp.MustCompile(`(.*?\n)`)
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
@@ -118,10 +121,12 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(status.OK(), "Getting media info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 	if ok {
-		strings.Fields(result)
-		nv, err := dbus.ParseVariant(result, dbus.Signature{})
+		s := re.ReplaceAllString(result, `$1`)
+		nv, err := dbus.ParseVariant(s, dbus.Signature{})
 		if err != nil {
 			json.NewEncoder(w).Encode(nv)
+		} else {
+			json.NewEncoder(w).Encode(err.Error())
 		}
 	} else {
 		json.NewEncoder(w).Encode("Error")
