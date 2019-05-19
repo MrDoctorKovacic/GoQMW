@@ -40,12 +40,11 @@ func cleanDBusOutput(output string) map[string]string {
 			if i == 0 && newValue == "Item" {
 				invert = 0
 				key = "Meta"
+			}
+			if i%2 == invert {
+				key = newValue
 			} else {
-				if i%2 == invert {
-					key = newValue
-				} else {
-					outputMap[key] = newValue
-				}
+				outputMap[key] = newValue
 			}
 		}
 
