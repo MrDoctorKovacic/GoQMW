@@ -39,7 +39,7 @@ func cleanDBusOutput(output string) map[string]string {
 			newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
 			// Some devices have this meta value as the first entry (iOS mainly)
 			// we should swap key/value pairs if so
-			if i == 0 && newValue == "Item" {
+			if i == 0 && (newValue == "Item" || newValue == "playing" || newValue == "paused") {
 				invert = 1
 				key = "Meta"
 			}
