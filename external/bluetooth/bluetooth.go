@@ -176,7 +176,7 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Echo back all info
-			json.NewEncoder(w).Encode(cleanDBusOutput(result))
+			json.NewEncoder(w).Encode(cleanResult)
 		} else {
 			json.NewEncoder(w).Encode("Error")
 		}
