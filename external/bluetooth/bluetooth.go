@@ -170,7 +170,7 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 
 			// Append Album / Artwork slug if both exist
 			album, albumOK := cleanResult["Album"]
-			artist, artistOK := cleanResult["Album"]
+			artist, artistOK := cleanResult["Artist"]
 			if albumOK && artistOK {
 				cleanResult["Album_Artwork"] = slug.Make(artist) + "/" + slug.Make(album) + ".jpg"
 			}
