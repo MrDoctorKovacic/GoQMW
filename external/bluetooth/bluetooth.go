@@ -10,6 +10,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/gosimple/slug"
 )
 
 var btAddress string
@@ -155,10 +156,30 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Getting media info...")
-	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
+	BluetoothStatus.Log(status.OK(), "Getting device info...")
+	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	if ok {
-		json.NewEncoder(w).Encode(cleanDBusOutput(result))
+		deviceStatus := cleanDBusOutput(result)
+
+		BluetoothStatus.Log(status.OK(), "Getting media info...")
+		result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
+		if ok {
+			// Append device status to media info
+			cleanResult := cleanDBusOutput(result)
+			cleanResult["Status"] = deviceStatus["Meta"]
+
+			// Append Album / Artwork slug if both exist
+			album, albumOK := cleanResult["Album"]
+			artist, artistOK := cleanResult["Album"]
+			if albumOK && artistOK {
+				cleanResult["Album_Artwork"] = slug.Make(artist) + "/" + slug.Make(album) + ".jpg"
+			}
+
+			// Echo back all info
+			json.NewEncoder(w).Encode(cleanDBusOutput(result))
+		} else {
+			json.NewEncoder(w).Encode("Error")
+		}
 	} else {
 		json.NewEncoder(w).Encode("Error")
 	}
