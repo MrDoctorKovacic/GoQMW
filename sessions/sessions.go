@@ -94,13 +94,17 @@ func SetupDatabase(database influx.Influx) {
 
 // GetSession returns the entire current session
 func GetSession(w http.ResponseWriter, r *http.Request) {
+	sessionLock.Lock()
 	json.NewEncoder(w).Encode(Session)
+	sessionLock.Unlock()
 }
 
 // GetSessionValue returns a specific session value
 func GetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	sessionLock.Lock()
 	json.NewEncoder(w).Encode(Session[params["name"]])
+	sessionLock.Unlock()
 }
 
 // SetSessionValue updates or posts a new session value to the common session
