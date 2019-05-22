@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -128,7 +129,18 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into database
 	if databaseEnabled {
-		err := DB.Write(fmt.Sprintf("pybus,name=%s value=\"%s\"", strings.Replace(params["name"], " ", "_", -1), newdata.Value))
+
+		// Convert to a float if that suits the value, otherwise change field to value_string
+		var valueString string
+		if _, err := strconv.ParseFloat(newdata.Value, 32); err == nil {
+			valueString = fmt.Sprintf("value=%s", newdata.Value)
+		} else {
+			valueString = fmt.Sprintf("value_string=\"%s\"", newdata.Value)
+		}
+
+		// In Sessions, all values come in and out as strings regardless,
+		// but this conversion alows Influx queries on the floats to be executed
+		err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(params["name"], " ", "_", -1), valueString))
 
 		if err != nil {
 			SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
