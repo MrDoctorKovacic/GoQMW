@@ -15,6 +15,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 //
@@ -55,6 +56,9 @@ var GPS GPSData
 // DB variable for influx
 var DB influx.Influx
 var databaseEnabled = false
+
+// Session WebSocket upgrader
+var upgrader = websocket.Upgrader{} // use default options
 
 // SessionFile will designate where to output session to a file
 var SessionFile string
@@ -98,6 +102,35 @@ func GetSession(w http.ResponseWriter, r *http.Request) {
 	sessionLock.Lock()
 	json.NewEncoder(w).Encode(Session)
 	sessionLock.Unlock()
+}
+
+// GetSessionSocket returns the entire current session as a webstream
+func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
+	c, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		SessionStatus.Log(status.Error(), "Error upgrading webstream: "+err.Error())
+		return
+	}
+	defer c.Close()
+	for {
+		_, message, err := c.ReadMessage()
+		if err != nil {
+			SessionStatus.Log(status.Error(), "Error reading from webstream: "+err.Error())
+			break
+		}
+
+		SessionStatus.Log(status.OK(), "Received: "+string(message))
+
+		sessionLock.Lock()
+		err = c.WriteJSON(Session)
+		sessionLock.Unlock()
+
+		if err != nil {
+			SessionStatus.Log(status.Error(), "Error writing to webstream: "+err.Error())
+			break
+		}
+	}
 }
 
 // GetSessionValue returns a specific session value
