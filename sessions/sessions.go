@@ -114,13 +114,14 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 	for {
-		_, message, err := c.ReadMessage()
+		_, _, err := c.ReadMessage()
 		if err != nil {
 			SessionStatus.Log(status.Error(), "Error reading from webstream: "+err.Error())
 			break
 		}
 
-		SessionStatus.Log(status.OK(), "Received: "+string(message))
+		// Very verbose
+		//SessionStatus.Log(status.OK(), "Received: "+string(message))
 
 		sessionLock.Lock()
 		err = c.WriteJSON(Session)
