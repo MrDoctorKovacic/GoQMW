@@ -1,6 +1,7 @@
 package bluetooth
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"os/exec"
@@ -118,18 +119,24 @@ func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 	if btAddress != "" {
 		// Fill in the meta nonsense
 		args = append([]string{"--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
-		out, err := exec.Command("dbus-send", args...).Output()
+		var stderr bytes.Buffer
+		var out bytes.Buffer
+		cmd := exec.Command("dbus-send", args...)
+		cmd.Stdout = &out
+		cmd.Stderr = &stderr
+		err := cmd.Run()
 
 		if err != nil {
 			BluetoothStatus.Log(status.Error(), err.Error())
-			return err.Error(), false
+			BluetoothStatus.Log(status.Error(), stderr.String())
+			return stderr.String(), false
 		}
 
 		if !hideOutput {
-			BluetoothStatus.Log(status.OK(), string(out))
+			BluetoothStatus.Log(status.OK(), out.String())
 		}
 
-		return string(out), true
+		return out.String(), true
 	}
 
 	BluetoothStatus.Log(status.Warning(), "No valid BT Address to run command")
