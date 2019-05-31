@@ -149,6 +149,7 @@ func main() {
 	router.HandleFunc("/bluetooth/getDeviceInfo", bluetooth.GetDeviceInfo).Methods("GET")
 	router.HandleFunc("/bluetooth/getMediaInfo", bluetooth.GetMediaInfo).Methods("GET")
 	router.HandleFunc("/bluetooth/connect", bluetooth.Connect).Methods("GET")
+	router.HandleFunc("/bluetooth/disconnect", bluetooth.Connect).Methods("GET")
 	router.HandleFunc("/bluetooth/prev", bluetooth.Prev).Methods("GET")
 	router.HandleFunc("/bluetooth/next", bluetooth.Next).Methods("GET")
 	router.HandleFunc("/bluetooth/pause", bluetooth.Pause).Methods("GET")
