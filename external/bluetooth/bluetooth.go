@@ -137,9 +137,15 @@ func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 	return "No valid BT Address to run command", false
 }
 
-// Connect new bluetooth device
+// Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"}, false)
+	json.NewEncoder(w).Encode("OK")
+}
+
+// Disconnect bluetooth device
+func Disconnect(w http.ResponseWriter, r *http.Request) {
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Disconnect"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
