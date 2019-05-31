@@ -165,7 +165,20 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 // Disconnect bluetooth device
 func Disconnect(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Disconnect"}, false)
+	//go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Disconnect"}, false)
+
+	var stderr bytes.Buffer
+	var out bytes.Buffer
+	cmd := exec.Command("/bin/sh", "/home/pi/bluetooth/disconnect.sh")
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+
+	if err != nil {
+		BluetoothStatus.Log(status.Error(), err.Error())
+		BluetoothStatus.Log(status.Error(), stderr.String())
+	}
+
 	json.NewEncoder(w).Encode("OK")
 }
 
