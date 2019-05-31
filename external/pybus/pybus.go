@@ -2,6 +2,7 @@ package pybus
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os/exec"
 
@@ -68,7 +69,14 @@ func DisablePybusRoutine(w http.ResponseWriter, r *http.Request) {
 func StartPybusRoutine(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	if params["command"] != "" {
+	src, srcOK := params["src"]
+	dest, destOK := params["dest"]
+	data, dataOK := params["data"]
+
+	if srcOK && destOK && dataOK && len(src) == 2 && len(dest) == 2 && len(data) > 0 {
+		go QueuePybus(fmt.Sprintf(`["%s", "%s", "%s"]`, src, dest, data))
+		json.NewEncoder(w).Encode("OK")
+	} else if params["command"] != "" {
 		// Ensure command exists in routines map, and that it's currently enabled
 		if _, ok := pybusRoutines[params["command"]]; !ok || !pybusRoutines[params["command"]] {
 			json.NewEncoder(w).Encode(params["command"] + " is not allowed.")

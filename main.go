@@ -130,16 +130,17 @@ func main() {
 	// PyBus Routes
 	//
 	router.HandleFunc("/pybus", pybus.GetPybusRoutines).Methods("GET")
-	router.HandleFunc("/pybus/{command}", pybus.RegisterPybusRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}", pybus.StartPybusRoutine).Methods("GET")
 	router.HandleFunc("/pybus/queue", pybus.SendPybus).Methods("GET")
 	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
+	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartPybusRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{command}", pybus.RegisterPybusRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{command}", pybus.StartPybusRoutine).Methods("GET")
 
 	//
 	// ALPR Routes
 	//
-	router.HandleFunc("/alpr/{plate}", sessions.LogALPR).Methods("POST")
 	router.HandleFunc("/alpr/restart", sessions.RestartALPR).Methods("GET")
+	router.HandleFunc("/alpr/{plate}", sessions.LogALPR).Methods("POST")
 
 	//
 	// Bluetooth routes
