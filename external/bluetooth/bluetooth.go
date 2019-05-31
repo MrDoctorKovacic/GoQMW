@@ -146,7 +146,20 @@ func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"}, false)
+	//go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress, "org.bluez.Device1.Connect"}, false)
+
+	var stderr bytes.Buffer
+	var out bytes.Buffer
+	cmd := exec.Command("/bin/sh", "/home/pi/bluetooth/connect.sh")
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+
+	if err != nil {
+		BluetoothStatus.Log(status.Error(), err.Error())
+		BluetoothStatus.Log(status.Error(), stderr.String())
+	}
+
 	json.NewEncoder(w).Encode("OK")
 }
 
