@@ -118,10 +118,10 @@ func SetAddress(address string) {
 func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 	if btAddress != "" {
 		// Fill in the meta nonsense
-		args = append([]string{"--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
+		args = append([]string{"-c", "dbus-send", "--system", "--print-reply", "--type=method_call", "--dest=org.bluez"}, args...)
 		var stderr bytes.Buffer
 		var out bytes.Buffer
-		cmd := exec.Command("dbus-send", args...)
+		cmd := exec.Command("/bin/sh", args...)
 		cmd.Stdout = &out
 		cmd.Stderr = &stderr
 		err := cmd.Run()
