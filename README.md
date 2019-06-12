@@ -44,10 +44,10 @@ Here's a commented example with suggested settings:
 {
 	// Core Configuration
 	"CONFIG": {
-		"DATABASE_HOST": "http://localhost:8086", // Influx DB with port
-		"DATABASE_NAME": "vehicle", // Influx DB name to aggregate data under
+		"CORE_DATABASE_HOST": "http://localhost:8086", // Influx DB with port
+		"CORE_DATABASE_NAME": "vehicle", // Influx DB name to aggregate data under
 		"BLUETOOTH_ADDRESS": "", // This is NOT the host's BT Addr, rather the default media device
-		"PING_HOST": "", // Mostly proprietary, safe to ignore
+		"CORE_PING_HOST": "", // Mostly proprietary, safe to ignore
 	}
 	
 	// Examples of user defined settings, these won't do anything and only store values

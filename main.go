@@ -63,9 +63,9 @@ func main() {
 	if ok {
 
 		// Set up InfluxDB time series logging
-		databaseHost, usingDatabase := config["DATABASE_HOST"]
+		databaseHost, usingDatabase := config["CORE_DATABASE_HOST"]
 		if usingDatabase {
-			DB := influx.Influx{Host: databaseHost, Database: config["DATABASE_NAME"]}
+			DB := influx.Influx{Host: databaseHost, Database: config["CORE_DATABASE_NAME"]}
 
 			//
 			// Pass DB pool to imports
@@ -75,8 +75,8 @@ func main() {
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
-			if config["PING_HOST"] != "" {
-				status.RemotePingAddress = config["PING_HOST"]
+			if config["CORE_PING_HOST"] != "" {
+				status.RemotePingAddress = config["CORE_PING_HOST"]
 			} else {
 				MainStatus.Log(status.OK(), "[DISABLED] Not forwarding pings to host")
 			}
