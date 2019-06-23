@@ -11,6 +11,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
@@ -22,6 +23,7 @@ type Config struct {
 	DatabaseName     string
 	BluetoothAddress string
 	PingHost         string
+	DebugSessionFile string
 }
 
 // MainStatus will control logging and reporting of status / warnings / errors
@@ -160,6 +162,18 @@ func main() {
 	router.HandleFunc("/status", status.GetStatus).Methods("GET")
 	router.HandleFunc("/status/{name}", status.GetStatusValue).Methods("GET")
 	router.HandleFunc("/status/{name}", status.SetStatus).Methods("POST")
+
+	// Log all routes for debugging later, if enabled
+	// The locks here slow things significantly, should only be used to generate a run file, not in production
+	if config["DEBUG_SESSION_LOG"] != "" {
+		enabled, err := logging.EnableLogging(config["DEBUG_SESSION_LOG"])
+		if enabled {
+			router.Use(logging.LoggingMiddleware)
+		} else {
+			MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
+			MainStatus.Log(status.Error(), err.Error())
+		}
+	}
 
 	log.Fatal(http.ListenAndServe(":5353", router))
 }
