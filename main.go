@@ -112,7 +112,7 @@ func main() {
 	// Main routes
 	//
 	router.HandleFunc("/restart", reboot).Methods("GET")
-	router.HandleFunc("/restart", stop).Methods("GET")
+	router.HandleFunc("/stop", stop).Methods("GET")
 
 	//
 	// Ping routes
