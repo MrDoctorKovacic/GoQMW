@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/bluetooth"
@@ -33,6 +34,13 @@ var MainStatus = status.NewStatus("Main")
 func reboot(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
 	exec.Command("reboot", "now")
+}
+
+// Stop MDroid-Core service
+func stop(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode("OK")
+	MainStatus.Log(status.OK(), "Stopping MDroid Service")
+	os.Exit(0)
 }
 
 // define our router and subsequent routes here
@@ -104,6 +112,7 @@ func main() {
 	// Main routes
 	//
 	router.HandleFunc("/restart", reboot).Methods("GET")
+	router.HandleFunc("/restart", stop).Methods("GET")
 
 	//
 	// Ping routes
