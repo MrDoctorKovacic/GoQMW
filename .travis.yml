@@ -1,8 +1,8 @@
 # MAC MUSL BUILD
-#env CC=arm-linux-musleabi-gcc GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -o MDroid-Core-MUSL ./main.go
+#env CC=arm-linux-musleabihf-gcc GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -o MDroid-Core-MUSL ./main.go
 
 # LINUX MUSL BUILD
-#env CC=arm-linux-musleabi-gcc GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -o ./bin/MDroid-Core-MUSL ./main.go
+#env CC=arm-linux-musleabihf-gcc GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -o ./bin/MDroid-Core-MUSL ./main.go
 
 # REGULAR GO BUILD
 #go build -o ./bin/MDroid-Core
