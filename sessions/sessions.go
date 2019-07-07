@@ -75,9 +75,8 @@ func init() {
 }
 
 // Setup is a debugging function, which initializes the session with some dummy values
-func Setup(file string, isVerbose bool) {
+func Setup(file string) {
 	SessionFile = file
-	verboseOutput = isVerbose
 
 	// Fetch and append old session from disk if allowed
 	if SessionFile != "" {
@@ -95,9 +94,10 @@ func Setup(file string, isVerbose bool) {
 }
 
 // SetupDatabase provides global DB for future queries
-func SetupDatabase(database influx.Influx) {
+func SetupDatabase(database influx.Influx, isVerbose bool) {
 	DB = database
 	databaseEnabled = true
+	verboseOutput = isVerbose
 	SessionStatus.Log(status.OK(), "Initialized Database")
 }
 

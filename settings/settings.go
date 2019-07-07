@@ -85,9 +85,7 @@ func writeSettings(file string) error {
 
 // Setup will handle the initialization of settings,
 // either from past mapping or by creating a new one
-func Setup(useSettingsFile string, isVerbose bool) map[string]map[string]string {
-	verboseOutput = isVerbose
-
+func Setup(useSettingsFile string) map[string]map[string]string {
 	if useSettingsFile != "" {
 		settingsFile = useSettingsFile
 		initSettings, err := parseSettings(settingsFile)
@@ -120,9 +118,10 @@ func Setup(useSettingsFile string, isVerbose bool) map[string]map[string]string 
 }
 
 // SetupDatabase is optional, but enables logging POST requests to see where things are coming from
-func SetupDatabase(database influx.Influx) {
+func SetupDatabase(database influx.Influx, isVerbose bool) {
 	DB = database
 	databaseEnabled = true
+	verboseOutput = isVerbose
 	if verboseOutput {
 		SettingsStatus.Log(status.OK(), "Initialized with database.")
 	}

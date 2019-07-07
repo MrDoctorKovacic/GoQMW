@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
@@ -77,17 +78,25 @@ func main() {
 		if usingDatabase {
 			DB := influx.Influx{Host: databaseHost, Database: config["CORE_DATABASE_NAME"]}
 
+			//
 			// Check if we're configed to verbose output
+			//
+			var verboseOutputInt int
 			verboseOutput, ok := config["VERBOSE_OUTPUT"]
 			if !ok {
-				verboseOutput := 0
+				verboseOutputInt = 0
+			} else {
+				verboseOutputInt, err = strconv.Atoi(verboseOutput)
+				if err != nil {
+					verboseOutputInt = 0
+				}
 			}
 
 			//
-			// Pass DB pool to imports
+			// Pass DB pool and verbosity to imports
 			//
-			settings.SetupDatabase(DB, verboseOutput != 0)
-			sessions.SetupDatabase(DB, verboseOutput != 0)
+			settings.SetupDatabase(DB, verboseOutputInt != 0)
+			sessions.SetupDatabase(DB, verboseOutputInt != 0)
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
