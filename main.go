@@ -77,11 +77,17 @@ func main() {
 		if usingDatabase {
 			DB := influx.Influx{Host: databaseHost, Database: config["CORE_DATABASE_NAME"]}
 
+			// Check if we're configed to verbose output
+			verboseOutput, ok := config["VERBOSE_OUTPUT"]
+			if !ok {
+				verboseOutput := 0
+			}
+
 			//
 			// Pass DB pool to imports
 			//
-			settings.SetupDatabase(DB)
-			sessions.SetupDatabase(DB)
+			settings.SetupDatabase(DB, verboseOutput != 0)
+			sessions.SetupDatabase(DB, verboseOutput != 0)
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking

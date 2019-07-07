@@ -27,6 +27,9 @@ var settingsLock sync.Mutex
 // SettingsStatus will control logging and reporting of status / warnings / errors
 var SettingsStatus = status.NewStatus("Settings")
 
+// verboseOutput will determine how much to put out to logs
+var verboseOutput bool
+
 // DB variable for influx
 var DB influx.Influx
 var databaseEnabled = false
@@ -82,7 +85,9 @@ func writeSettings(file string) error {
 
 // Setup will handle the initialization of settings,
 // either from past mapping or by creating a new one
-func Setup(useSettingsFile string) map[string]map[string]string {
+func Setup(useSettingsFile string, isVerbose bool) map[string]map[string]string {
+	verboseOutput = isVerbose
+
 	if useSettingsFile != "" {
 		settingsFile = useSettingsFile
 		initSettings, err := parseSettings(settingsFile)
@@ -118,23 +123,42 @@ func Setup(useSettingsFile string) map[string]map[string]string {
 func SetupDatabase(database influx.Influx) {
 	DB = database
 	databaseEnabled = true
+	if verboseOutput {
+		SettingsStatus.Log(status.OK(), "Initialized with database.")
+	}
 }
 
 // GetAllSettings returns all current settings
 func GetAllSettings(w http.ResponseWriter, r *http.Request) {
+	if verboseOutput {
+		SettingsStatus.Log(status.OK(), "Responding to GET request with entire settings map.")
+	}
 	json.NewEncoder(w).Encode(Settings)
 }
 
 // GetSetting returns all the values of a specific setting
 func GetSetting(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	json.NewEncoder(w).Encode(Settings[formatSetting(params["componentName"])])
+	componentName := formatSetting(params["componentName"])
+
+	if verboseOutput {
+		SettingsStatus.Log(status.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
+	}
+
+	json.NewEncoder(w).Encode(Settings[componentName])
 }
 
 // GetSettingValue returns a specific setting value
 func GetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	json.NewEncoder(w).Encode(Settings[formatSetting(params["componentName"])][formatSetting(params["name"])])
+	componentName := formatSetting(params["componentName"])
+	settingName := formatSetting(params["name"])
+
+	if verboseOutput {
+		SettingsStatus.Log(status.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+	}
+
+	json.NewEncoder(w).Encode(Settings[componentName][settingName])
 }
 
 // SetSettingValue is the http wrapper for our setting setter
@@ -145,6 +169,11 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	componentName := formatSetting(params["componentName"])
 	settingName := formatSetting(params["name"])
 	settingValue := params["value"]
+
+	// Log if requested
+	if verboseOutput {
+		SettingsStatus.Log(status.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
+	}
 
 	// Do the dirty work elsewhere
 	SetSetting(componentName, settingName, settingValue)
