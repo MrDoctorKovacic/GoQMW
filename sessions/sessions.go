@@ -63,6 +63,9 @@ var upgrader = websocket.Upgrader{} // use default options
 // SessionFile will designate where to output session to a file
 var SessionFile string
 
+// verboseOutput will determine how much to put out to logs
+var verboseOutput bool
+
 // SessionStatus will control logging and reporting of status / warnings / errors
 var SessionStatus = status.NewStatus("Session")
 
@@ -72,8 +75,9 @@ func init() {
 }
 
 // Setup is a debugging function, which initializes the session with some dummy values
-func Setup(file string) {
+func Setup(file string, isVerbose bool) {
 	SessionFile = file
+	verboseOutput = isVerbose
 
 	// Fetch and append old session from disk if allowed
 	if SessionFile != "" {
@@ -99,6 +103,11 @@ func SetupDatabase(database influx.Influx) {
 
 // GetSession returns the entire current session
 func GetSession(w http.ResponseWriter, r *http.Request) {
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), "Responding to GET request for full session")
+	}
+
 	sessionLock.Lock()
 	json.NewEncoder(w).Encode(Session)
 	sessionLock.Unlock()
@@ -107,6 +116,12 @@ func GetSession(w http.ResponseWriter, r *http.Request) {
 // GetSessionSocket returns the entire current session as a webstream
 func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
+
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), "Responding to request for session websocket")
+	}
+
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		SessionStatus.Log(status.Error(), "Error upgrading webstream: "+err.Error())
@@ -137,6 +152,12 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 // GetSessionValue returns a specific session value
 func GetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to GET request for session value %s", params["name"]))
+	}
+
 	sessionLock.Lock()
 	json.NewEncoder(w).Encode(Session[params["name"]])
 	sessionLock.Unlock()
@@ -151,6 +172,11 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 	// Set last updated time to now
 	var timestamp = time.Now().Format("2006-01-02 15:04:05.999")
 	newdata.LastUpdate = timestamp
+
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to POST request for session key %s = %s", params["name"], newdata.Value))
+	}
 
 	// Lock access to session
 	sessionLock.Lock()
@@ -192,6 +218,10 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 
 // GetGPSValue returns the latest GPS fix
 func GetGPSValue(w http.ResponseWriter, r *http.Request) {
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), "Responding to GET request for all GPS values")
+	}
 	json.NewEncoder(w).Encode(GPS)
 }
 
@@ -199,6 +229,11 @@ func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	var newdata GPSData
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
+
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), "Responding to POST request for gps values")
+	}
 
 	// Prepare new value
 	var postingString strings.Builder
@@ -262,6 +297,11 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var newplate ALPRData
 	err := decoder.Decode(&newplate)
+
+	// Log if requested
+	if verboseOutput {
+		SessionStatus.Log(status.OK(), "Responding to POST request for ALPR")
+	}
 
 	if err != nil {
 		SessionStatus.Log(status.Error(), "Error decoding incoming ALPR data: "+err.Error())
