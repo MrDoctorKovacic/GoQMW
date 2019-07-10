@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -50,6 +51,8 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 		timestamp := time.Now().Format(time.RFC850)
 		data, _ := ioutil.ReadAll(r.Body)
+		r.Body.Close()
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 
 		// Add route to log, after getting lock
 		debugLock.Lock()

@@ -123,7 +123,7 @@ func SetupDatabase(database influx.Influx, isVerbose bool) {
 	databaseEnabled = true
 	verboseOutput = isVerbose
 	if verboseOutput {
-		SettingsStatus.Log(status.OK(), "Initialized with database.")
+		SettingsStatus.Log(status.OK(), "Initialized Database for Settings")
 	}
 }
 
