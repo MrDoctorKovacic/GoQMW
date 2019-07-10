@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -98,7 +99,7 @@ func SetupDatabase(database influx.Influx, isVerbose bool) {
 	DB = database
 	databaseEnabled = true
 	verboseOutput = isVerbose
-	SessionStatus.Log(status.OK(), "Initialized Database")
+	SessionStatus.Log(status.OK(), "Initialized Database for Sessions")
 }
 
 // GetSession returns the entire current session
@@ -165,51 +166,76 @@ func GetSessionValue(w http.ResponseWriter, r *http.Request) {
 
 // SetSessionValue updates or posts a new session value to the common session
 func SetSessionValue(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	var newdata SessionData
-	_ = json.NewDecoder(r.Body).Decode(&newdata)
-
-	// Set last updated time to now
-	var timestamp = time.Now().Format("2006-01-02 15:04:05.999")
-	newdata.LastUpdate = timestamp
-
-	// Log if requested
-	if verboseOutput {
-		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to POST request for session key %s = %s", params["name"], newdata.Value))
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading body: %v", err)
+		http.Error(w, "can't read body", http.StatusBadRequest)
+		return
 	}
 
-	// Lock access to session
-	sessionLock.Lock()
+	// Put body back
+	r.Body.Close() //  must close
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-	// Add / update value in global session
-	Session[params["name"]] = newdata
+	if len(body) > 0 {
 
-	// Immediately unlock, since defer could take a while
-	sessionLock.Unlock()
-
-	// Insert into database
-	if databaseEnabled {
-
-		// Convert to a float if that suits the value, otherwise change field to value_string
-		var valueString string
-		if _, err := strconv.ParseFloat(newdata.Value, 32); err == nil {
-			valueString = fmt.Sprintf("value=%s", newdata.Value)
-		} else {
-			valueString = fmt.Sprintf("value_string=\"%s\"", newdata.Value)
-		}
-
-		// In Sessions, all values come in and out as strings regardless,
-		// but this conversion alows Influx queries on the floats to be executed
-		err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(params["name"], " ", "_", -1), valueString))
+		params := mux.Vars(r)
+		var newdata SessionData
+		err = json.NewDecoder(r.Body).Decode(&newdata)
 
 		if err != nil {
-			SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
-		} else {
-			SessionStatus.Log(status.OK(), "Logged "+params["name"]+"="+newdata.Value+" to database")
+			SessionStatus.Log(status.Error(), "Error decoding incoming JSON")
+			SessionStatus.Log(status.Error(), err.Error())
 		}
-	}
 
-	json.NewEncoder(w).Encode("OK")
+		// Set last updated time to now
+		var timestamp = time.Now().Format("2006-01-02 15:04:05.999")
+		newdata.LastUpdate = timestamp
+
+		// Trim off whitespace
+		newdata.Value = strings.TrimSpace(newdata.Value)
+
+		// Log if requested
+		if verboseOutput {
+			SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to POST request for session key %s = %s", params["name"], newdata.Value))
+		}
+
+		// Lock access to session
+		sessionLock.Lock()
+
+		// Add / update value in global session
+		Session[params["name"]] = newdata
+
+		// Immediately unlock, since defer could take a while
+		sessionLock.Unlock()
+
+		// Insert into database
+		if databaseEnabled {
+
+			// Convert to a float if that suits the value, otherwise change field to value_string
+			var valueString string
+			if _, err := strconv.ParseFloat(newdata.Value, 32); err == nil {
+				valueString = fmt.Sprintf("value=%s", newdata.Value)
+			} else {
+				valueString = fmt.Sprintf("value_string=\"%s\"", newdata.Value)
+			}
+
+			// In Sessions, all values come in and out as strings regardless,
+			// but this conversion alows Influx queries on the floats to be executed
+			err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(params["name"], " ", "_", -1), valueString))
+
+			if err != nil {
+				SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
+			} else {
+				SessionStatus.Log(status.OK(), "Logged "+params["name"]+"="+newdata.Value+" to database")
+			}
+		}
+
+		json.NewEncoder(w).Encode("OK")
+
+	} else {
+		json.NewEncoder(w).Encode("FAIL")
+	}
 }
 
 //
