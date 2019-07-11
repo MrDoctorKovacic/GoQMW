@@ -3,20 +3,13 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"log"
-	"net/http"
-	"os"
-	"os/exec"
 	"strconv"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/external/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
+	"github.com/MrDoctorKovacic/MDroid-Core/external/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/gorilla/mux"
 )
 
 // Config controls program settings and general persistent settings
@@ -31,18 +24,8 @@ type Config struct {
 // MainStatus will control logging and reporting of status / warnings / errors
 var MainStatus = status.NewStatus("Main")
 
-// Reboot the machine
-func reboot(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
-	exec.Command("reboot", "now")
-}
-
-// Stop MDroid-Core service
-func stop(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
-	MainStatus.Log(status.OK(), "Stopping MDroid Service")
-	os.Exit(0)
-}
+// Configure verbose output for code in package main
+var VERBOSE_OUTPUT bool
 
 // define our router and subsequent routes here
 func main() {
@@ -95,8 +78,9 @@ func main() {
 			//
 			// Pass DB pool and verbosity to imports
 			//
-			settings.SetupDatabase(DB, verboseOutputInt != 0)
-			sessions.SetupDatabase(DB, verboseOutputInt != 0)
+			VERBOSE_OUTPUT = verboseOutputInt != 0
+			settings.SetupDatabase(DB, VERBOSE_OUTPUT)
+			sessions.SetupDatabase(DB, VERBOSE_OUTPUT)
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
@@ -120,84 +104,6 @@ func main() {
 		MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
 	}
 
-	// Init router
-	router := mux.NewRouter()
-
-	//
-	// Main routes
-	//
-	router.HandleFunc("/restart", reboot).Methods("GET")
-	router.HandleFunc("/stop", stop).Methods("GET")
-
-	//
-	// Ping routes
-	//
-	router.HandleFunc("/ping/{device}", status.Ping).Methods("POST")
-
-	//
-	// Session routes
-	//
-	router.HandleFunc("/session", sessions.GetSession).Methods("GET")
-	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
-	router.HandleFunc("/session/gps", sessions.GetGPSValue).Methods("GET")
-	router.HandleFunc("/session/gps", sessions.SetGPSValue).Methods("POST")
-	router.HandleFunc("/session/{name}", sessions.GetSessionValue).Methods("GET")
-	router.HandleFunc("/session/{name}", sessions.SetSessionValue).Methods("POST")
-
-	//
-	// Settings routes
-	//
-	router.HandleFunc("/settings", settings.GetAllSettings).Methods("GET")
-	router.HandleFunc("/settings/{component}", settings.GetSetting).Methods("GET")
-	router.HandleFunc("/settings/{component}/{name}", settings.GetSettingValue).Methods("GET")
-	router.HandleFunc("/settings/{component}/{name}/{value}", settings.SetSettingValue).Methods("POST")
-
-	//
-	// PyBus Routes
-	//
-	router.HandleFunc("/pybus", pybus.GetPybusRoutines).Methods("GET")
-	router.HandleFunc("/pybus/queue", pybus.SendPybus).Methods("GET")
-	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
-	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartPybusRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}", pybus.RegisterPybusRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}", pybus.StartPybusRoutine).Methods("GET")
-
-	//
-	// ALPR Routes
-	//
-	router.HandleFunc("/alpr/restart", sessions.RestartALPR).Methods("GET")
-	router.HandleFunc("/alpr/{plate}", sessions.LogALPR).Methods("POST")
-
-	//
-	// Bluetooth routes
-	//
-	router.HandleFunc("/bluetooth", bluetooth.GetDeviceInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/getDeviceInfo", bluetooth.GetDeviceInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/getMediaInfo", bluetooth.GetMediaInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/connect", bluetooth.Connect).Methods("GET")
-	router.HandleFunc("/bluetooth/disconnect", bluetooth.Connect).Methods("GET")
-	router.HandleFunc("/bluetooth/prev", bluetooth.Prev).Methods("GET")
-	router.HandleFunc("/bluetooth/next", bluetooth.Next).Methods("GET")
-	router.HandleFunc("/bluetooth/pause", bluetooth.Pause).Methods("GET")
-	router.HandleFunc("/bluetooth/play", bluetooth.Play).Methods("GET")
-	router.HandleFunc("/bluetooth/refresh", bluetooth.ForceRefresh).Methods("GET")
-
-	// Status Routes
-	router.HandleFunc("/status", status.GetStatus).Methods("GET")
-	router.HandleFunc("/status/{name}", status.GetStatusValue).Methods("GET")
-	router.HandleFunc("/status/{name}", status.SetStatus).Methods("POST")
-
-	// Log all routes for debugging later, if enabled
-	// The locks here slow things significantly, should only be used to generate a run file, not in production
-	if config["DEBUG_SESSION_LOG"] != "" {
-		enabled, err := logging.EnableLogging(config["DEBUG_SESSION_LOG"])
-		if enabled {
-			router.Use(logging.LoggingMiddleware)
-		} else {
-			MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
-			MainStatus.Log(status.Error(), err.Error())
-		}
-	}
-
-	log.Fatal(http.ListenAndServe(":5353", router))
+	// Define routes and begin routing
+	startRouter(config["DEBUG_SESSION_LOG"])
 }
