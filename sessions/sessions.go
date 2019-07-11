@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/external/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
