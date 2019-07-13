@@ -33,6 +33,11 @@ func stop(w http.ResponseWriter, r *http.Request) {
 	os.Exit(0)
 }
 
+// welcomeRoute intros MDroid-Core, proving port and service works
+func welcomeRoute(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode("Welcome to MDroid! This port is fully operational, see the docs for applicable routes.")
+}
+
 // A list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
 func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
@@ -201,6 +206,7 @@ func startRouter(debugSessionLog string) {
 	// i.e. /doors/lock
 	//
 	router.HandleFunc("/{device}/{command}", sendPybusCommand).Methods("GET")
+	router.HandleFunc("/", welcomeRoute).Methods("GET")
 
 	// Log all routes for debugging later, if enabled
 	// The locks here slow things down, should only be used to generate a run file, not in production
