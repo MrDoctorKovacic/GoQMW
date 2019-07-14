@@ -49,7 +49,7 @@ func EnableLogging(debugFilename string) (bool, error) {
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		timestamp := time.Now().Format(time.RFC850)
+		var timestamp = time.Now().In(TIMEZONE).Format(time.RFC850)
 		data, _ := ioutil.ReadAll(r.Body)
 		r.Body.Close()
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
