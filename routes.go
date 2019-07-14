@@ -95,7 +95,11 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 	case "FLASHERS":
 		pybus.QueuePybus("turnOnFlashers")
 	case "HAZARDS":
-		pybus.QueuePybus("turnOnHazards")
+		if isPositive {
+			pybus.QueuePybus("turnOnHazards")
+		} else {
+			pybus.QueuePybus("turnOnHazards")
+		}
 	case "INTERIOR":
 		if isPositive {
 			pybus.QueuePybus("interiorLightsOff")
