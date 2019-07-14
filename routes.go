@@ -8,11 +8,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/external/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/external/pybus"
-	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
+	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/MrDoctorKovacic/MDroid-Core/status"
 	"github.com/gorilla/mux"
 )
 
@@ -60,9 +59,7 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log if requested
-	if VERBOSE_OUTPUT {
-		pybus.PybusStatus.Log(status.OK(), "Attempting to put "+commandRaw+" to device "+device)
-	}
+	pybus.PybusStatus.Log(status.OK(), "Attempting to put "+commandRaw+" to device "+device)
 
 	// It ain't really that hard to do and
 	// I ain't trying to be in love with you and
@@ -149,12 +146,12 @@ func startRouter(debugSessionLog string) {
 	//
 	// Session routes
 	//
-	router.HandleFunc("/session", sessions.GetSession).Methods("GET")
-	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
-	router.HandleFunc("/session/gps", sessions.GetGPSValue).Methods("GET")
-	router.HandleFunc("/session/gps", sessions.SetGPSValue).Methods("POST")
-	router.HandleFunc("/session/{name}", sessions.GetSessionValue).Methods("GET")
-	router.HandleFunc("/session/{name}", sessions.SetSessionValue).Methods("POST")
+	router.HandleFunc("/session", GetSession).Methods("GET")
+	router.HandleFunc("/session/socket", GetSessionSocket).Methods("GET")
+	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
+	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")
+	router.HandleFunc("/session/{name}", GetSessionValue).Methods("GET")
+	router.HandleFunc("/session/{name}", SetSessionValue).Methods("POST")
 
 	//
 	// Settings routes
@@ -177,8 +174,8 @@ func startRouter(debugSessionLog string) {
 	//
 	// ALPR Routes
 	//
-	router.HandleFunc("/alpr/restart", sessions.RestartALPR).Methods("GET")
-	router.HandleFunc("/alpr/{plate}", sessions.LogALPR).Methods("POST")
+	router.HandleFunc("/alpr/restart", RestartALPR).Methods("GET")
+	router.HandleFunc("/alpr/{plate}", LogALPR).Methods("POST")
 
 	//
 	// Bluetooth routes

@@ -11,8 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/external/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/external/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/status"
 	"github.com/gorilla/mux"
 )
 
@@ -27,12 +26,62 @@ var settingsLock sync.Mutex
 // SettingsStatus will control logging and reporting of status / warnings / errors
 var SettingsStatus = status.NewStatus("Settings")
 
-// verboseOutput will determine how much to put out to logs
+// Configure verbose output
 var verboseOutput bool
 
-// DB variable for influx
-var DB influx.Influx
-var databaseEnabled = false
+// SetupSettings will handle the initialization of settings,
+// either from past mapping or by creating a new one
+func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) {
+	// Default to false
+	verboseOutput = false
+
+	if useSettingsFile != "" {
+		settingsFile = useSettingsFile
+		initSettings, err := parseSettings(settingsFile)
+		if err == nil && initSettings != nil && len(initSettings) != 0 {
+			Settings = initSettings
+
+			//
+			// Check if we're configed to verbose output
+			//
+			var verboseOutputInt int
+			useVerboseOutput, ok := Settings["CONFIG"]["VERBOSE_OUTPUT"]
+			if !ok {
+				verboseOutputInt = 0
+			} else {
+				verboseOutputInt, err = strconv.Atoi(useVerboseOutput)
+				if err != nil {
+					verboseOutputInt = 0
+				}
+			}
+
+			// Set as bool for return
+			verboseOutput = verboseOutputInt != 0
+
+			// Log settings
+			out, err := json.Marshal(Settings)
+			if err == nil {
+				SettingsStatus.Log(status.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
+				return Settings, verboseOutput
+			}
+
+			// If err is set, re-marshaling the settings failed
+			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
+		} else if initSettings == nil {
+			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
+		}
+	}
+
+	// Default to empty map
+	Settings = make(map[string]map[string]string, 0)
+
+	if useSettingsFile != "" {
+		SetSetting("CONFIG", "LAST_USED", time.Now().String())
+	}
+
+	// Return empty map
+	return Settings, verboseOutput
+}
 
 // Formats in upper case with underscores replacing spaces
 func formatSetting(text string) string {
@@ -81,50 +130,6 @@ func writeSettings(file string) error {
 	// Log success
 	SettingsStatus.Log(status.OK(), "Successfully wrote Settings to "+file)
 	return nil
-}
-
-// Setup will handle the initialization of settings,
-// either from past mapping or by creating a new one
-func Setup(useSettingsFile string) map[string]map[string]string {
-	if useSettingsFile != "" {
-		settingsFile = useSettingsFile
-		initSettings, err := parseSettings(settingsFile)
-		if err == nil && initSettings != nil && len(initSettings) != 0 {
-			Settings = initSettings
-
-			// Log settings
-			out, err := json.Marshal(Settings)
-			if err == nil {
-				SettingsStatus.Log(status.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
-				return Settings
-			}
-
-			// If err is set, re-marshaling the settings failed
-			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
-		} else if initSettings == nil {
-			SettingsStatus.Log(status.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
-		}
-	}
-
-	// Default to empty map
-	Settings = make(map[string]map[string]string, 0)
-
-	if useSettingsFile != "" {
-		SetSetting("CONFIG", "LAST_USED", time.Now().String())
-	}
-
-	// Return empty map
-	return Settings
-}
-
-// SetupDatabase is optional, but enables logging POST requests to see where things are coming from
-func SetupDatabase(database influx.Influx, isVerbose bool) {
-	DB = database
-	databaseEnabled = true
-	verboseOutput = isVerbose
-	if verboseOutput {
-		SettingsStatus.Log(status.OK(), "Initialized Database for Settings")
-	}
 }
 
 // GetAllSettings returns all current settings
@@ -192,24 +197,6 @@ func SetSetting(componentName string, settingName string, settingValue string) {
 	// Update setting in inner map
 	Settings[componentName][settingName] = settingValue
 	settingsLock.Unlock()
-
-	// Insert into database
-	if databaseEnabled {
-		// Format as string, if it is. Influx will complain about booleans / ints formatted as strings
-		var value = settingValue
-		_, err := strconv.Atoi(settingValue)
-		if err != nil {
-			value = "\"" + settingValue + "\""
-		}
-
-		err = DB.Write(fmt.Sprintf("settings,component=%s %s=%s", componentName, settingName, value))
-
-		if err != nil {
-			SettingsStatus.Log(status.Error(), fmt.Sprintf("Error writing %s[%s] = %s to influx DB: %s", componentName, settingName, settingValue, err.Error()))
-		} else {
-			SettingsStatus.Log(status.OK(), fmt.Sprintf("Logged %s[%s] = %s to database", componentName, settingName, settingValue))
-		}
-	}
 
 	// Log our success
 	SettingsStatus.Log(status.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
