@@ -67,52 +67,47 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOORS":
+		fallthrough
 	case "DOOR":
 		if isPositive {
 			pybus.QueuePybus("toggleDoorLocks")
 		} else {
 			pybus.QueuePybus("toggleDoorLocks")
 		}
-		break
 	case "WINDOWS":
+		fallthrough
 	case "WINDOW":
 		if isPositive {
 			pybus.QueuePybus("popWindowsUp")
 		} else {
 			pybus.QueuePybus("popWindowsDown")
 		}
-		break
 	case "CONVERTIBLE_TOP":
+		fallthrough
 	case "TOP":
 		if isPositive {
 			pybus.QueuePybus("convertibleTopUp")
 		} else {
 			pybus.QueuePybus("convertibleTopDown")
 		}
-		break
 	case "TRUNK":
 		pybus.QueuePybus("openTrunk")
-		break
 	case "FLASHERS":
 		pybus.QueuePybus("turnOnFlashers")
-		break
 	case "HAZARDS":
 		pybus.QueuePybus("turnOnHazards")
-		break
 	case "INTERIOR":
 		if isPositive {
 			pybus.QueuePybus("interiorLightsOff")
 		} else {
 			pybus.QueuePybus("interiorLightsOn")
 		}
-		break
 	case "MODE":
 		pybus.QueuePybus("pressMode")
-		break
 	case "STEREO":
+		fallthrough
 	case "RADIO":
 		pybus.QueuePybus("pressStereoPower")
-		break
 	default:
 		pybus.PybusStatus.Log(status.Error(), "Invalid device "+device)
 		json.NewEncoder(w).Encode("ERROR: INVALID DEVICE")

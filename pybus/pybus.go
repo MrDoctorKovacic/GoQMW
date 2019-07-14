@@ -78,10 +78,10 @@ func StartPybusRoutine(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode("OK")
 	} else if params["command"] != "" {
 		// Ensure command exists in routines map, and that it's currently enabled
-		if _, ok := pybusRoutines[params["command"]]; !ok || !pybusRoutines[params["command"]] {
+		/*if _, ok := pybusRoutines[params["command"]]; !ok || !pybusRoutines[params["command"]] {
 			json.NewEncoder(w).Encode(params["command"] + " is not allowed.")
 			return
-		}
+		}*/
 
 		// Some commands need special timing functions
 		switch params["command"] {
