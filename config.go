@@ -8,7 +8,6 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
 )
@@ -22,21 +21,19 @@ type Config struct {
 	DebugSessionFile string
 }
 
-// Configure verbose output for code in package main
-var VERBOSE_OUTPUT bool
+// DatabaseEnabled - If we're using a database at all
+var DatabaseEnabled bool
 
-// Timezone location for session last used and logging
-var TIMEZONE *time.Location
+// UsingHardwareSerial - a gateway to an Arduino hooked to a set of relays
+var UsingHardwareSerial bool
 
-// If we're using a database at all
-var DATABASE_ENABLED bool
+// HardwareSerialPort - port for accessing hardware serial controls
+var HardwareSerialPort string
 
-// Hardware serial is a gateway to an Arduino hooked to a set of relays
-var USING_HARDWARE_SERIAL bool
-var HARDWARE_SERIAL_PORT string
-var HARDWARE_SERIAL_BAUD string
+// HardwareSerialBaud - respective baud rate
+var HardwareSerialBaud string
 
-// Database variable, that may or may not be used globally
+// DB for influx, that may or may not be used globally
 var DB influx.Influx
 
 func parseConfig() map[string]string {
@@ -51,7 +48,7 @@ func parseConfig() map[string]string {
 
 	// Parse settings file
 	settingsData, useVerboseOutput := settings.SetupSettings(settingsFile)
-	VERBOSE_OUTPUT = useVerboseOutput
+	VerboseOutput = useVerboseOutput
 	SetupSessions(sessionFile)
 
 	// Log settings
@@ -69,25 +66,25 @@ func parseConfig() map[string]string {
 	if ok {
 
 		// Set up timezone
-		timezoneLocation, usingTimezone := config["TIMEZONE"]
+		timezoneLocation, usingTimezone := config["Timezone"]
 		if usingTimezone {
 			loc, err := time.LoadLocation(timezoneLocation)
 			if err == nil {
-				TIMEZONE = loc
+				Timezone = loc
 			} else {
 				// If timezone has errored
-				TIMEZONE, _ = time.LoadLocation("UTC")
+				Timezone, _ = time.LoadLocation("UTC")
 			}
 		} else {
 			// If timezone is not set in config
-			TIMEZONE, _ = time.LoadLocation("UTC")
+			Timezone, _ = time.LoadLocation("UTC")
 		}
 
 		// Set up InfluxDB time series logging
 		databaseHost, usingDatabase := config["CORE_DATABASE_HOST"]
 		if usingDatabase {
 			DB = influx.Influx{Host: databaseHost, Database: config["CORE_DATABASE_NAME"]}
-			DATABASE_ENABLED = true
+			DatabaseEnabled = true
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
@@ -98,7 +95,7 @@ func parseConfig() map[string]string {
 			}
 
 		} else {
-			DATABASE_ENABLED = false
+			DatabaseEnabled = false
 			MainStatus.Log(status.OK(), "[DISABLED] Not logging to influx db")
 		}
 
@@ -113,28 +110,27 @@ func parseConfig() map[string]string {
 		// PROPRIETARY
 		// Configure hardware serials, should not be used outside my own config
 		//
-		HARDWARE_SERIAL_PORT, USING_HARDWARE_SERIAL := config["CORE_HARDWARE_SERIAL_PORT"]
-		hardwareSerialBaud, usingHardwareBaud := config["CORE_HARDWARE_SERIAL_BAUD"]
-		if USING_HARDWARE_SERIAL {
+		HardwareSerialPort, UsingHardwareSerial := config["CORE_HardwareSerialPort"]
+		hardwareSerialBaud, usingHardwareBaud := config["CORE_HardwareSerialBaud"]
+		if UsingHardwareSerial {
 			// Configure default baudrate
-			HARDWARE_SERIAL_BAUD := 9600
+			HardwareSerialBaud := 9600
 			if usingHardwareBaud {
 				baudrateString, err := strconv.Atoi(hardwareSerialBaud)
 				if err != nil {
-					MainStatus.Log(status.Error(), "Failed to convert CORE_HARDWARE_SERIAL_BAUD to int. Found value: "+hardwareSerialBaud)
+					MainStatus.Log(status.Error(), "Failed to convert CORE_HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
 					MainStatus.Log(status.Warning(), "Disabling hardware serial functionality")
-					USING_HARDWARE_SERIAL = false
+					UsingHardwareSerial = false
 				} else {
-					HARDWARE_SERIAL_BAUD = baudrateString
+					HardwareSerialBaud = baudrateString
 				}
 			}
-			StartSerialComms(HARDWARE_SERIAL_PORT, HARDWARE_SERIAL_BAUD)
-			pybus.USING_HARDWARE_SERIAL = USING_HARDWARE_SERIAL
+			StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
 		}
 
 		return config
-	} else {
-		MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
-		return nil
 	}
+
+	MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
+	return nil
 }

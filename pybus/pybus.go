@@ -10,9 +10,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Hardware serial is a gateway to an Arduino hooked to a set of relays
-var USING_HARDWARE_SERIAL bool
-
 // Queue that the PyBus program will fetch from repeatedly
 var pybusQueue []string
 
