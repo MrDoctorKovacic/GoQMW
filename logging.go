@@ -32,6 +32,7 @@ func writeLog(file string) error {
 	return nil
 }
 
+// EnableLogging sets up debug files to be written to
 func EnableLogging(debugFilename string) (bool, error) {
 	file, err := os.Open(debugFilename)
 	defer file.Close()
@@ -49,7 +50,7 @@ func EnableLogging(debugFilename string) (bool, error) {
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		var timestamp = time.Now().In(TIMEZONE).Format(time.RFC850)
+		var timestamp = time.Now().In(Timezone).Format(time.RFC850)
 		data, _ := ioutil.ReadAll(r.Body)
 		r.Body.Close()
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))

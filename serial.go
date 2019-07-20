@@ -10,9 +10,9 @@ import (
 
 // HardwareReadout holds the name and power state of various hardware
 type HardwareReadout struct {
-	TABLET_POWER string `json:"TABLET_POWER,omitempty"`
-	BOARD_POWER  string `json:"BOARD_POWER,omitempty"`
-	ACC_POWER    string `json:"ACC_POWER,omitempty"`
+	TabletPower string `json:"TABLET_POWER,omitempty"`
+	BoardPower  string `json:"BOARD_POWER,omitempty"`
+	AccPower    string `json:"ACC_POWER,omitempty"`
 }
 
 // SerialStatus will control logging and reporting of status / warnings / errors
@@ -40,21 +40,22 @@ func ReadSerial() {
 			var data HardwareReadout
 			json.Unmarshal(buf[:n], &data)
 
-			if data.TABLET_POWER != "" {
-				SetSessionRawValue("TABLET_POWER", data.TABLET_POWER)
+			if data.TabletPower != "" {
+				SetSessionRawValue("TABLET_POWER", data.TabletPower)
 			}
 
-			if data.BOARD_POWER != "" {
-				SetSessionRawValue("BOARD_POWER", data.BOARD_POWER)
+			if data.BoardPower != "" {
+				SetSessionRawValue("BOARD_POWER", data.BoardPower)
 			}
 
-			if data.ACC_POWER != "" {
-				SetSessionRawValue("ACC_POWER", data.ACC_POWER)
+			if data.AccPower != "" {
+				SetSessionRawValue("ACC_POWER", data.AccPower)
 			}
 		}
 	}
 }
 
+// WriteSerial pushes out a message to the open serial port
 func WriteSerial(msg string) {
 	if len(msg) == 0 {
 		SerialStatus.Log(status.Warning(), "Empty message, not writing to serial")
@@ -76,6 +77,8 @@ func WriteSerial(msg string) {
 	SerialStatus.Log(status.OK(), fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
 }
 
+// StartSerialComms will set up the serial port,
+// and start the ReadSerial goroutine
 func StartSerialComms(deviceName string, baudrate int) {
 	c := &serial.Config{Name: deviceName, Baud: baudrate}
 	s, err := serial.OpenPort(c)

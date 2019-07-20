@@ -59,7 +59,7 @@ var upgrader = websocket.Upgrader{} // use default options
 // SessionStatus will control logging and reporting of status / warnings / errors
 var SessionStatus = status.NewStatus("Session")
 
-// Init session
+// SetupSessions will init the current session with a file
 func SetupSessions(sessionFile string) {
 	Session = make(map[string]SessionData)
 
@@ -85,7 +85,7 @@ func HandleGetSession(w http.ResponseWriter, r *http.Request) {
 // GetSession returns the entire current session
 func GetSession() map[string]SessionData {
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), "Responding to request for full session")
 	}
 
@@ -101,7 +101,7 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
 
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), "Responding to request for session websocket")
 	}
 
@@ -149,7 +149,7 @@ func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 func GetSessionValue(name string) (value SessionData, OK bool) {
 
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to request for session value %s", name))
 	}
 
@@ -207,11 +207,11 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 // SetSessionValue does the actual setting of Session Values
 func SetSessionValue(name string, newData SessionData) {
 	// Set last updated time to now
-	var timestamp = time.Now().In(TIMEZONE).Format("2006-01-02 15:04:05.999")
+	var timestamp = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
 	newData.LastUpdate = timestamp
 
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
 	}
 
@@ -221,7 +221,7 @@ func SetSessionValue(name string, newData SessionData) {
 	sessionLock.Unlock()
 
 	// Insert into database
-	if DATABASE_ENABLED {
+	if DatabaseEnabled {
 
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		var valueString string
@@ -257,7 +257,7 @@ func SetSessionRawValue(name string, value string) {
 // GetGPSValue returns the latest GPS fix
 func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), "Responding to GET request for all GPS values")
 	}
 	json.NewEncoder(w).Encode(GPS)
@@ -269,7 +269,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
 
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), "Responding to POST request for gps values")
 	}
 
@@ -312,7 +312,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert into database
-	if DATABASE_ENABLED {
+	if DatabaseEnabled {
 		err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 		if err != nil {
@@ -337,7 +337,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&newplate)
 
 	// Log if requested
-	if VERBOSE_OUTPUT {
+	if VerboseOutput {
 		SessionStatus.Log(status.OK(), "Responding to POST request for ALPR")
 	}
 
@@ -350,7 +350,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 
 		if plate != "" {
 			// Insert into database
-			if DATABASE_ENABLED {
+			if DatabaseEnabled {
 				err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
 
 				if err != nil {
