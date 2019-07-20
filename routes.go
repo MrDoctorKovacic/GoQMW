@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/proprietary"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
@@ -75,7 +74,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		if ok &&
 			(isPositive && deviceStatus.Value == "FALSE") ||
 			(!isPositive && deviceStatus.Value == "TRUE") {
-			proprietary.WriteSerial("toggleDoorLocks")
+			WriteSerial("toggleDoorLocks")
 		}
 	case "WINDOWS":
 		fallthrough
@@ -96,7 +95,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "TRUNK":
 		pybus.PushQueue("openTrunk")
 	case "HAZARDS":
-		proprietary.WriteSerial("toggleHazards")
+		WriteSerial("toggleHazards")
 	case "INTERIOR":
 		if isPositive {
 			pybus.PushQueue("interiorLightsOff")
@@ -142,7 +141,7 @@ func startRouter(config map[string]string) {
 	//
 	// Session routes
 	//
-	router.HandleFunc("/session", GetSession).Methods("GET")
+	router.HandleFunc("/session", HandleGetSession).Methods("GET")
 	router.HandleFunc("/session/socket", GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
 	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")

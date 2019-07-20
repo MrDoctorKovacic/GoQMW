@@ -8,7 +8,6 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/proprietary"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
@@ -129,7 +128,7 @@ func parseConfig() map[string]string {
 					HARDWARE_SERIAL_BAUD = baudrateString
 				}
 			}
-			proprietary.StartSerialComms(HARDWARE_SERIAL_PORT, HARDWARE_SERIAL_BAUD)
+			StartSerialComms(HARDWARE_SERIAL_PORT, HARDWARE_SERIAL_BAUD)
 			pybus.USING_HARDWARE_SERIAL = USING_HARDWARE_SERIAL
 		}
 
