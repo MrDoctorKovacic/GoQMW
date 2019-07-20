@@ -10,23 +10,34 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Registered pybusRoutines, to make sure we're not calling something that doesn't exist
-// (or isn't allowed...)
-var pybusRoutines = make(map[string]bool, 0)
+// Hardware serial is a gateway to an Arduino hooked to a set of relays
+var USING_HARDWARE_SERIAL bool
 
+// Queue that the PyBus program will fetch from repeatedly
 var pybusQueue []string
 
 // PybusStatus will control logging and reporting of status / warnings / errors
 var PybusStatus = status.NewStatus("Pybus")
 
-// QueuePybus adds a directive to the pybus queue
-func QueuePybus(msg string) {
+// PushQueue adds a directive to the pybus queue
+// msg can either be a directive (e.g. 'openTrunk')
+// or a Python formatted list of three byte strings: src, dest, and data
+// e.g. '["50", "68", "3B01"]'
+func PushQueue(msg string) {
+
+	//
+	// First, interrupt with some special cases
+	//
+	switch msg {
+	case "unlockDoors":
+	}
+
 	pybusQueue = append(pybusQueue, msg)
 	PybusStatus.Log(status.OK(), "Added "+msg+" to the Pybus Queue")
 }
 
-// SendPybus pops a directive off the queue after confirming it occured
-func SendPybus(w http.ResponseWriter, r *http.Request) {
+// PopQueue pops a directive off the queue after confirming it occured
+func PopQueue(w http.ResponseWriter, r *http.Request) {
 	if len(pybusQueue) > 0 {
 		PybusStatus.Log(status.OK(), "Dumping "+pybusQueue[0]+" from Pybus queue to get request")
 		json.NewEncoder(w).Encode(pybusQueue[0])
@@ -38,35 +49,8 @@ func SendPybus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetPybusRoutines fetches all registered Pybus routines
-func GetPybusRoutines(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(pybusRoutines)
-}
-
-// RegisterPybusRoutine handles PyBus goroutine
-func RegisterPybusRoutine(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	// Append new routine into mapping
-	pybusRoutines[params["command"]] = true
-
-	// Log success
-	PybusStatus.Log(status.OK(), "Registered new routine: "+params["command"])
-	json.NewEncoder(w).Encode("OK")
-}
-
-// DisablePybusRoutine handles PyBus goroutine
-func DisablePybusRoutine(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	pybusRoutines[params["command"]] = false
-
-	// Log success
-	PybusStatus.Log(status.OK(), "Disabled routine: "+params["command"])
-	json.NewEncoder(w).Encode("OK")
-}
-
-// StartPybusRoutine handles PyBus goroutine
-func StartPybusRoutine(w http.ResponseWriter, r *http.Request) {
+// StartRoutine handles incoming requests to the pybus program, will add routines to the queue
+func StartRoutine(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	src, srcOK := params["src"]
@@ -74,25 +58,19 @@ func StartPybusRoutine(w http.ResponseWriter, r *http.Request) {
 	data, dataOK := params["data"]
 
 	if srcOK && destOK && dataOK && len(src) == 2 && len(dest) == 2 && len(data) > 0 {
-		go QueuePybus(fmt.Sprintf(`["%s", "%s", "%s"]`, src, dest, data))
+		go PushQueue(fmt.Sprintf(`["%s", "%s", "%s"]`, src, dest, data))
 		json.NewEncoder(w).Encode("OK")
 	} else if params["command"] != "" {
-		// Ensure command exists in routines map, and that it's currently enabled
-		/*if _, ok := pybusRoutines[params["command"]]; !ok || !pybusRoutines[params["command"]] {
-			json.NewEncoder(w).Encode(params["command"] + " is not allowed.")
-			return
-		}*/
-
 		// Some commands need special timing functions
 		switch params["command"] {
 		case "rollWindowsUp":
-			QueuePybus("popWindowsUp")
-			QueuePybus("popWindowsUp")
+			PushQueue("popWindowsUp")
+			PushQueue("popWindowsUp")
 		case "rollWindowsDown":
-			QueuePybus("popWindowsDown")
-			QueuePybus("popWindowsDown")
+			PushQueue("popWindowsDown")
+			PushQueue("popWindowsDown")
 		default:
-			go QueuePybus(params["command"])
+			go PushQueue(params["command"])
 		}
 
 		json.NewEncoder(w).Encode("OK")

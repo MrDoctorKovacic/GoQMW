@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"strconv"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/proprietary"
+	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
 )
@@ -29,10 +32,15 @@ var TIMEZONE *time.Location
 // If we're using a database at all
 var DATABASE_ENABLED bool
 
+// Hardware serial is a gateway to an Arduino hooked to a set of relays
+var USING_HARDWARE_SERIAL bool
+var HARDWARE_SERIAL_PORT string
+var HARDWARE_SERIAL_BAUD string
+
 // Database variable, that may or may not be used globally
 var DB influx.Influx
 
-func parseConfig() string {
+func parseConfig() map[string]string {
 	// Start with program arguments
 	var (
 		settingsFile string
@@ -102,9 +110,32 @@ func parseConfig() string {
 			bluetooth.SetAddress(bluetoothAddress)
 		}
 
-		return config["DEBUG_SESSION_LOG"]
+		//
+		// PROPRIETARY
+		// Configure hardware serials, should not be used outside my own config
+		//
+		HARDWARE_SERIAL_PORT, USING_HARDWARE_SERIAL := config["CORE_HARDWARE_SERIAL_PORT"]
+		hardwareSerialBaud, usingHardwareBaud := config["CORE_HARDWARE_SERIAL_BAUD"]
+		if USING_HARDWARE_SERIAL {
+			// Configure default baudrate
+			HARDWARE_SERIAL_BAUD := 9600
+			if usingHardwareBaud {
+				baudrateString, err := strconv.Atoi(hardwareSerialBaud)
+				if err != nil {
+					MainStatus.Log(status.Error(), "Failed to convert CORE_HARDWARE_SERIAL_BAUD to int. Found value: "+hardwareSerialBaud)
+					MainStatus.Log(status.Warning(), "Disabling hardware serial functionality")
+					USING_HARDWARE_SERIAL = false
+				} else {
+					HARDWARE_SERIAL_BAUD = baudrateString
+				}
+			}
+			proprietary.StartSerialComms(HARDWARE_SERIAL_PORT, HARDWARE_SERIAL_BAUD)
+			pybus.USING_HARDWARE_SERIAL = USING_HARDWARE_SERIAL
+		}
+
+		return config
 	} else {
 		MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
-		return ""
+		return nil
 	}
 }
