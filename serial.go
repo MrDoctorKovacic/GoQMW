@@ -1,4 +1,4 @@
-package proprietary
+package main
 
 import (
 	"encoding/json"
@@ -10,9 +10,9 @@ import (
 
 // HardwareReadout holds the name and power state of various hardware
 type HardwareReadout struct {
-	TABLET_POWER int `json:"TABLET_POWER,omitempty"`
-	BOARD_POWER  int `json:"BOARD_POWER,omitempty"`
-	ACC_POWER    int `json:"ACC_POWER,omitempty"`
+	TABLET_POWER string `json:"TABLET_POWER,omitempty"`
+	BOARD_POWER  string `json:"BOARD_POWER,omitempty"`
+	ACC_POWER    string `json:"ACC_POWER,omitempty"`
 }
 
 // SerialStatus will control logging and reporting of status / warnings / errors
@@ -39,6 +39,18 @@ func ReadSerial() {
 		} else {
 			var data HardwareReadout
 			json.Unmarshal(buf[:n], &data)
+
+			if data.TABLET_POWER != "" {
+				SetSessionRawValue("TABLET_POWER", data.TABLET_POWER)
+			}
+
+			if data.BOARD_POWER != "" {
+				SetSessionRawValue("BOARD_POWER", data.BOARD_POWER)
+			}
+
+			if data.ACC_POWER != "" {
+				SetSessionRawValue("ACC_POWER", data.ACC_POWER)
+			}
 		}
 	}
 }
