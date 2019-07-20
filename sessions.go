@@ -77,16 +77,23 @@ func SetupSessions(sessionFile string) {
 	}
 }
 
+// HandleGetSession responds to an HTTP request for the entire session
+func HandleGetSession(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(GetSession())
+}
+
 // GetSession returns the entire current session
-func GetSession(w http.ResponseWriter, r *http.Request) {
+func GetSession() map[string]SessionData {
 	// Log if requested
 	if VERBOSE_OUTPUT {
-		SessionStatus.Log(status.OK(), "Responding to GET request for full session")
+		SessionStatus.Log(status.OK(), "Responding to request for full session")
 	}
 
 	sessionLock.Lock()
-	json.NewEncoder(w).Encode(Session)
+	returnSession := Session
 	sessionLock.Unlock()
+
+	return returnSession
 }
 
 // GetSessionSocket returns the entire current session as a webstream
@@ -182,10 +189,6 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Set last updated time to now
-		var timestamp = time.Now().In(TIMEZONE).Format("2006-01-02 15:04:05.999")
-		newdata.LastUpdate = timestamp
-
 		// Trim off whitespace
 		newdata.Value = strings.TrimSpace(newdata.Value)
 
@@ -203,6 +206,10 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 
 // SetSessionValue does the actual setting of Session Values
 func SetSessionValue(name string, newData SessionData) {
+	// Set last updated time to now
+	var timestamp = time.Now().In(TIMEZONE).Format("2006-01-02 15:04:05.999")
+	newData.LastUpdate = timestamp
+
 	// Log if requested
 	if VERBOSE_OUTPUT {
 		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
@@ -234,6 +241,13 @@ func SetSessionValue(name string, newData SessionData) {
 			SessionStatus.Log(status.OK(), "Logged "+name+"="+newData.Value+" to database")
 		}
 	}
+}
+
+// SetSessionRawValue prepares a SessionData structure before passing it to the setter
+func SetSessionRawValue(name string, value string) {
+	var newdata SessionData
+	newdata.Value = value
+	SetSessionValue(name, newdata)
 }
 
 //
