@@ -11,8 +11,8 @@ var MainStatus = status.NewStatus("Main")
 func main() {
 
 	// Run through the config file and set up some global variables
-	debugSessionLog := parseConfig()
+	config := parseConfig()
 
 	// Define routes and begin routing
-	startRouter(debugSessionLog)
+	startRouter(config)
 }

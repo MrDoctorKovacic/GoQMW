@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
+	"github.com/MrDoctorKovacic/MDroid-Core/proprietary"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
@@ -37,9 +38,9 @@ func welcomeRoute(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("Welcome to MDroid! This port is fully operational, see the docs for applicable routes.")
 }
 
-// A list of pre-approved routes to PyBus for easier routing
+// a list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
-func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
+func parseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Format similarly to the rest of MDroid suite
@@ -53,7 +54,7 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 	} else if commandRaw == "OFF" || commandRaw == "DOWN" || commandRaw == "UNLOCK" || commandRaw == "CLOSE" {
 		isPositive = false
 	} else {
-		// Something fishy is amok, get out of here
+		// Command didn't match any of the above, get out of here
 		json.NewEncoder(w).Encode("ERROR: INVALID COMMAND")
 		return
 	}
@@ -69,49 +70,45 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 	case "DOORS":
 		fallthrough
 	case "DOOR":
-		if isPositive {
-			pybus.QueuePybus("toggleDoorLocks")
-		} else {
-			pybus.QueuePybus("toggleDoorLocks")
+		// Since this toggles, we should only do lock/unlock the doors if there's a known state
+		deviceStatus, ok := GetSessionValue("DOORS_LOCKED")
+		if ok &&
+			(isPositive && deviceStatus.Value == "FALSE") ||
+			(!isPositive && deviceStatus.Value == "TRUE") {
+			proprietary.WriteSerial("toggleDoorLocks")
 		}
 	case "WINDOWS":
 		fallthrough
 	case "WINDOW":
 		if isPositive {
-			pybus.QueuePybus("popWindowsUp")
+			pybus.PushQueue("popWindowsUp")
 		} else {
-			pybus.QueuePybus("popWindowsDown")
+			pybus.PushQueue("popWindowsDown")
 		}
 	case "CONVERTIBLE_TOP":
 		fallthrough
 	case "TOP":
 		if isPositive {
-			pybus.QueuePybus("convertibleTopUp")
+			pybus.PushQueue("convertibleTopUp")
 		} else {
-			pybus.QueuePybus("convertibleTopDown")
+			pybus.PushQueue("convertibleTopDown")
 		}
 	case "TRUNK":
-		pybus.QueuePybus("openTrunk")
-	case "FLASHERS":
-		pybus.QueuePybus("turnOnFlashers")
+		pybus.PushQueue("openTrunk")
 	case "HAZARDS":
-		if isPositive {
-			pybus.QueuePybus("turnOnHazards")
-		} else {
-			pybus.QueuePybus("turnOnHazards")
-		}
+		proprietary.WriteSerial("toggleHazards")
 	case "INTERIOR":
 		if isPositive {
-			pybus.QueuePybus("interiorLightsOff")
+			pybus.PushQueue("interiorLightsOff")
 		} else {
-			pybus.QueuePybus("interiorLightsOn")
+			pybus.PushQueue("interiorLightsOn")
 		}
 	case "MODE":
-		pybus.QueuePybus("pressMode")
+		pybus.PushQueue("pressMode")
 	case "STEREO":
 		fallthrough
 	case "RADIO":
-		pybus.QueuePybus("pressStereoPower")
+		pybus.PushQueue("pressStereoPower")
 	default:
 		pybus.PybusStatus.Log(status.Error(), "Invalid device "+device)
 		json.NewEncoder(w).Encode("ERROR: INVALID DEVICE")
@@ -119,7 +116,7 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Yay
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(device)
 }
 
 // **
@@ -127,7 +124,7 @@ func sendPybusCommand(w http.ResponseWriter, r *http.Request) {
 // **
 
 // Configures routes, starts router with optional middleware if configured
-func startRouter(debugSessionLog string) {
+func startRouter(config map[string]string) {
 	// Init router
 	router := mux.NewRouter()
 
@@ -149,8 +146,8 @@ func startRouter(debugSessionLog string) {
 	router.HandleFunc("/session/socket", GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
 	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")
-	router.HandleFunc("/session/{name}", GetSessionValue).Methods("GET")
-	router.HandleFunc("/session/{name}", SetSessionValue).Methods("POST")
+	router.HandleFunc("/session/{name}", HandleGetSessionValue).Methods("GET")
+	router.HandleFunc("/session/{name}", HandleSetSessionValue).Methods("POST")
 
 	//
 	// Settings routes
@@ -163,12 +160,10 @@ func startRouter(debugSessionLog string) {
 	//
 	// PyBus Routes
 	//
-	router.HandleFunc("/pybus", pybus.GetPybusRoutines).Methods("GET")
-	router.HandleFunc("/pybus/queue", pybus.SendPybus).Methods("GET")
+	router.HandleFunc("/pybus/queue", pybus.PopQueue).Methods("GET")
 	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
-	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartPybusRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}", pybus.RegisterPybusRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}", pybus.StartPybusRoutine).Methods("GET")
+	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
 
 	//
 	// ALPR Routes
@@ -201,18 +196,25 @@ func startRouter(debugSessionLog string) {
 	// Catch-All for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
-	router.HandleFunc("/{device}/{command}", sendPybusCommand).Methods("GET")
+	router.HandleFunc("/{device}/{command}", parseCommand).Methods("GET")
+
+	//
+	// Finally, welcome and meta routes
+	//
 	router.HandleFunc("/", welcomeRoute).Methods("GET")
 
-	// Log all routes for debugging later, if enabled
-	// The locks here slow things down, should only be used to generate a run file, not in production
-	if debugSessionLog != "" {
-		enabled, err := EnableLogging(debugSessionLog)
-		if enabled {
-			router.Use(LoggingMiddleware)
-		} else {
-			MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
-			MainStatus.Log(status.Error(), err.Error())
+	if config != nil {
+		// Log all routes for debugging later, if enabled
+		// The locks here slow things down, should only be used to generate a run file, not in production
+		debugSessionLog, debuggingSession := config["DEBUG_SESSION_LOG"]
+		if debuggingSession {
+			enabled, err := EnableLogging(debugSessionLog)
+			if enabled {
+				router.Use(LoggingMiddleware)
+			} else {
+				MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
+				MainStatus.Log(status.Error(), err.Error())
+			}
 		}
 	}
 

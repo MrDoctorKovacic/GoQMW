@@ -125,22 +125,40 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetSessionValue returns a specific session value
-func GetSessionValue(w http.ResponseWriter, r *http.Request) {
+// HandleGetSessionValue returns a specific session value
+func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+
+	sessionValue, ok := GetSessionValue(params["name"])
+	if !ok {
+		json.NewEncoder(w).Encode("Fail")
+		return
+	}
+
+	json.NewEncoder(w).Encode(sessionValue)
+}
+
+// GetSessionValue returns the named session, if it exists. Nil otherwise
+func GetSessionValue(name string) (value SessionData, OK bool) {
 
 	// Log if requested
 	if VERBOSE_OUTPUT {
-		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to GET request for session value %s", params["name"]))
+		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to request for session value %s", name))
 	}
 
 	sessionLock.Lock()
-	json.NewEncoder(w).Encode(Session[params["name"]])
+	sessionValue, ok := Session[name]
 	sessionLock.Unlock()
+
+	if !ok {
+		return sessionValue, false
+	}
+
+	return sessionValue, true
 }
 
-// SetSessionValue updates or posts a new session value to the common session
-func SetSessionValue(w http.ResponseWriter, r *http.Request) {
+// HandleSetSessionValue updates or posts a new session value to the common session
+func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
@@ -161,6 +179,7 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			SessionStatus.Log(status.Error(), "Error decoding incoming JSON")
 			SessionStatus.Log(status.Error(), err.Error())
+			return
 		}
 
 		// Set last updated time to now
@@ -170,46 +189,50 @@ func SetSessionValue(w http.ResponseWriter, r *http.Request) {
 		// Trim off whitespace
 		newdata.Value = strings.TrimSpace(newdata.Value)
 
-		// Log if requested
-		if VERBOSE_OUTPUT {
-			SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to POST request for session key %s = %s", params["name"], newdata.Value))
-		}
+		// Call the setter
+		// TODO: Error handling
+		SetSessionValue(params["name"], newdata)
 
-		// Lock access to session
-		sessionLock.Lock()
-
-		// Add / update value in global session
-		Session[params["name"]] = newdata
-
-		// Immediately unlock, since defer could take a while
-		sessionLock.Unlock()
-
-		// Insert into database
-		if DATABASE_ENABLED {
-
-			// Convert to a float if that suits the value, otherwise change field to value_string
-			var valueString string
-			if _, err := strconv.ParseFloat(newdata.Value, 32); err == nil {
-				valueString = fmt.Sprintf("value=%s", newdata.Value)
-			} else {
-				valueString = fmt.Sprintf("value_string=\"%s\"", newdata.Value)
-			}
-
-			// In Sessions, all values come in and out as strings regardless,
-			// but this conversion alows Influx queries on the floats to be executed
-			err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(params["name"], " ", "_", -1), valueString))
-
-			if err != nil {
-				SessionStatus.Log(status.Error(), "Error writing "+params["name"]+"="+newdata.Value+" to influx DB: "+err.Error())
-			} else {
-				SessionStatus.Log(status.OK(), "Logged "+params["name"]+"="+newdata.Value+" to database")
-			}
-		}
-
+		// Respond with success
 		json.NewEncoder(w).Encode("OK")
 
 	} else {
 		json.NewEncoder(w).Encode("FAIL")
+	}
+}
+
+// SetSessionValue does the actual setting of Session Values
+func SetSessionValue(name string, newData SessionData) {
+	// Log if requested
+	if VERBOSE_OUTPUT {
+		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
+	}
+
+	// Add / update value in global session after locking access to session
+	sessionLock.Lock()
+	Session[name] = newData
+	sessionLock.Unlock()
+
+	// Insert into database
+	if DATABASE_ENABLED {
+
+		// Convert to a float if that suits the value, otherwise change field to value_string
+		var valueString string
+		if _, err := strconv.ParseFloat(newData.Value, 32); err == nil {
+			valueString = fmt.Sprintf("value=%s", newData.Value)
+		} else {
+			valueString = fmt.Sprintf("value_string=\"%s\"", newData.Value)
+		}
+
+		// In Sessions, all values come in and out as strings regardless,
+		// but this conversion alows Influx queries on the floats to be executed
+		err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(name, " ", "_", -1), valueString))
+
+		if err != nil {
+			SessionStatus.Log(status.Error(), "Error writing "+name+"="+newData.Value+" to influx DB: "+err.Error())
+		} else {
+			SessionStatus.Log(status.OK(), "Logged "+name+"="+newData.Value+" to database")
+		}
 	}
 }
 
