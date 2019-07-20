@@ -17,6 +17,7 @@ go:
 before_install:
   - go get -u -v "github.com/gorilla/mux"
   - go get -u -v "github.com/parnurzeal/gorequest"
+  - go get -u -v "github.com/tarm/serial"
 
 install:
   - go get -t -v ./...
