@@ -39,6 +39,7 @@ func ReadSerial() {
 		} else {
 			var data HardwareReadout
 			json.Unmarshal(buf[:n], &data)
+			SerialStatus.Log(status.OK(), fmt.Sprintf("Got %s from serial", buf[:n]))
 
 			if data.TabletPower != "" {
 				SetSessionRawValue("TABLET_POWER", data.TabletPower)
