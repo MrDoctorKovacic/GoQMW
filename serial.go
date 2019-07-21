@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
 	"github.com/tarm/serial"
@@ -11,9 +13,9 @@ import (
 
 // HardwareReadout holds the name and power state of various hardware
 type HardwareReadout struct {
-	TabletPower string `json:"TABLET_POWER,omitempty"`
-	BoardPower  string `json:"BOARD_POWER,omitempty"`
-	AccPower    string `json:"ACC_POWER,omitempty"`
+	TabletPower *bool `json:"TABLET_POWER,omitempty"`
+	BoardPower  *bool `json:"BOARD_POWER,omitempty"`
+	AccPower    *bool `json:"ACC_POWER,omitempty"`
 }
 
 // SerialStatus will control logging and reporting of status / warnings / errors
@@ -43,18 +45,17 @@ func ReadSerial() {
 		} else {
 			var data HardwareReadout
 			json.Unmarshal(msg, &data)
-			SerialStatus.Log(status.OK(), fmt.Sprintf("Got %s from serial", msg))
 
-			if data.TabletPower != "" {
-				SetSessionRawValue("TABLET_POWER", data.TabletPower)
+			if data.TabletPower != nil {
+				SetSessionRawValue("TABLET_POWER", strings.ToUpper(strconv.FormatBool(*data.TabletPower)))
 			}
 
-			if data.BoardPower != "" {
-				SetSessionRawValue("BOARD_POWER", data.BoardPower)
+			if data.BoardPower != nil {
+				SetSessionRawValue("BOARD_POWER", strings.ToUpper(strconv.FormatBool(*data.BoardPower)))
 			}
 
-			if data.AccPower != "" {
-				SetSessionRawValue("ACC_POWER", data.AccPower)
+			if data.AccPower != nil {
+				SetSessionRawValue("ACC_POWER", strings.ToUpper(strconv.FormatBool(*data.AccPower)))
 			}
 		}
 	}
