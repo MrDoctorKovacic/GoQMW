@@ -110,8 +110,8 @@ func parseConfig() map[string]string {
 		// PROPRIETARY
 		// Configure hardware serials, should not be used outside my own config
 		//
-		HardwareSerialPort, UsingHardwareSerial := config["CORE_HardwareSerialPort"]
-		hardwareSerialBaud, usingHardwareBaud := config["CORE_HardwareSerialBaud"]
+		HardwareSerialPort, UsingHardwareSerial := config["CORE_HARDWARE_SERIAL_PORT"]
+		hardwareSerialBaud, usingHardwareBaud := config["CORE_HARDWARE_SERIAL_BAUD"]
 		if UsingHardwareSerial {
 			// Configure default baudrate
 			HardwareSerialBaud := 9600
