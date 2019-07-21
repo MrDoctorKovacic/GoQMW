@@ -28,7 +28,7 @@ func ReadSerial() {
 	// While connected, try to read from the device
 	// If we become disconnected, the goroutine will end and will have to be restarted
 	for connected := true; connected; serialReads++ {
-		buf := make([]byte, 128)
+		buf := make([]byte, 1024)
 		n, err := serialDevice.Read(buf)
 
 		// Parse serial data
