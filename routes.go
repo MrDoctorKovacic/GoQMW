@@ -124,7 +124,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 // **
 
 // Configures routes, starts router with optional middleware if configured
-func startRouter(config map[string]string) {
+func startRouter() {
 	// Init router
 	router := mux.NewRouter()
 
@@ -203,19 +203,21 @@ func startRouter(config map[string]string) {
 	//
 	router.HandleFunc("/", welcomeRoute).Methods("GET")
 
-	if config != nil {
+	if Config.DebugSessionFile != "" {
 		// Log all routes for debugging later, if enabled
 		// The locks here slow things down, should only be used to generate a run file, not in production
-		debugSessionLog, debuggingSession := config["DEBUG_SESSION_LOG"]
-		if debuggingSession {
-			enabled, err := EnableLogging(debugSessionLog)
-			if enabled {
-				router.Use(LoggingMiddleware)
-			} else {
-				MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
-				MainStatus.Log(status.Error(), err.Error())
-			}
+		enabled, err := EnableLogging(Config.DebugSessionFile)
+		if enabled {
+			router.Use(LoggingMiddleware)
+		} else {
+			MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
+			MainStatus.Log(status.Error(), err.Error())
 		}
+	}
+
+	if Config.AuthToken != "" {
+		// Ask for matching Auth Token before taking requests
+		router.Use(AuthMiddleware)
 	}
 
 	log.Fatal(http.ListenAndServe(":5353", router))

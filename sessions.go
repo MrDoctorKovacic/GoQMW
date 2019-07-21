@@ -221,7 +221,7 @@ func SetSessionValue(name string, newData SessionData) {
 	sessionLock.Unlock()
 
 	// Insert into database
-	if DatabaseEnabled {
+	if Config.DatabaseEnabled {
 
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		var valueString string
@@ -312,7 +312,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert into database
-	if DatabaseEnabled {
+	if Config.DatabaseEnabled {
 		err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 		if err != nil {
@@ -350,7 +350,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 
 		if plate != "" {
 			// Insert into database
-			if DatabaseEnabled {
+			if Config.DatabaseEnabled {
 				err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
 
 				if err != nil {

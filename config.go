@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
@@ -12,31 +14,28 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
 )
 
-// Config controls program settings and general persistent settings
-type Config struct {
-	DatabaseHost     string
-	DatabaseName     string
-	BluetoothAddress string
-	PingHost         string
-	DebugSessionFile string
+// ConfigValues controls program settings and general persistent settings
+type ConfigValues struct {
+	AuthToken           string
+	DatabaseEnabled     bool
+	DatabaseHost        string
+	DatabaseName        string
+	BluetoothAddress    string
+	PingHost            string
+	DebugSessionFile    string
+	UsingHardwareSerial bool
+	HardwareSerialPort  string
+	HardwareSerialBaud  string
 }
 
-// DatabaseEnabled - If we're using a database at all
-var DatabaseEnabled bool
-
-// UsingHardwareSerial - a gateway to an Arduino hooked to a set of relays
-var UsingHardwareSerial bool
-
-// HardwareSerialPort - port for accessing hardware serial controls
-var HardwareSerialPort string
-
-// HardwareSerialBaud - respective baud rate
-var HardwareSerialBaud string
+// Config defined here, to be saved to below
+var Config ConfigValues
 
 // DB for influx, that may or may not be used globally
 var DB influx.Influx
 
-func parseConfig() map[string]string {
+func parseConfig() {
+
 	// Start with program arguments
 	var (
 		settingsFile string
@@ -62,11 +61,11 @@ func parseConfig() map[string]string {
 	// Fetch and append old session from disk if allowed
 
 	// Parse through config if found in settings file
-	config, ok := settingsData["CONFIG"]
+	configMap, ok := settingsData["CONFIG"]
 	if ok {
 
 		// Set up timezone
-		timezoneLocation, usingTimezone := config["Timezone"]
+		timezoneLocation, usingTimezone := configMap["Timezone"]
 		if usingTimezone {
 			loc, err := time.LoadLocation(timezoneLocation)
 			if err == nil {
@@ -81,37 +80,47 @@ func parseConfig() map[string]string {
 		}
 
 		// Set up InfluxDB time series logging
-		databaseHost, usingDatabase := config["CORE_DATABASE_HOST"]
+		databaseHost, usingDatabase := configMap["CORE_DATABASE_HOST"]
 		if usingDatabase {
-			DB = influx.Influx{Host: databaseHost, Database: config["CORE_DATABASE_NAME"]}
-			DatabaseEnabled = true
+			DB = influx.Influx{Host: databaseHost, Database: configMap["CORE_DATABASE_NAME"]}
+			Config.DatabaseEnabled = true
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
-			if config["CORE_PING_HOST"] != "" {
-				status.RemotePingAddress = config["CORE_PING_HOST"]
+			if configMap["CORE_PING_HOST"] != "" {
+				status.RemotePingAddress = configMap["CORE_PING_HOST"]
 			} else {
 				MainStatus.Log(status.OK(), "[DISABLED] Not forwarding pings to host")
 			}
 
 		} else {
-			DatabaseEnabled = false
+			Config.DatabaseEnabled = false
 			MainStatus.Log(status.OK(), "[DISABLED] Not logging to influx db")
 		}
 
 		// Set up bluetooth
-		bluetoothAddress, usingBluetooth := config["BLUETOOTH_ADDRESS"]
+		bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
 		if usingBluetooth {
 			bluetooth.EnableAutoRefresh()
 			bluetooth.SetAddress(bluetoothAddress)
+			Config.BluetoothAddress = bluetoothAddress
+		}
+
+		// Debug session log
+		Config.DebugSessionFile = configMap["DEBUG_SESSION_LOG"]
+
+		// Set up Auth tokens
+		authToken, usingAuth := configMap["AUTH_TOKEN"]
+		if usingAuth {
+			Config.AuthToken = authToken
 		}
 
 		//
 		// PROPRIETARY
 		// Configure hardware serials, should not be used outside my own config
 		//
-		HardwareSerialPort, UsingHardwareSerial := config["CORE_HARDWARE_SERIAL_PORT"]
-		hardwareSerialBaud, usingHardwareBaud := config["CORE_HARDWARE_SERIAL_BAUD"]
+		HardwareSerialPort, UsingHardwareSerial := configMap["CORE_HARDWARE_SERIAL_PORT"]
+		hardwareSerialBaud, usingHardwareBaud := configMap["CORE_HARDWARE_SERIAL_BAUD"]
 		if UsingHardwareSerial {
 			// Configure default baudrate
 			HardwareSerialBaud := 9600
@@ -127,10 +136,23 @@ func parseConfig() map[string]string {
 			}
 			StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
 		}
-
-		return config
 	}
 
 	MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
-	return nil
+}
+
+// AuthMiddleware will match http bearer token again the one hardcoded in our config
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		reqToken := r.Header.Get("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer")
+		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != Config.AuthToken {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("403 - Invalid Auth Token!"))
+		}
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
 }

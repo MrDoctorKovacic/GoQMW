@@ -19,8 +19,8 @@ var Timezone *time.Location
 func main() {
 
 	// Run through the config file and set up some global variables
-	config := parseConfig()
+	parseConfig()
 
 	// Define routes and begin routing
-	startRouter(config)
+	startRouter()
 }
