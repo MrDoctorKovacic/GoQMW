@@ -26,6 +26,7 @@ var serialDevice *serial.Port
 func ReadSerial() {
 	serialReads := 0
 	reader := bufio.NewReader(serialDevice)
+	SerialStatus.Log(status.OK(), "Starting serial read")
 
 	// While connected, try to read from the device
 	// If we become disconnected, the goroutine will end and will have to be restarted
