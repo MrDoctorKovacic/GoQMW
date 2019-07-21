@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 
@@ -28,8 +29,11 @@ func ReadSerial() {
 	// While connected, try to read from the device
 	// If we become disconnected, the goroutine will end and will have to be restarted
 	for connected := true; connected; serialReads++ {
-		buf := make([]byte, 1024)
-		n, err := serialDevice.Read(buf)
+		//buf := make([]byte, 1024)
+		//n, err := serialDevice.Read(buf)
+
+		reader := bufio.NewReader(serialDevice)
+		msg, err := reader.ReadBytes('\n')
 
 		// Parse serial data
 		if err != nil {
@@ -38,8 +42,8 @@ func ReadSerial() {
 			connected = false
 		} else {
 			var data HardwareReadout
-			json.Unmarshal(buf[:n], &data)
-			SerialStatus.Log(status.OK(), fmt.Sprintf("Got %s from serial", buf[:n]))
+			json.Unmarshal(msg, &data)
+			SerialStatus.Log(status.OK(), fmt.Sprintf("Got %s from serial", msg))
 
 			if data.TabletPower != "" {
 				SetSessionRawValue("TABLET_POWER", data.TabletPower)
