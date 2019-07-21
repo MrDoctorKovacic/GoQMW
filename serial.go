@@ -33,7 +33,7 @@ func ReadSerial() {
 	for connected := true; connected; serialReads++ {
 		//buf := make([]byte, 1024)
 		//n, err := serialDevice.Read(buf)
-		msg, err := reader.ReadBytes('\n')
+		msg, err := reader.ReadBytes('}')
 
 		// Parse serial data
 		if err != nil {
