@@ -19,20 +19,19 @@ type HardwareReadout struct {
 // SerialStatus will control logging and reporting of status / warnings / errors
 var SerialStatus = status.NewStatus("Serial")
 
-// serialDevice is the
+// serialDevice is the open port of our arduino hardware serial
 var serialDevice *serial.Port
 
 // ReadSerial will continuously pull data from incoming serial
 func ReadSerial() {
 	serialReads := 0
+	reader := bufio.NewReader(serialDevice)
 
 	// While connected, try to read from the device
 	// If we become disconnected, the goroutine will end and will have to be restarted
 	for connected := true; connected; serialReads++ {
 		//buf := make([]byte, 1024)
 		//n, err := serialDevice.Read(buf)
-
-		reader := bufio.NewReader(serialDevice)
 		msg, err := reader.ReadBytes('\n')
 
 		// Parse serial data
