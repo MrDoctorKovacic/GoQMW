@@ -170,7 +170,7 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Parse out params
-	componentName := formatSetting(params["componentName"])
+	componentName := formatSetting(params["component"])
 	settingName := formatSetting(params["name"])
 	settingValue := params["value"]
 

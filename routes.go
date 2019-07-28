@@ -72,7 +72,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "DOOR":
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		deviceStatus, ok := GetSessionValue("DOORS_LOCKED")
-		if ok &&
+		if ok && Config.HardwareSerialEnabled &&
 			(isPositive && deviceStatus.Value == "FALSE") ||
 			(!isPositive && deviceStatus.Value == "TRUE") {
 			WriteSerial("toggleDoorLocks")
@@ -82,7 +82,9 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "WINDOW":
 		if isPositive {
 			pybus.PushQueue("popWindowsUp")
+			pybus.PushQueue("popWindowsUp")
 		} else {
+			pybus.PushQueue("popWindowsDown")
 			pybus.PushQueue("popWindowsDown")
 		}
 	case "CONVERTIBLE_TOP":
@@ -96,7 +98,9 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "TRUNK":
 		pybus.PushQueue("openTrunk")
 	case "HAZARDS":
-		WriteSerial("toggleHazards")
+		if Config.HardwareSerialEnabled {
+			WriteSerial("toggleHazards")
+		}
 	case "INTERIOR":
 		if isPositive {
 			pybus.PushQueue("interiorLightsOff")
