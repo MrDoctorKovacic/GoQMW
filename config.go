@@ -16,16 +16,17 @@ import (
 
 // ConfigValues controls program settings and general persistent settings
 type ConfigValues struct {
-	AuthToken           string
-	DatabaseEnabled     bool
-	DatabaseHost        string
-	DatabaseName        string
-	BluetoothAddress    string
-	PingHost            string
-	DebugSessionFile    string
-	UsingHardwareSerial bool
-	HardwareSerialPort  string
-	HardwareSerialBaud  string
+	AuthToken             string
+	DatabaseEnabled       bool
+	DatabaseHost          string
+	DatabaseName          string
+	BluetoothAddress      string
+	BluetoothEnabled      bool
+	PingHost              string
+	DebugSessionFile      string
+	HardwareSerialEnabled bool
+	HardwareSerialPort    string
+	HardwareSerialBaud    string
 }
 
 // Config defined here, to be saved to below
@@ -105,6 +106,7 @@ func parseConfig() {
 			bluetooth.SetAddress(bluetoothAddress)
 			Config.BluetoothAddress = bluetoothAddress
 		}
+		Config.BluetoothEnabled = usingBluetooth
 
 		// Debug session log
 		Config.DebugSessionFile = configMap["DEBUG_SESSION_LOG"]
@@ -119,9 +121,10 @@ func parseConfig() {
 		// PROPRIETARY
 		// Configure hardware serials, should not be used outside my own config
 		//
-		HardwareSerialPort, UsingHardwareSerial := configMap["CORE_HARDWARE_SERIAL_PORT"]
+		HardwareSerialPort, usingHardwareSerial := configMap["CORE_HARDWARE_SERIAL_PORT"]
 		hardwareSerialBaud, usingHardwareBaud := configMap["CORE_HARDWARE_SERIAL_BAUD"]
-		if UsingHardwareSerial {
+		Config.HardwareSerialEnabled = usingHardwareSerial
+		if Config.HardwareSerialEnabled {
 			// Configure default baudrate
 			HardwareSerialBaud := 9600
 			if usingHardwareBaud {
@@ -129,7 +132,7 @@ func parseConfig() {
 				if err != nil {
 					MainStatus.Log(status.Error(), "Failed to convert CORE_HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
 					MainStatus.Log(status.Warning(), "Disabling hardware serial functionality")
-					UsingHardwareSerial = false
+					Config.HardwareSerialEnabled = false
 				} else {
 					HardwareSerialBaud = baudrateString
 				}
