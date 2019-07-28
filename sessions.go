@@ -194,7 +194,7 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 
 		// Call the setter
 		// TODO: Error handling
-		SetSessionValue(params["name"], newdata)
+		SetSessionValue(params["name"], newdata, false)
 
 		// Respond with success
 		json.NewEncoder(w).Encode("OK")
@@ -205,13 +205,13 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetSessionValue does the actual setting of Session Values
-func SetSessionValue(name string, newData SessionData) {
+func SetSessionValue(name string, newData SessionData, quiet bool) {
 	// Set last updated time to now
 	var timestamp = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
 	newData.LastUpdate = timestamp
 
 	// Log if requested
-	if VerboseOutput {
+	if VerboseOutput && !quiet {
 		SessionStatus.Log(status.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
 	}
 
@@ -237,7 +237,7 @@ func SetSessionValue(name string, newData SessionData) {
 
 		if err != nil {
 			SessionStatus.Log(status.Error(), "Error writing "+name+"="+newData.Value+" to influx DB: "+err.Error())
-		} else {
+		} else if !quiet {
 			SessionStatus.Log(status.OK(), "Logged "+name+"="+newData.Value+" to database")
 		}
 	}
@@ -247,7 +247,7 @@ func SetSessionValue(name string, newData SessionData) {
 func SetSessionRawValue(name string, value string) {
 	var newdata SessionData
 	newdata.Value = value
-	SetSessionValue(name, newdata)
+	SetSessionValue(name, newdata, true)
 }
 
 //
