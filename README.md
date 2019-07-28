@@ -29,13 +29,13 @@ Having [InfluxDB & the rest of the TICK stack](https://www.influxdata.com/blog/r
 
 ## Configuration 
 
-The `settings.json` file is a simple JSON document for program settings that should persist through each load. The ones under the header `CONFIG` are suggested for the program to function properly. The program provides endpoints for user-defined settings to be POST-ed at will. 
+The `settings.json` file is a simple JSON document for program settings that should persist through each load. The ones under the header `MDROID` are suggested for the program to function properly. The program provides endpoints for user-defined settings to be POST-ed at will. 
 
 This allows for setting generic fields and values, which can be retrieved later. Some notes:
 
 * This MUST be a 2D array, matching the (settings[Component][Field] = Value) style.
 * If the settings file is omitted or missing, one will be created.
-* `CONFIG` options can be omitted to disable their specific functionality.
+* `MDROID` options can be omitted to disable their specific functionality.
 
 Here's a commented example with suggested settings:
 
@@ -43,11 +43,11 @@ Here's a commented example with suggested settings:
 // COMMENTS ARE NOT VALID JSON, AN UNCOMMENTED VERSION OF THE BELOW IS PROVIDED IN THE REPO
 {
 	// Core Configuration
-	"CONFIG": {
-		"CORE_DATABASE_HOST": "http://localhost:8086", // Influx DB with port
-		"CORE_DATABASE_NAME": "vehicle", // Influx DB name to aggregate data under
+	"MDROID": {
+		"DATABASE_HOST": "http://localhost:8086", // Influx DB with port
+		"DATABASE_NAME": "vehicle", // Influx DB name to aggregate data under
 		"BLUETOOTH_ADDRESS": "", // This is NOT the host's BT Addr, rather the default media device
-		"CORE_PING_HOST": "", // Mostly proprietary, safe to ignore
+		"PING_HOST": "", // Mostly proprietary, safe to ignore
 	}
 	
 	// Examples of user defined settings, these won't do anything and only store values
