@@ -45,7 +45,7 @@ func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) 
 			// Check if we're configed to verbose output
 			//
 			var verboseOutputInt int
-			useVerboseOutput, ok := Settings["CONFIG"]["VERBOSE_OUTPUT"]
+			useVerboseOutput, ok := Settings["MDROID"]["VERBOSE_OUTPUT"]
 			if !ok {
 				verboseOutputInt = 0
 			} else {
@@ -76,7 +76,7 @@ func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) 
 	Settings = make(map[string]map[string]string, 0)
 
 	if useSettingsFile != "" {
-		SetSetting("CONFIG", "LAST_USED", time.Now().String())
+		SetSetting("MDROID", "LAST_USED", time.Now().String())
 	}
 
 	// Return empty map

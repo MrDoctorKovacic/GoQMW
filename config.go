@@ -62,7 +62,7 @@ func parseConfig() {
 	// Fetch and append old session from disk if allowed
 
 	// Parse through config if found in settings file
-	configMap, ok := settingsData["CONFIG"]
+	configMap, ok := settingsData["MDROID"]
 	if ok {
 
 		// Set up timezone
@@ -81,15 +81,15 @@ func parseConfig() {
 		}
 
 		// Set up InfluxDB time series logging
-		databaseHost, usingDatabase := configMap["CORE_DATABASE_HOST"]
+		databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 		if usingDatabase {
-			DB = influx.Influx{Host: databaseHost, Database: configMap["CORE_DATABASE_NAME"]}
+			DB = influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
 			Config.DatabaseEnabled = true
 
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
-			if configMap["CORE_PING_HOST"] != "" {
-				status.RemotePingAddress = configMap["CORE_PING_HOST"]
+			if configMap["PING_HOST"] != "" {
+				status.RemotePingAddress = configMap["PING_HOST"]
 			} else {
 				MainStatus.Log(status.OK(), "[DISABLED] Not forwarding pings to host")
 			}
@@ -121,8 +121,8 @@ func parseConfig() {
 		// PROPRIETARY
 		// Configure hardware serials, should not be used outside my own config
 		//
-		HardwareSerialPort, usingHardwareSerial := configMap["CORE_HARDWARE_SERIAL_PORT"]
-		hardwareSerialBaud, usingHardwareBaud := configMap["CORE_HARDWARE_SERIAL_BAUD"]
+		HardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
+		hardwareSerialBaud, usingHardwareBaud := configMap["HARDWARE_SERIAL_BAUD"]
 		Config.HardwareSerialEnabled = usingHardwareSerial
 		if Config.HardwareSerialEnabled {
 			// Configure default baudrate
@@ -130,7 +130,7 @@ func parseConfig() {
 			if usingHardwareBaud {
 				baudrateString, err := strconv.Atoi(hardwareSerialBaud)
 				if err != nil {
-					MainStatus.Log(status.Error(), "Failed to convert CORE_HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
+					MainStatus.Log(status.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
 					MainStatus.Log(status.Warning(), "Disabling hardware serial functionality")
 					Config.HardwareSerialEnabled = false
 				} else {
