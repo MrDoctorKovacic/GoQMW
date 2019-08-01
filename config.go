@@ -12,6 +12,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/tarm/serial"
 )
 
 // ConfigValues controls program settings and general persistent settings
@@ -27,6 +28,7 @@ type ConfigValues struct {
 	HardwareSerialEnabled bool
 	HardwareSerialPort    string
 	HardwareSerialBaud    string
+	SerialControlDevice   *serial.Port
 }
 
 // Config defined here, to be saved to below
@@ -35,6 +37,21 @@ var Config ConfigValues
 // DB for influx, that may or may not be used globally
 var DB influx.Influx
 
+// Sub function to parse through other serial devices, if enabled
+func parseSerialDevices(settingsData map[string]map[string]string) {
+
+	serialDevices, additionalSerialDevices := settingsData["TLV"]
+
+	if additionalSerialDevices {
+		// Loop through each READONLY serial device and set up
+		// No room to config baud rate here, use 9600 as default
+		for _, deviceName := range serialDevices {
+			StartSerialComms(serialDevices[deviceName], 9600)
+		}
+	}
+}
+
+// Main config parsing
 func parseConfig() {
 
 	// Start with program arguments
@@ -138,6 +155,9 @@ func parseConfig() {
 				}
 			}
 			StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
+
+			// Setup other devices
+			parseSerialDevices(settingsData)
 		}
 	}
 
