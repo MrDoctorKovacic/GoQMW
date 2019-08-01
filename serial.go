@@ -21,11 +21,8 @@ type HardwareReadout struct {
 // SerialStatus will control logging and reporting of status / warnings / errors
 var SerialStatus = status.NewStatus("Serial")
 
-// serialDevice is the open port of our arduino hardware serial
-var serialDevice *serial.Port
-
 // ReadSerial will continuously pull data from incoming serial
-func ReadSerial() {
+func ReadSerial(serialDevice *serial.Port) {
 	serialReads := 0
 	reader := bufio.NewReader(serialDevice)
 	SerialStatus.Log(status.OK(), "Starting serial read")
@@ -68,12 +65,12 @@ func WriteSerial(msg string) {
 		return
 	}
 
-	if serialDevice == nil {
+	if Config.SerialControlDevice == nil {
 		SerialStatus.Log(status.Error(), "Serial port is not set, nothing to write to.")
 		return
 	}
 
-	n, err := serialDevice.Write([]byte(msg))
+	n, err := Config.SerialControlDevice.Write([]byte(msg))
 	if err != nil {
 		SerialStatus.Log(status.Error(), "Failed to write to serial port")
 		SerialStatus.Log(status.Error(), err.Error())
@@ -92,9 +89,13 @@ func StartSerialComms(deviceName string, baudrate int) {
 		SerialStatus.Log(status.Error(), "Failed to open serial port "+deviceName)
 		SerialStatus.Log(status.Error(), err.Error())
 	} else {
-		serialDevice = s
+		// Use first Serial device as a R/W, all others will only be read from
+		if Config.SerialControlDevice == nil {
+			Config.SerialControlDevice = s
+		}
+
 		// Continiously read from serial port
-		go ReadSerial()
+		go ReadSerial(s)
 	}
 
 }
