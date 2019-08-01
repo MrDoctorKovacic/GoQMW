@@ -83,6 +83,7 @@ func WriteSerial(msg string) {
 // StartSerialComms will set up the serial port,
 // and start the ReadSerial goroutine
 func StartSerialComms(deviceName string, baudrate int) {
+	SerialStatus.Log(status.OK(), "Opening serial device "+deviceName)
 	c := &serial.Config{Name: deviceName, Baud: baudrate}
 	s, err := serial.OpenPort(c)
 	if err != nil {
@@ -92,6 +93,7 @@ func StartSerialComms(deviceName string, baudrate int) {
 		// Use first Serial device as a R/W, all others will only be read from
 		if Config.SerialControlDevice == nil {
 			Config.SerialControlDevice = s
+			SerialStatus.Log(status.OK(), "Using serial device "+deviceName+" as default writer")
 		}
 
 		// Continiously read from serial port
