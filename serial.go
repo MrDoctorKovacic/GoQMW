@@ -11,15 +11,32 @@ import (
 	"github.com/tarm/serial"
 )
 
-// HardwareReadout holds the name and power state of various hardware
-type HardwareReadout struct {
-	TabletPower *bool `json:"TABLET_POWER,omitempty"`
-	BoardPower  *bool `json:"BOARD_POWER,omitempty"`
-	AccPower    *bool `json:"ACC_POWER,omitempty"`
-}
-
 // SerialStatus will control logging and reporting of status / warnings / errors
 var SerialStatus = status.NewStatus("Serial")
+
+func parseSerialJSON(marshalledJSON interface{}) {
+
+	data := marshalledJSON.(map[string]interface{})
+
+	// Switch through various types of JSON data
+	for key, value := range data {
+		switch vv := value.(type) {
+		case bool:
+			SetSessionRawValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+		case string:
+			SetSessionRawValue(strings.ToUpper(key), strings.ToUpper(vv))
+		case int:
+			SetSessionRawValue(strings.ToUpper(key), strconv.Itoa(vv))
+		case []interface{}:
+			SerialStatus.Log(status.Error(), key+" is an array. Data: ")
+			for i, u := range vv {
+				fmt.Println(i, u)
+			}
+		default:
+			SerialStatus.Log(status.Error(), key+" is of a type I don't know how to handle")
+		}
+	}
+}
 
 // ReadSerial will continuously pull data from incoming serial
 func ReadSerial(serialDevice *serial.Port) {
@@ -40,20 +57,10 @@ func ReadSerial(serialDevice *serial.Port) {
 			SerialStatus.Log(status.Error(), err.Error())
 			connected = false
 		} else {
-			var data HardwareReadout
+			var data interface{}
 			json.Unmarshal(msg, &data)
 
-			if data.TabletPower != nil {
-				SetSessionRawValue("TABLET_POWER", strings.ToUpper(strconv.FormatBool(*data.TabletPower)))
-			}
-
-			if data.BoardPower != nil {
-				SetSessionRawValue("BOARD_POWER", strings.ToUpper(strconv.FormatBool(*data.BoardPower)))
-			}
-
-			if data.AccPower != nil {
-				SetSessionRawValue("ACC_POWER", strings.ToUpper(strconv.FormatBool(*data.AccPower)))
-			}
+			parseSerialJSON(data)
 		}
 	}
 }
