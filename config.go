@@ -45,8 +45,14 @@ func parseSerialDevices(settingsData map[string]map[string]string) {
 	if additionalSerialDevices {
 		// Loop through each READONLY serial device and set up
 		// No room to config baud rate here, use 9600 as default
-		for _, deviceName := range serialDevices {
-			StartSerialComms(serialDevices[deviceName], 9600)
+		for deviceName, baudrateString := range serialDevices {
+			deviceBaud, err := strconv.Atoi(baudrateString)
+			if err != nil {
+				MainStatus.Log(status.Error(), "Failed to convert given baudrate string to int. Found values: "+deviceName+": "+baudrateString)
+				return
+			}
+
+			StartSerialComms(deviceName, deviceBaud)
 		}
 	}
 }
@@ -150,9 +156,10 @@ func parseConfig() {
 					MainStatus.Log(status.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
 					MainStatus.Log(status.Warning(), "Disabling hardware serial functionality")
 					Config.HardwareSerialEnabled = false
-				} else {
-					HardwareSerialBaud = baudrateString
+					return
 				}
+
+				HardwareSerialBaud = baudrateString
 			}
 			StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
 
