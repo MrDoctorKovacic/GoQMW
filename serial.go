@@ -16,6 +16,11 @@ var SerialStatus = status.NewStatus("Serial")
 
 func parseSerialJSON(marshalledJSON interface{}) {
 
+	if marshalledJSON == nil {
+		SerialStatus.Log(status.Error(), " marshalled JSON is nil.")
+		return
+	}
+
 	data := marshalledJSON.(map[string]interface{})
 
 	// Switch through various types of JSON data

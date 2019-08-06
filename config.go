@@ -159,9 +159,9 @@ func parseConfig() {
 			// Setup other devices
 			parseSerialDevices(settingsData)
 		}
+	} else {
+		MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
 	}
-
-	MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
 }
 
 // AuthMiddleware will match http bearer token again the one hardcoded in our config
