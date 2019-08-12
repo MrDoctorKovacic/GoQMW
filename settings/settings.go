@@ -1,3 +1,4 @@
+// Package settings reads and writes to an MDroid settings file
 package settings
 
 import (

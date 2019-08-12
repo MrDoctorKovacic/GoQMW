@@ -149,8 +149,8 @@ func startRouter() {
 	router.HandleFunc("/session/socket", GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
 	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")
-	router.HandleFunc("/session/{name}", HandleGetSessionValue).Methods("GET")
-	router.HandleFunc("/session/{name}", HandleSetSessionValue).Methods("POST")
+	router.HandleFunc("/session/{name}", GetSessionValueHandler).Methods("GET")
+	router.HandleFunc("/session/{name}", PostSessionValue).Methods("POST")
 
 	//
 	// Settings routes

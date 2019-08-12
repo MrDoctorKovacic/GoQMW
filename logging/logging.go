@@ -1,3 +1,4 @@
+// Package logging provides various upgrades to organizing logs and status reports
 package logging
 
 import (

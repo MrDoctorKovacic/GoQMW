@@ -1,3 +1,4 @@
+// Package utils is bad form but these are common utilities used across the MDroid suite
 package utils
 
 import (
