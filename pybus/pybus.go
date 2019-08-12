@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
 	"github.com/gorilla/mux"
@@ -12,6 +13,7 @@ import (
 
 // Queue that the PyBus program will fetch from repeatedly
 var pybusQueue []string
+var pybusQueueLock sync.Mutex
 
 // PybusStatus will control logging and reporting of status / warnings / errors
 var PybusStatus = status.NewStatus("Pybus")
@@ -20,23 +22,33 @@ var PybusStatus = status.NewStatus("Pybus")
 // msg can either be a directive (e.g. 'openTrunk')
 // or a Python formatted list of three byte strings: src, dest, and data
 // e.g. '["50", "68", "3B01"]'
-func PushQueue(msg string) {
+func PushQueue(command string) {
 
 	//
 	// First, interrupt with some special cases
 	//
-	switch msg {
-	case "unlockDoors":
+	switch command {
+	case "rollWindowsUp":
+		go PushQueue("popWindowsUp")
+		go PushQueue("popWindowsUp")
+		return
+	case "rollWindowsDown":
+		go PushQueue("popWindowsDown")
+		go PushQueue("popWindowsDown")
+		return
 	}
 
-	pybusQueue = append(pybusQueue, msg)
-	PybusStatus.Log(status.OK(), "Added "+msg+" to the Pybus Queue")
+	pybusQueueLock.Lock()
+	pybusQueue = append(pybusQueue, command)
+	pybusQueueLock.Unlock()
+
+	PybusStatus.Log(status.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
 }
 
 // PopQueue pops a directive off the queue after confirming it occured
 func PopQueue(w http.ResponseWriter, r *http.Request) {
 	if len(pybusQueue) > 0 {
-		PybusStatus.Log(status.OK(), "Dumping "+pybusQueue[0]+" from Pybus queue to get request")
+		PybusStatus.Log(status.OK(), fmt.Sprintf("Dumping %s from Pybus queue to get request", pybusQueue[0]))
 		json.NewEncoder(w).Encode(pybusQueue[0])
 
 		// Pop off queue
@@ -59,17 +71,7 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode("OK")
 	} else if params["command"] != "" {
 		// Some commands need special timing functions
-		switch params["command"] {
-		case "rollWindowsUp":
-			PushQueue("popWindowsUp")
-			PushQueue("popWindowsUp")
-		case "rollWindowsDown":
-			PushQueue("popWindowsDown")
-			PushQueue("popWindowsDown")
-		default:
-			go PushQueue(params["command"])
-		}
-
+		go PushQueue(params["command"])
 		json.NewEncoder(w).Encode("OK")
 	} else {
 		json.NewEncoder(w).Encode("Invalid command")
@@ -81,7 +83,7 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 	out, err := exec.Command("/home/pi/le/auto/pyBus/startup_pybus.sh").Output()
 
 	if err != nil {
-		PybusStatus.Log(status.Error(), "Error restarting PyBus: "+err.Error())
+		PybusStatus.Log(status.Error(), fmt.Sprintf("Error restarting PyBus: \n%s", err.Error()))
 		json.NewEncoder(w).Encode(err)
 	} else {
 		json.NewEncoder(w).Encode(out)
