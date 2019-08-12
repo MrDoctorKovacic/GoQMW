@@ -32,7 +32,7 @@ var GPS GPSData
 // GetGPSValue returns the latest GPS fix
 func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
-	if VerboseOutput {
+	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), "Responding to GET request for all GPS values")
 	}
 	json.NewEncoder(w).Encode(GPS)
@@ -44,7 +44,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
 
 	// Log if requested
-	if VerboseOutput {
+	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), "Responding to POST request for gps values")
 	}
 
@@ -91,9 +91,9 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 		if err != nil {
-			SessionStatus.Log(logging.Error(), "Error writing string "+postingString.String()+" to influx DB: "+err.Error())
+			SessionStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
 		} else {
-			SessionStatus.Log(logging.OK(), "Logged "+postingString.String()+" to database")
+			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
 		}
 	}
 

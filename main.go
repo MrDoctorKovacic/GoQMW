@@ -9,9 +9,6 @@ import (
 // MainStatus will control logging and reporting of status / warnings / errors
 var MainStatus = logging.NewStatus("Main")
 
-// VerboseOutput for logging in package main
-var VerboseOutput bool
-
 // Timezone location for session last used and logging
 var Timezone *time.Location
 

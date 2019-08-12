@@ -66,7 +66,7 @@ func HandleGetSession(w http.ResponseWriter, r *http.Request) {
 // GetSession returns the entire current session
 func GetSession() map[string]SessionData {
 	// Log if requested
-	if VerboseOutput {
+	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), "Responding to request for full session")
 	}
 
@@ -82,7 +82,7 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
 
 	// Log if requested
-	if VerboseOutput {
+	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), "Responding to request for session websocket")
 	}
 
@@ -130,7 +130,7 @@ func GetSessionValueHandler(w http.ResponseWriter, r *http.Request) {
 func GetSessionValue(name string) (value SessionData, err error) {
 
 	// Log if requested
-	if VerboseOutput {
+	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session value %s", name))
 	}
 
@@ -203,7 +203,7 @@ func SetSessionValue(name string, newData SessionData, quiet bool) error {
 	newData.Value = strings.TrimSpace(newData.Value)
 
 	// Log if requested
-	if VerboseOutput && !quiet {
+	if Config.VerboseOutput && !quiet {
 		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
 	}
 

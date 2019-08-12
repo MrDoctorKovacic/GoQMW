@@ -138,7 +138,7 @@ func SetStatus(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		// Status does not exist, we should create one
 		s = NewStatus(params["name"])
-		StatusStatus.Log(OK(), "Created new Status called "+params["name"])
+		StatusStatus.Log(OK(), fmt.Sprintf("Created new Status called %s", params["name"]))
 	}
 
 	switch newdata.Name {
@@ -150,7 +150,7 @@ func SetStatus(w http.ResponseWriter, r *http.Request) {
 		s.Log(OK(), newdata.Message)
 	}
 
-	StatusStatus.Log(OK(), "Logged external "+newdata.Name+" Status for "+params["name"]+" with message "+newdata.Message)
+	StatusStatus.Log(OK(), fmt.Sprintf("Logged external %s Status for %s with message %s", newdata.Name, params["name"], newdata.Message))
 
 	// Respond with inserted values
 	json.NewEncoder(w).Encode(s)
@@ -174,26 +174,26 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// Log locally
 			//
 			defer onlineResp.Body.Close()
-			StatusStatus.Log(OK(), "Logging "+params["device"]+" to database")
+			StatusStatus.Log(OK(), fmt.Sprintf("Logging %s to database", params["device"]))
 
 			// Insert into database
 			//err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
 
 			if err != nil {
-				StatusStatus.Log(Error(), "Error when logging "+params["device"]+" to database: "+err.Error())
+				StatusStatus.Log(Error(), fmt.Sprintf("Error when logging %s to database: %s", params["device"], err.Error()))
 			} else {
-				StatusStatus.Log(OK(), "Logged "+params["device"]+" to database")
+				StatusStatus.Log(OK(), fmt.Sprintf("Logged %s to database", params["device"]))
 			}
 
 		} else {
 			//
 			// FWD request to server since we have internet
 			//
-			StatusStatus.Log(OK(), "Forwarding "+params["device"]+" to server")
-			pingResp, err := http.Get(RemotePingAddress + "?name=" + params["device"] + "&local_ip=" + params["ip"])
+			StatusStatus.Log(OK(), fmt.Sprintf("Forwarding %s to server", params["device"]))
+			pingResp, err := http.Get(fmt.Sprintf("%s?name=%s&local_ip=%s", RemotePingAddress, params["device"], params["ip"]))
 			if err != nil {
 				defer pingResp.Body.Close()
-				StatusStatus.Log(Error(), "Error when forwarding ping: "+err.Error())
+				StatusStatus.Log(Error(), fmt.Sprintf("Error when forwarding ping: %s", err.Error()))
 			}
 		}
 
