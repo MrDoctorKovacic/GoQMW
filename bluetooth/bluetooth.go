@@ -1,3 +1,4 @@
+// Package bluetooth is a rudimentary interface between MDroid-Core and underlying BT dbus
 package bluetooth
 
 import (

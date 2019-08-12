@@ -1,3 +1,4 @@
+// Package pybus interfaces between MDroid-Core and the pyBus programs
 package pybus
 
 import (

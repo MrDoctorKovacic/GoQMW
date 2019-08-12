@@ -1,3 +1,4 @@
+// Package influx is my own implementation of influxdb commands
 package influx
 
 import (

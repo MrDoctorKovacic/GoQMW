@@ -113,8 +113,8 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HandleGetSessionValue returns a specific session value
-func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
+// GetSessionValueHandler returns a specific session value
+func GetSessionValueHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	sessionValue, err := GetSessionValue(params["name"])
@@ -145,8 +145,8 @@ func GetSessionValue(name string) (value SessionData, err error) {
 	return sessionValue, nil
 }
 
-// HandleSetSessionValue updates or posts a new session value to the common session
-func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
+// PostSessionValue updates or posts a new session value to the common session
+func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
