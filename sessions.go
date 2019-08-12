@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -39,12 +40,6 @@ type GPSData struct {
 	EPT       *float32 `json:"ept,omitempty"`
 	Speed     *float32 `json:"speed,omitempty"`
 	Climb     *float32 `json:"climb,omitempty"`
-}
-
-// ALPRData holds the plate and percent for each new ALPR value
-type ALPRData struct {
-	Plate   string `json:"plate,omitempty"`
-	Percent int    `json:"percent,omitempty"`
 }
 
 // Session is the global session accessed by incoming requests
@@ -137,9 +132,9 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	sessionValue, ok := GetSessionValue(params["name"])
-	if !ok {
-		json.NewEncoder(w).Encode("Fail")
+	sessionValue, err := GetSessionValue(params["name"])
+	if err != nil {
+		json.NewEncoder(w).Encode("Error: " + err.Error())
 		return
 	}
 
@@ -147,7 +142,7 @@ func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSessionValue returns the named session, if it exists. Nil otherwise
-func GetSessionValue(name string) (value SessionData, OK bool) {
+func GetSessionValue(name string) (value SessionData, err error) {
 
 	// Log if requested
 	if VerboseOutput {
@@ -159,10 +154,10 @@ func GetSessionValue(name string) (value SessionData, OK bool) {
 	sessionLock.Unlock()
 
 	if !ok {
-		return sessionValue, false
+		return sessionValue, fmt.Errorf("%s does not exist in Session", name)
 	}
 
-	return sessionValue, true
+	return sessionValue, nil
 }
 
 // HandleSetSessionValue updates or posts a new session value to the common session
@@ -178,32 +173,40 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 	r.Body.Close() //  must close
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-	if len(body) > 0 {
-
-		params := mux.Vars(r)
-		var newdata SessionData
-		err = json.NewDecoder(r.Body).Decode(&newdata)
-
-		if err != nil {
-			SessionStatus.Log(status.Error(), "Error decoding incoming JSON")
-			SessionStatus.Log(status.Error(), err.Error())
-			return
-		}
-
-		// Call the setter
-		// TODO: Error handling
-		SetSessionValue(params["name"], newdata, false)
-
-		// Respond with success
-		json.NewEncoder(w).Encode("OK")
-
-	} else {
-		json.NewEncoder(w).Encode("FAIL")
+	if len(body) == 0 {
+		json.NewEncoder(w).Encode("Error: Empty body")
 	}
+
+	params := mux.Vars(r)
+	var newdata SessionData
+	err = json.NewDecoder(r.Body).Decode(&newdata)
+
+	if err != nil {
+		SessionStatus.Log(status.Error(), "Error decoding incoming JSON")
+		SessionStatus.Log(status.Error(), err.Error())
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	// Call the setter
+	err = SetSessionValue(params["name"], newdata, false)
+
+	if err != nil {
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	// Respond with success
+	json.NewEncoder(w).Encode("OK")
 }
 
 // SetSessionValue does the actual setting of Session Values
-func SetSessionValue(name string, newData SessionData, quiet bool) {
+func SetSessionValue(name string, newData SessionData, quiet bool) error {
+	// Ensure name is valid
+	if !utils.IsValidName(name) {
+		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", name)
+	}
+
 	// Set last updated time to now
 	var timestamp = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
 	newData.LastUpdate = timestamp
@@ -240,11 +243,15 @@ func SetSessionValue(name string, newData SessionData, quiet bool) {
 		err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(name, " ", "_", -1), valueString))
 
 		if err != nil {
-			SessionStatus.Log(status.Error(), "Error writing "+name+"="+newData.Value+" to influx DB: "+err.Error())
+			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", name, newData.Value, err.Error())
+			SessionStatus.Log(status.Error(), errorText)
+			return errors.New(errorText)
 		} else if !quiet {
-			SessionStatus.Log(status.OK(), "Logged "+name+"="+newData.Value+" to database")
+			SessionStatus.Log(status.OK(), fmt.Sprintf("Logged %s=%s to database", name, newData.Value))
 		}
 	}
+
+	return nil
 }
 
 // SetSessionRawValue prepares a SessionData structure before passing it to the setter
@@ -326,52 +333,5 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode("OK")
-}
-
-//
-// ALPR Functions
-//
-
-// LogALPR creates a new entry in running SQL DB
-func LogALPR(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	decoder := json.NewDecoder(r.Body)
-	var newplate ALPRData
-	err := decoder.Decode(&newplate)
-
-	// Log if requested
-	if VerboseOutput {
-		SessionStatus.Log(status.OK(), "Responding to POST request for ALPR")
-	}
-
-	if err != nil {
-		SessionStatus.Log(status.Error(), "Error decoding incoming ALPR data: "+err.Error())
-	} else {
-		// Decode plate/time/etc values
-		plate := strings.Replace(params["plate"], " ", "_", -1)
-		percent := newplate.Percent
-
-		if plate != "" {
-			// Insert into database
-			if Config.DatabaseEnabled {
-				err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
-
-				if err != nil {
-					SessionStatus.Log(status.Error(), "Error writing "+plate+" to influx DB: "+err.Error())
-				} else {
-					SessionStatus.Log(status.OK(), "Logged "+plate+" to database")
-				}
-			}
-		} else {
-			SessionStatus.Log(status.Error(), fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent))
-		}
-	}
-
-	json.NewEncoder(w).Encode("OK")
-}
-
-// RestartALPR posts remote device to restart ALPR service
-func RestartALPR(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
 }
