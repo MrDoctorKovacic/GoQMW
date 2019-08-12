@@ -1,4 +1,4 @@
-package utils
+package logging
 
 import (
 	"bytes"
@@ -48,8 +48,8 @@ func EnableLogging(debugFilename string, Timezone *time.Location) (bool, error) 
 	return true, nil
 }
 
-// LoggingMiddleware will generate a file for reproducing a live session, for debug purposes
-func LoggingMiddleware(next http.Handler) http.Handler {
+// LogMiddleware will generate a file for reproducing a live session, for debug purposes
+func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		var timestamp = time.Now().In(timezone).Format(time.RFC850)
