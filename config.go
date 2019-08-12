@@ -11,7 +11,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/tarm/serial"
 )
 
@@ -60,7 +60,7 @@ func parseConfig() {
 	if err != nil {
 		panic(err)
 	}
-	MainStatus.Log(status.OK(), "Using settings: "+string(out))
+	MainStatus.Log(utils.OK(), "Using settings: "+string(out))
 
 	// Init session tracking (with or without Influx)
 	// Fetch and append old session from disk if allowed
@@ -93,14 +93,14 @@ func parseConfig() {
 			// Set up ping functionality
 			// Proprietary pinging for component tracking
 			if configMap["PING_HOST"] != "" {
-				status.RemotePingAddress = configMap["PING_HOST"]
+				utils.RemotePingAddress = configMap["PING_HOST"]
 			} else {
-				MainStatus.Log(status.OK(), "[DISABLED] Not forwarding pings to host")
+				MainStatus.Log(utils.OK(), "[DISABLED] Not forwarding pings to host")
 			}
 
 		} else {
 			Config.DatabaseEnabled = false
-			MainStatus.Log(status.OK(), "[DISABLED] Not logging to influx db")
+			MainStatus.Log(utils.OK(), "[DISABLED] Not logging to influx db")
 		}
 
 		// Set up bluetooth
@@ -134,8 +134,8 @@ func parseConfig() {
 			if usingHardwareBaud {
 				baudrateString, err := strconv.Atoi(hardwareSerialBaud)
 				if err != nil {
-					MainStatus.Log(status.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
-					MainStatus.Log(status.Warning(), "Disabling hardware serial functionality")
+					MainStatus.Log(utils.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
+					MainStatus.Log(utils.Warning(), "Disabling hardware serial functionality")
 					Config.HardwareSerialEnabled = false
 					return
 				}
@@ -149,7 +149,7 @@ func parseConfig() {
 			parseSerialDevices(settingsData)
 		}
 	} else {
-		MainStatus.Log(status.Warning(), "No config found in settings file, not parsing through config")
+		MainStatus.Log(utils.Warning(), "No config found in settings file, not parsing through config")
 	}
 }
 

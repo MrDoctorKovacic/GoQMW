@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/parnurzeal/gorequest"
 )
 
@@ -15,7 +15,7 @@ type Influx struct {
 }
 
 // InfluxStatus will control logging and reporting of status / warnings / errors
-var InfluxStatus = status.NewStatus("Influx")
+var InfluxStatus = utils.NewStatus("Influx")
 
 // Ping influx DB server for connectivity
 func (db *Influx) Ping() error {
@@ -23,12 +23,12 @@ func (db *Influx) Ping() error {
 	request := gorequest.New()
 	resp, _, errs := request.Get(db.Host + "/ping").End()
 	if errs != nil {
-		InfluxStatus.Log(status.Error(), "Error opening JSON file on disk: "+errs[0].Error())
+		InfluxStatus.Log(utils.Error(), "Error opening JSON file on disk: "+errs[0].Error())
 		log.Println("Errored: " + errs[0].Error())
 		return errs[0]
 	}
 
-	InfluxStatus.Log(status.OK(), fmt.Sprintf("[Influx] Ping response: %d", resp.StatusCode))
+	InfluxStatus.Log(utils.OK(), fmt.Sprintf("[Influx] Ping response: %d", resp.StatusCode))
 
 	// Create Database if it doesn't exist
 	db.CreateDatabase()
@@ -42,13 +42,13 @@ func (db *Influx) Write(msg string) error {
 	request := gorequest.New()
 	resp, body, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
 	if errs != nil {
-		InfluxStatus.Log(status.Error(), fmt.Sprintf("Error when writing to DB: %s/write?db=%s with message %s", db.Host, db.Database, msg))
+		InfluxStatus.Log(utils.Error(), fmt.Sprintf("Error when writing to DB: %s/write?db=%s with message %s", db.Host, db.Database, msg))
 		return errs[0]
 	}
 
 	if resp.StatusCode != 204 {
-		InfluxStatus.Log(status.Warning(), fmt.Sprintf("Write/Post request response: %d", resp.StatusCode))
-		InfluxStatus.Log(status.Warning(), "Received: "+body)
+		InfluxStatus.Log(utils.Warning(), fmt.Sprintf("Write/Post request response: %d", resp.StatusCode))
+		InfluxStatus.Log(utils.Warning(), "Received: "+body)
 	}
 
 	return nil
@@ -62,8 +62,8 @@ func (db *Influx) Query(msg string) (string, error) {
 		return "", errs[0]
 	}
 
-	InfluxStatus.Log(status.OK(), fmt.Sprintf("Query request response: %d", resp.StatusCode))
-	InfluxStatus.Log(status.OK(), "Received: "+body)
+	InfluxStatus.Log(utils.OK(), fmt.Sprintf("Query request response: %d", resp.StatusCode))
+	InfluxStatus.Log(utils.OK(), "Received: "+body)
 	return body, nil
 }
 
@@ -75,8 +75,8 @@ func (db *Influx) ShowDatabases() (string, error) {
 		return "", errs[0]
 	}
 
-	InfluxStatus.Log(status.OK(), fmt.Sprintf("Show Database request response: %d", resp.StatusCode))
-	InfluxStatus.Log(status.OK(), "Received: "+body)
+	InfluxStatus.Log(utils.OK(), fmt.Sprintf("Show Database request response: %d", resp.StatusCode))
+	InfluxStatus.Log(utils.OK(), "Received: "+body)
 	return body, nil
 }
 
@@ -89,8 +89,8 @@ func (db *Influx) CreateDatabase() error {
 	}
 
 	if resp.StatusCode != 200 {
-		InfluxStatus.Log(status.OK(), fmt.Sprintf("Create Database request response: %d", resp.StatusCode))
-		InfluxStatus.Log(status.OK(), "Received: "+body)
+		InfluxStatus.Log(utils.OK(), fmt.Sprintf("Create Database request response: %d", resp.StatusCode))
+		InfluxStatus.Log(utils.OK(), "Received: "+body)
 	}
 	return nil
 }

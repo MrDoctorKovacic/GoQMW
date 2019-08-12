@@ -12,7 +12,6 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/MrDoctorKovacic/MDroid-Core/status"
 	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 )
@@ -30,7 +29,7 @@ func reboot(w http.ResponseWriter, r *http.Request) {
 // Stop MDroid-Core service
 func stop(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
-	MainStatus.Log(status.OK(), "Stopping MDroid Service")
+	MainStatus.Log(utils.OK(), "Stopping MDroid Service")
 	os.Exit(0)
 }
 
@@ -63,7 +62,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log if requested
-	pybus.PybusStatus.Log(status.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
+	pybus.PybusStatus.Log(utils.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
 
 	// It ain't really that hard to do and
 	// I ain't trying to be in love with you and
@@ -113,7 +112,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "RADIO":
 		pybus.PushQueue("pressStereoPower")
 	default:
-		pybus.PybusStatus.Log(status.Error(), fmt.Sprintf("Invalid device %s", device))
+		pybus.PybusStatus.Log(utils.Error(), fmt.Sprintf("Invalid device %s", device))
 		json.NewEncoder(w).Encode(fmt.Sprintf("Invalid device %s", device))
 		return
 	}
@@ -140,7 +139,7 @@ func startRouter() {
 	//
 	// Ping routes
 	//
-	router.HandleFunc("/ping/{device}", status.Ping).Methods("POST")
+	router.HandleFunc("/ping/{device}", utils.Ping).Methods("POST")
 
 	//
 	// Session routes
@@ -191,9 +190,9 @@ func startRouter() {
 	//
 	// Status Routes
 	//
-	router.HandleFunc("/status", status.GetStatus).Methods("GET")
-	router.HandleFunc("/status/{name}", status.GetStatusValue).Methods("GET")
-	router.HandleFunc("/status/{name}", status.SetStatus).Methods("POST")
+	router.HandleFunc("/status", utils.GetStatus).Methods("GET")
+	router.HandleFunc("/status/{name}", utils.GetStatusValue).Methods("GET")
+	router.HandleFunc("/status/{name}", utils.SetStatus).Methods("POST")
 
 	//
 	// Catch-All for (hopefully) a pre-approved pybus function
@@ -213,8 +212,8 @@ func startRouter() {
 		if enabled {
 			router.Use(utils.LoggingMiddleware)
 		} else {
-			MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
-			MainStatus.Log(status.Error(), err.Error())
+			MainStatus.Log(utils.Error(), "Failed to open debug file, is it writable?")
+			MainStatus.Log(utils.Error(), err.Error())
 		}
 	}
 
