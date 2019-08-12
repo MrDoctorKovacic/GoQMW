@@ -29,6 +29,7 @@ type ConfigValues struct {
 	HardwareSerialPort    string
 	HardwareSerialBaud    string
 	SerialControlDevice   *serial.Port
+	VerboseOutput         bool
 }
 
 // Config defined here, to be saved to below
@@ -50,8 +51,8 @@ func parseConfig() {
 	flag.Parse()
 
 	// Parse settings file
-	settingsData, useVerboseOutput := settings.SetupSettings(settingsFile)
-	VerboseOutput = useVerboseOutput
+	settingsData, VerboseOutput := settings.SetupSettings(settingsFile)
+	Config.VerboseOutput = VerboseOutput
 	SetupSessions(sessionFile)
 
 	// Log settings
