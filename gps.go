@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/utils"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
 
 // GPSData holds various data points we expect to receive
@@ -33,7 +33,7 @@ var GPS GPSData
 func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
 	if VerboseOutput {
-		SessionStatus.Log(utils.OK(), "Responding to GET request for all GPS values")
+		SessionStatus.Log(logging.OK(), "Responding to GET request for all GPS values")
 	}
 	json.NewEncoder(w).Encode(GPS)
 }
@@ -45,7 +45,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 
 	// Log if requested
 	if VerboseOutput {
-		SessionStatus.Log(utils.OK(), "Responding to POST request for gps values")
+		SessionStatus.Log(logging.OK(), "Responding to POST request for gps values")
 	}
 
 	// Prepare new value
@@ -91,9 +91,9 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		err := DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 		if err != nil {
-			SessionStatus.Log(utils.Error(), "Error writing string "+postingString.String()+" to influx DB: "+err.Error())
+			SessionStatus.Log(logging.Error(), "Error writing string "+postingString.String()+" to influx DB: "+err.Error())
 		} else {
-			SessionStatus.Log(utils.OK(), "Logged "+postingString.String()+" to database")
+			SessionStatus.Log(logging.OK(), "Logged "+postingString.String()+" to database")
 		}
 	}
 

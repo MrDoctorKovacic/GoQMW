@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/utils"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 )
 
@@ -17,7 +17,7 @@ type ALPRData struct {
 }
 
 // ALPRStatus will control logging and reporting of status / warnings / errors
-var ALPRStatus = utils.NewStatus("ALPR")
+var ALPRStatus = logging.NewStatus("ALPR")
 
 //
 // ALPR Functions
@@ -32,11 +32,11 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 
 	// Log if requested
 	if Config.VerboseOutput {
-		ALPRStatus.Log(utils.OK(), "Responding to POST request for ALPR")
+		ALPRStatus.Log(logging.OK(), "Responding to POST request for ALPR")
 	}
 
 	if err != nil {
-		ALPRStatus.Log(utils.Error(), fmt.Sprintf("Error decoding incoming ALPR data: %s", err.Error()))
+		ALPRStatus.Log(logging.Error(), fmt.Sprintf("Error decoding incoming ALPR data: %s", err.Error()))
 		return
 	}
 
@@ -51,16 +51,16 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				errorText := fmt.Sprintf("Error writing %s to influx DB: %s", plate, err.Error())
-				ALPRStatus.Log(utils.Error(), errorText)
+				ALPRStatus.Log(logging.Error(), errorText)
 				json.NewEncoder(w).Encode(errorText)
 				return
 			}
 
-			ALPRStatus.Log(utils.OK(), fmt.Sprintf("Logged %s to database", plate))
+			ALPRStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", plate))
 		}
 	} else {
 		errorText := fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent)
-		ALPRStatus.Log(utils.Error(), errorText)
+		ALPRStatus.Log(logging.Error(), errorText)
 		json.NewEncoder(w).Encode(errorText)
 		return
 	}

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 )
@@ -23,7 +24,7 @@ var Settings map[string]map[string]string
 var settingsLock sync.Mutex
 
 // SettingsStatus will control logging and reporting of status / warnings / errors
-var SettingsStatus = utils.NewStatus("Settings")
+var SettingsStatus = logging.NewStatus("Settings")
 
 // Configure verbose output
 var verboseOutput bool
@@ -60,14 +61,14 @@ func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) 
 			// Log settings
 			out, err := json.Marshal(Settings)
 			if err == nil {
-				SettingsStatus.Log(utils.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
+				SettingsStatus.Log(logging.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
 				return Settings, verboseOutput
 			}
 
 			// If err is set, re-marshaling the settings failed
-			SettingsStatus.Log(utils.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
+			SettingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
 		} else if initSettings == nil {
-			SettingsStatus.Log(utils.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
+			SettingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
 		}
 	}
 
@@ -90,14 +91,14 @@ func parseSettings(settingsFile string) (map[string]map[string]string, error) {
 	// Open settings file
 	file, err := os.Open(settingsFile)
 	if err != nil {
-		SettingsStatus.Log(utils.Error(), "Error opening file '"+settingsFile+"': "+err.Error())
+		SettingsStatus.Log(logging.Error(), "Error opening file '"+settingsFile+"': "+err.Error())
 		return nil, err
 	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&data)
 	if err != nil {
-		SettingsStatus.Log(utils.Error(), "Error parsing json from file '"+settingsFile+"': "+err.Error())
+		SettingsStatus.Log(logging.Error(), "Error parsing json from file '"+settingsFile+"': "+err.Error())
 		return nil, err
 	}
 
@@ -111,25 +112,25 @@ func writeSettings(file string) error {
 	settingsLock.Unlock()
 
 	if err != nil {
-		SettingsStatus.Log(utils.Error(), "Failed to marshall Settings")
+		SettingsStatus.Log(logging.Error(), "Failed to marshall Settings")
 		return err
 	}
 
 	err = ioutil.WriteFile(file, settingsJSON, 0644)
 	if err != nil {
-		SettingsStatus.Log(utils.Error(), "Failed to write Settings to "+file+": "+err.Error())
+		SettingsStatus.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
 		return err
 	}
 
 	// Log success
-	SettingsStatus.Log(utils.OK(), "Successfully wrote Settings to "+file)
+	SettingsStatus.Log(logging.OK(), "Successfully wrote Settings to "+file)
 	return nil
 }
 
 // GetAllSettings returns all current settings
 func GetAllSettings(w http.ResponseWriter, r *http.Request) {
 	if verboseOutput {
-		SettingsStatus.Log(utils.OK(), "Responding to GET request with entire settings map.")
+		SettingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
 	}
 	json.NewEncoder(w).Encode(Settings)
 }
@@ -140,7 +141,7 @@ func GetSetting(w http.ResponseWriter, r *http.Request) {
 	componentName := utils.FormatName(params["componentName"])
 
 	if verboseOutput {
-		SettingsStatus.Log(utils.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
+		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 	}
 
 	json.NewEncoder(w).Encode(Settings[componentName])
@@ -153,7 +154,7 @@ func GetSettingValue(w http.ResponseWriter, r *http.Request) {
 	settingName := utils.FormatName(params["name"])
 
 	if verboseOutput {
-		SettingsStatus.Log(utils.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 	}
 
 	json.NewEncoder(w).Encode(Settings[componentName][settingName])
@@ -170,7 +171,7 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 
 	// Log if requested
 	if verboseOutput {
-		SettingsStatus.Log(utils.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
+		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
 	}
 
 	// Do the dirty work elsewhere
@@ -193,7 +194,7 @@ func SetSetting(componentName string, settingName string, settingValue string) {
 	settingsLock.Unlock()
 
 	// Log our success
-	SettingsStatus.Log(utils.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
+	SettingsStatus.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
 	writeSettings(settingsFile)

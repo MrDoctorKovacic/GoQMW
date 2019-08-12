@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -37,7 +38,7 @@ var sessionLock sync.Mutex
 var upgrader = websocket.Upgrader{} // use default options
 
 // SessionStatus will control logging and reporting of status / warnings / errors
-var SessionStatus = utils.NewStatus("Session")
+var SessionStatus = logging.NewStatus("Session")
 
 // SetupSessions will init the current session with a file
 func SetupSessions(sessionFile string) {
@@ -47,13 +48,13 @@ func SetupSessions(sessionFile string) {
 		jsonFile, err := os.Open(sessionFile)
 
 		if err != nil {
-			SessionStatus.Log(utils.Warning(), "Error opening JSON file on disk: "+err.Error())
+			SessionStatus.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
 		} else {
 			byteValue, _ := ioutil.ReadAll(jsonFile)
 			json.Unmarshal(byteValue, &Session)
 		}
 	} else {
-		SessionStatus.Log(utils.OK(), "Not saving or recovering from file")
+		SessionStatus.Log(logging.OK(), "Not saving or recovering from file")
 	}
 }
 
@@ -66,7 +67,7 @@ func HandleGetSession(w http.ResponseWriter, r *http.Request) {
 func GetSession() map[string]SessionData {
 	// Log if requested
 	if VerboseOutput {
-		SessionStatus.Log(utils.OK(), "Responding to request for full session")
+		SessionStatus.Log(logging.OK(), "Responding to request for full session")
 	}
 
 	sessionLock.Lock()
@@ -82,31 +83,31 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Log if requested
 	if VerboseOutput {
-		SessionStatus.Log(utils.OK(), "Responding to request for session websocket")
+		SessionStatus.Log(logging.OK(), "Responding to request for session websocket")
 	}
 
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		SessionStatus.Log(utils.Error(), "Error upgrading webstream: "+err.Error())
+		SessionStatus.Log(logging.Error(), "Error upgrading webstream: "+err.Error())
 		return
 	}
 	defer c.Close()
 	for {
 		_, _, err := c.ReadMessage()
 		if err != nil {
-			SessionStatus.Log(utils.Error(), "Error reading from webstream: "+err.Error())
+			SessionStatus.Log(logging.Error(), "Error reading from webstream: "+err.Error())
 			break
 		}
 
 		// Very verbose
-		//SessionStatus.Log(utils.OK(), "Received: "+string(message))
+		//SessionStatus.Log(logging.OK(), "Received: "+string(message))
 
 		sessionLock.Lock()
 		err = c.WriteJSON(Session)
 		sessionLock.Unlock()
 
 		if err != nil {
-			SessionStatus.Log(utils.Error(), "Error writing to webstream: "+err.Error())
+			SessionStatus.Log(logging.Error(), "Error writing to webstream: "+err.Error())
 			break
 		}
 	}
@@ -130,7 +131,7 @@ func GetSessionValue(name string) (value SessionData, err error) {
 
 	// Log if requested
 	if VerboseOutput {
-		SessionStatus.Log(utils.OK(), fmt.Sprintf("Responding to request for session value %s", name))
+		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session value %s", name))
 	}
 
 	sessionLock.Lock()
@@ -166,8 +167,8 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newdata)
 
 	if err != nil {
-		SessionStatus.Log(utils.Error(), "Error decoding incoming JSON")
-		SessionStatus.Log(utils.Error(), err.Error())
+		SessionStatus.Log(logging.Error(), "Error decoding incoming JSON")
+		SessionStatus.Log(logging.Error(), err.Error())
 		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
@@ -203,7 +204,7 @@ func SetSessionValue(name string, newData SessionData, quiet bool) error {
 
 	// Log if requested
 	if VerboseOutput && !quiet {
-		SessionStatus.Log(utils.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
+		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
 	}
 
 	// Add / update value in global session after locking access to session
@@ -228,10 +229,10 @@ func SetSessionValue(name string, newData SessionData, quiet bool) error {
 
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", name, newData.Value, err.Error())
-			SessionStatus.Log(utils.Error(), errorText)
+			SessionStatus.Log(logging.Error(), errorText)
 			return errors.New(errorText)
 		} else if !quiet {
-			SessionStatus.Log(utils.OK(), fmt.Sprintf("Logged %s=%s to database", name, newData.Value))
+			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", name, newData.Value))
 		}
 	}
 
