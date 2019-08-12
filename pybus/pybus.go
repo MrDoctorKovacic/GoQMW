@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -16,7 +16,7 @@ var pybusQueue []string
 var pybusQueueLock sync.Mutex
 
 // PybusStatus will control logging and reporting of status / warnings / errors
-var PybusStatus = status.NewStatus("Pybus")
+var PybusStatus = utils.NewStatus("Pybus")
 
 // PushQueue adds a directive to the pybus queue
 // msg can either be a directive (e.g. 'openTrunk')
@@ -42,13 +42,13 @@ func PushQueue(command string) {
 	pybusQueue = append(pybusQueue, command)
 	pybusQueueLock.Unlock()
 
-	PybusStatus.Log(status.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
+	PybusStatus.Log(utils.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
 }
 
 // PopQueue pops a directive off the queue after confirming it occured
 func PopQueue(w http.ResponseWriter, r *http.Request) {
 	if len(pybusQueue) > 0 {
-		PybusStatus.Log(status.OK(), fmt.Sprintf("Dumping %s from Pybus queue to get request", pybusQueue[0]))
+		PybusStatus.Log(utils.OK(), fmt.Sprintf("Dumping %s from Pybus queue to get request", pybusQueue[0]))
 		json.NewEncoder(w).Encode(pybusQueue[0])
 
 		// Pop off queue
@@ -83,7 +83,7 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 	out, err := exec.Command("/home/pi/le/auto/pyBus/startup_pybus.sh").Output()
 
 	if err != nil {
-		PybusStatus.Log(status.Error(), fmt.Sprintf("Error restarting PyBus: \n%s", err.Error()))
+		PybusStatus.Log(utils.Error(), fmt.Sprintf("Error restarting PyBus: \n%s", err.Error()))
 		json.NewEncoder(w).Encode(err)
 	} else {
 		json.NewEncoder(w).Encode(out)

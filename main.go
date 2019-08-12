@@ -3,11 +3,11 @@ package main
 import (
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 )
 
 // MainStatus will control logging and reporting of status / warnings / errors
-var MainStatus = status.NewStatus("Main")
+var MainStatus = utils.NewStatus("Main")
 
 // VerboseOutput for logging in package main
 var VerboseOutput bool

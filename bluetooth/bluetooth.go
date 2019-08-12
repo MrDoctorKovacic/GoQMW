@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gosimple/slug"
 )
 
 var btAddress string
 
 // BluetoothStatus will control logging and reporting of status / warnings / errors
-var BluetoothStatus = status.NewStatus("Bluetooth")
+var BluetoothStatus = utils.NewStatus("Bluetooth")
 
 // Regex expressions for parsing dbus output
 var re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
@@ -55,7 +55,7 @@ func cleanDBusOutput(output string) map[string]string {
 		}
 
 	} else {
-		BluetoothStatus.Log(status.Error(), "Error parsing dbus output")
+		BluetoothStatus.Log(utils.Error(), "Error parsing dbus output")
 	}
 
 	return outputMap
@@ -63,7 +63,7 @@ func cleanDBusOutput(output string) map[string]string {
 
 // EnableAutoRefresh continously refreshes bluetooth media devices
 func EnableAutoRefresh() {
-	BluetoothStatus.Log(status.OK(), "Enabling auto refresh of BT address")
+	BluetoothStatus.Log(utils.OK(), "Enabling auto refresh of BT address")
 	go startAutoRefresh()
 }
 
@@ -77,7 +77,7 @@ func startAutoRefresh() {
 
 // ForceRefresh to immediately reload bt address
 func ForceRefresh(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Forcing refresh of BT address")
+	BluetoothStatus.Log(utils.OK(), "Forcing refresh of BT address")
 	go getConnectedAddress()
 }
 
@@ -88,14 +88,14 @@ func getConnectedAddress() string {
 	out, err := exec.Command("bash", "-c", args).Output()
 
 	if err != nil {
-		BluetoothStatus.Log(status.Error(), err.Error())
+		BluetoothStatus.Log(utils.Error(), err.Error())
 		return err.Error()
 	}
 
 	// Use new device if found
 	newAddress := strings.TrimSpace(string(out))
 	if newAddress != "" && btAddress != newAddress {
-		BluetoothStatus.Log(status.OK(), "Found new connected media device with address: "+newAddress)
+		BluetoothStatus.Log(utils.OK(), "Found new connected media device with address: "+newAddress)
 		SetAddress(newAddress)
 	}
 
@@ -107,7 +107,7 @@ func SetAddress(address string) {
 	// Format address for dbus
 	if address != "" {
 		btAddress = strings.Replace(strings.TrimSpace(address), ":", "_", -1)
-		BluetoothStatus.Log(status.OK(), "Now routing Bluetooth commands to "+btAddress)
+		BluetoothStatus.Log(utils.OK(), "Now routing Bluetooth commands to "+btAddress)
 
 		// Set new address to persist in settings file
 		settings.SetSetting("CONFIG", "BLUETOOTH_ADDRESS", btAddress)
@@ -127,19 +127,19 @@ func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 		err := cmd.Run()
 
 		if err != nil {
-			BluetoothStatus.Log(status.Error(), err.Error())
-			BluetoothStatus.Log(status.Error(), stderr.String())
+			BluetoothStatus.Log(utils.Error(), err.Error())
+			BluetoothStatus.Log(utils.Error(), stderr.String())
 			return stderr.String(), false
 		}
 
 		if !hideOutput {
-			BluetoothStatus.Log(status.OK(), out.String())
+			BluetoothStatus.Log(utils.OK(), out.String())
 		}
 
 		return out.String(), true
 	}
 
-	BluetoothStatus.Log(status.Warning(), "No valid BT Address to run command")
+	BluetoothStatus.Log(utils.Warning(), "No valid BT Address to run command")
 
 	return "No valid BT Address to run command", false
 }
@@ -156,8 +156,8 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	err := cmd.Run()
 
 	if err != nil {
-		BluetoothStatus.Log(status.Error(), err.Error())
-		BluetoothStatus.Log(status.Error(), stderr.String())
+		BluetoothStatus.Log(utils.Error(), err.Error())
+		BluetoothStatus.Log(utils.Error(), stderr.String())
 	}
 
 	json.NewEncoder(w).Encode("OK")
@@ -175,8 +175,8 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 	err := cmd.Run()
 
 	if err != nil {
-		BluetoothStatus.Log(status.Error(), err.Error())
-		BluetoothStatus.Log(status.Error(), stderr.String())
+		BluetoothStatus.Log(utils.Error(), err.Error())
+		BluetoothStatus.Log(utils.Error(), stderr.String())
 	}
 
 	json.NewEncoder(w).Encode("OK")
@@ -184,7 +184,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 
 // GetDeviceInfo attempts to get metadata about connected device
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Getting device info...")
+	BluetoothStatus.Log(utils.OK(), "Getting device info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	if ok {
 		json.NewEncoder(w).Encode(cleanDBusOutput(result))
@@ -195,12 +195,12 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Getting device info...")
+	BluetoothStatus.Log(utils.OK(), "Getting device info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	if ok {
 		deviceStatus := cleanDBusOutput(result)
 
-		BluetoothStatus.Log(status.OK(), "Getting media info...")
+		BluetoothStatus.Log(utils.OK(), "Getting media info...")
 		result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
 		if ok {
 			// Append device status to media info
@@ -226,28 +226,28 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 
 // Prev skips to previous track
 func Prev(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Going to previous track...")
+	BluetoothStatus.Log(utils.OK(), "Going to previous track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Going to next track...")
+	BluetoothStatus.Log(utils.OK(), "Going to next track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Play attempts to play bluetooth media
 func Play(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Attempting to play media...")
+	BluetoothStatus.Log(utils.OK(), "Attempting to play media...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
 
 // Pause attempts to pause bluetooth media
 func Pause(w http.ResponseWriter, r *http.Request) {
-	BluetoothStatus.Log(status.OK(), "Attempting to pause media...")
+	BluetoothStatus.Log(utils.OK(), "Attempting to pause media...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"}, false)
 	json.NewEncoder(w).Encode("OK")
 }
