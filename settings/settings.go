@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -83,11 +83,6 @@ func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) 
 	return Settings, verboseOutput
 }
 
-// Formats in upper case with underscores replacing spaces
-func formatSetting(text string) string {
-	return strings.ToUpper(strings.Replace(text, " ", "_", -1))
-}
-
 // parseSettings will open and interpret program settings,
 // as well as return the generic settings from last session
 func parseSettings(settingsFile string) (map[string]map[string]string, error) {
@@ -143,7 +138,7 @@ func GetAllSettings(w http.ResponseWriter, r *http.Request) {
 // GetSetting returns all the values of a specific setting
 func GetSetting(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatSetting(params["componentName"])
+	componentName := utils.FormatName(params["componentName"])
 
 	if verboseOutput {
 		SettingsStatus.Log(status.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
@@ -155,8 +150,8 @@ func GetSetting(w http.ResponseWriter, r *http.Request) {
 // GetSettingValue returns a specific setting value
 func GetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatSetting(params["componentName"])
-	settingName := formatSetting(params["name"])
+	componentName := utils.FormatName(params["componentName"])
+	settingName := utils.FormatName(params["name"])
 
 	if verboseOutput {
 		SettingsStatus.Log(status.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
@@ -170,8 +165,8 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Parse out params
-	componentName := formatSetting(params["component"])
-	settingName := formatSetting(params["name"])
+	componentName := utils.FormatName(params["component"])
+	settingName := utils.FormatName(params["name"])
 	settingValue := params["value"]
 
 	// Log if requested

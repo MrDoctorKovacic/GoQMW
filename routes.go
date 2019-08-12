@@ -12,6 +12,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -210,9 +211,9 @@ func startRouter() {
 	if Config.DebugSessionFile != "" {
 		// Log all routes for debugging later, if enabled
 		// The locks here slow things down, should only be used to generate a run file, not in production
-		enabled, err := EnableLogging(Config.DebugSessionFile)
+		enabled, err := utils.EnableLogging(Config.DebugSessionFile, Timezone)
 		if enabled {
-			router.Use(LoggingMiddleware)
+			router.Use(utils.LoggingMiddleware)
 		} else {
 			MainStatus.Log(status.Error(), "Failed to open debug file, is it writable?")
 			MainStatus.Log(status.Error(), err.Error())
