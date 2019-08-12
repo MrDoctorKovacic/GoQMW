@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -44,49 +45,44 @@ func welcomeRoute(w http.ResponseWriter, r *http.Request) {
 func parseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	// Format similarly to the rest of MDroid suite
-	device := strings.TrimSpace(strings.ToUpper(strings.Replace(params["device"], " ", "_", -1)))
-	commandRaw := strings.TrimSpace(strings.ToUpper(strings.Replace(params["command"], " ", "_", -1)))
+	if len(params["device"]) == 0 || len(params["command"]) == 0 {
+		json.NewEncoder(w).Encode("Error: One or more required params is empty")
+		return
+	}
+
+	// Format similarly to the rest of MDroid suite, removing plurals
+	// Formatting allows for fuzzier requests
+	device := strings.TrimSuffix(utils.FormatName(params["device"]), "S")
+	command := strings.TrimSuffix(utils.FormatName(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
-	var isPositive bool
-	if commandRaw == "ON" || commandRaw == "UP" || commandRaw == "LOCK" || commandRaw == "OPEN" || commandRaw == "TOGGLE" || commandRaw == "PUSH" {
-		isPositive = true
-	} else if commandRaw == "OFF" || commandRaw == "DOWN" || commandRaw == "UNLOCK" || commandRaw == "CLOSE" {
-		isPositive = false
-	} else {
-		// Command didn't match any of the above, get out of here
-		json.NewEncoder(w).Encode("ERROR: INVALID COMMAND")
+	isPositive, err := utils.IsPositiveRequest(command)
+	if err != nil {
+		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
 
 	// Log if requested
-	pybus.PybusStatus.Log(status.OK(), "Attempting to put "+commandRaw+" to device "+device)
+	pybus.PybusStatus.Log(status.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
 
 	// It ain't really that hard to do and
 	// I ain't trying to be in love with you and
 	// All I wanted was a moment or two to
 	// See if you could do that switch-a-roo
 	switch device {
-	case "DOORS":
-		fallthrough
 	case "DOOR":
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
-		deviceStatus, ok := GetSessionValue("DOORS_LOCKED")
-		if ok && Config.HardwareSerialEnabled &&
+		deviceStatus, err := GetSessionValue("DOORS_LOCKED")
+		if err != nil && Config.HardwareSerialEnabled &&
 			(isPositive && deviceStatus.Value == "FALSE") ||
 			(!isPositive && deviceStatus.Value == "TRUE") {
 			WriteSerial("toggleDoorLocks")
 		}
-	case "WINDOWS":
-		fallthrough
 	case "WINDOW":
 		if isPositive {
-			pybus.PushQueue("popWindowsUp")
-			pybus.PushQueue("popWindowsUp")
+			pybus.PushQueue("rollWindowsUp")
 		} else {
-			pybus.PushQueue("popWindowsDown")
-			pybus.PushQueue("popWindowsDown")
+			pybus.PushQueue("rollWindowsDown")
 		}
 	case "CONVERTIBLE_TOP":
 		fallthrough
@@ -98,7 +94,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	case "TRUNK":
 		pybus.PushQueue("openTrunk")
-	case "HAZARDS":
+	case "HAZARD":
 		if Config.HardwareSerialEnabled {
 			WriteSerial("toggleHazards")
 		}
@@ -110,13 +106,15 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	case "MODE":
 		pybus.PushQueue("pressMode")
+	case "NAV":
+		fallthrough
 	case "STEREO":
 		fallthrough
 	case "RADIO":
 		pybus.PushQueue("pressStereoPower")
 	default:
-		pybus.PybusStatus.Log(status.Error(), "Invalid device "+device)
-		json.NewEncoder(w).Encode("ERROR: INVALID DEVICE")
+		pybus.PybusStatus.Log(status.Error(), fmt.Sprintf("Invalid device %s", device))
+		json.NewEncoder(w).Encode(fmt.Sprintf("Invalid device %s", device))
 		return
 	}
 
