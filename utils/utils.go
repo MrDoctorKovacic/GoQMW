@@ -2,7 +2,7 @@ package utils
 
 import "strings"
 
-// Formats in upper case with underscores replacing spaces
-func formatName(text string) string {
+// FormatName returns string in upper case with underscores replacing spaces
+func FormatName(text string) string {
 	return strings.ToUpper(strings.Replace(text, " ", "_", -1))
 }

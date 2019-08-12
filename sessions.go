@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/status"
+	"github.com/MrDoctorKovacic/MDroid-Core/utils"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
@@ -189,9 +190,6 @@ func HandleSetSessionValue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Trim off whitespace
-		newdata.Value = strings.TrimSpace(newdata.Value)
-
 		// Call the setter
 		// TODO: Error handling
 		SetSessionValue(params["name"], newdata, false)
@@ -209,6 +207,12 @@ func SetSessionValue(name string, newData SessionData, quiet bool) {
 	// Set last updated time to now
 	var timestamp = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
 	newData.LastUpdate = timestamp
+
+	// Correct name
+	name = utils.FormatName(name)
+
+	// Trim off whitespace
+	newData.Value = strings.TrimSpace(newData.Value)
 
 	// Log if requested
 	if VerboseOutput && !quiet {
