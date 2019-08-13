@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/utils"
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/gorilla/mux"
 )
 
@@ -139,7 +139,7 @@ func GetAllSettings(w http.ResponseWriter, r *http.Request) {
 // GetSetting returns all the values of a specific setting
 func GetSetting(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := utils.FormatName(params["componentName"])
+	componentName := formatting.FormatName(params["componentName"])
 
 	if verboseOutput {
 		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
@@ -151,8 +151,8 @@ func GetSetting(w http.ResponseWriter, r *http.Request) {
 // GetSettingValue returns a specific setting value
 func GetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := utils.FormatName(params["componentName"])
-	settingName := utils.FormatName(params["name"])
+	componentName := formatting.FormatName(params["componentName"])
+	settingName := formatting.FormatName(params["name"])
 
 	if verboseOutput {
 		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
@@ -166,8 +166,8 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Parse out params
-	componentName := utils.FormatName(params["component"])
-	settingName := utils.FormatName(params["name"])
+	componentName := formatting.FormatName(params["component"])
+	settingName := formatting.FormatName(params["name"])
 	settingValue := params["value"]
 
 	// Log if requested

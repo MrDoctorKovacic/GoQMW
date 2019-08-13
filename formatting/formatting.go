@@ -1,5 +1,5 @@
-// Package utils is bad form but these are common utilities used across the MDroid suite
-package utils
+// Package formatting are common utilities used across the MDroid suite
+package formatting
 
 import (
 	"fmt"
