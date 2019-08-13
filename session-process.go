@@ -42,8 +42,8 @@ func (triggerPackage SessionPackage) modifyAuxVoltage() {
 	}
 
 	realVoltage := voltageModifier * (((voltageFloat * 3.3) / 4095.0) / 0.2)
-	SetSessionRawValue("AUX_VOLTAGE", strconv.FormatFloat(realVoltage, 'f', -1, 64))
-	SetSessionRawValue("AUX_VOLTAGE_MODIFIER", strconv.FormatFloat(voltageModifier, 'f', -1, 64))
+	SetSessionRawValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
+	SetSessionRawValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
 }
 
 // Resistance values and modifiers to the incoming Current sensor value
@@ -56,5 +56,5 @@ func (triggerPackage SessionPackage) modifyAuxCurrent() {
 	}
 
 	realCurrent := 2000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185)
-	SetSessionRawValue("AUX_CURRENT", strconv.FormatFloat(realCurrent, 'f', -1, 64))
+	SetSessionRawValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
