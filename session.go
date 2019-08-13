@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
@@ -24,10 +24,16 @@ import (
 // Is Influx logging a core aspect of the route? It's probably in here then.
 //
 
-// SessionData holds the name, data, last update info for each session value
+// SessionData holds the data and last update info for each session value
 type SessionData struct {
 	Value      string `json:"value,omitempty"`
 	LastUpdate string `json:"lastUpdate,omitempty"`
+}
+
+// SessionPackage contains both name and data
+type SessionPackage struct {
+	Name string
+	Data SessionData
 }
 
 // Session is the global session accessed by incoming requests
@@ -174,7 +180,8 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call the setter
-	err = SetSessionValue(params["name"], newdata, false)
+	newPackage := SessionPackage{Name: params["name"], Data: newdata}
+	err = newPackage.SetSessionValue(false)
 
 	if err != nil {
 		json.NewEncoder(w).Encode(err.Error())
@@ -186,53 +193,56 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetSessionValue does the actual setting of Session Values
-func SetSessionValue(name string, newData SessionData, quiet bool) error {
+func (newPackage *SessionPackage) SetSessionValue(quiet bool) error {
 	// Ensure name is valid
-	if !formatting.IsValidName(name) {
-		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", name)
+	if !formatting.IsValidName(newPackage.Name) {
+		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
 	}
 
 	// Set last updated time to now
 	var timestamp = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
-	newData.LastUpdate = timestamp
+	newPackage.Data.LastUpdate = timestamp
 
 	// Correct name
-	name = formatting.FormatName(name)
+	newPackage.Name = formatting.FormatName(newPackage.Name)
 
 	// Trim off whitespace
-	newData.Value = strings.TrimSpace(newData.Value)
+	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
 
 	// Log if requested
 	if Config.VerboseOutput && !quiet {
-		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", name, newData.Value))
+		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 	}
 
 	// Add / update value in global session after locking access to session
 	sessionLock.Lock()
-	Session[name] = newData
+	Session[newPackage.Name] = newPackage.Data
 	sessionLock.Unlock()
+
+	// Finish post processing
+	go newPackage.postProcessSession()
 
 	// Insert into database
 	if Config.DatabaseEnabled {
 
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		var valueString string
-		if _, err := strconv.ParseFloat(newData.Value, 32); err == nil {
-			valueString = fmt.Sprintf("value=%s", newData.Value)
+		if _, err := strconv.ParseFloat(newPackage.Data.Value, 32); err == nil {
+			valueString = fmt.Sprintf("value=%s", newPackage.Data.Value)
 		} else {
-			valueString = fmt.Sprintf("value_string=\"%s\"", newData.Value)
+			valueString = fmt.Sprintf("value_string=\"%s\"", newPackage.Data.Value)
 		}
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
-		err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(name, " ", "_", -1), valueString))
+		err := DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 
 		if err != nil {
-			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", name, newData.Value, err.Error())
+			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
 			SessionStatus.Log(logging.Error(), errorText)
 			return errors.New(errorText)
 		} else if !quiet {
-			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", name, newData.Value))
+			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
 		}
 	}
 
@@ -241,7 +251,6 @@ func SetSessionValue(name string, newData SessionData, quiet bool) error {
 
 // SetSessionRawValue prepares a SessionData structure before passing it to the setter
 func SetSessionRawValue(name string, value string) {
-	var newdata SessionData
-	newdata.Value = value
-	SetSessionValue(name, newdata, true)
+	newPackage := SessionPackage{Name: name, Data: SessionData{Value: value}}
+	newPackage.SetSessionValue(true)
 }
