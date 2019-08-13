@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/utils"
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
@@ -188,7 +188,7 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 // SetSessionValue does the actual setting of Session Values
 func SetSessionValue(name string, newData SessionData, quiet bool) error {
 	// Ensure name is valid
-	if !utils.IsValidName(name) {
+	if !formatting.IsValidName(name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", name)
 	}
 
@@ -197,7 +197,7 @@ func SetSessionValue(name string, newData SessionData, quiet bool) error {
 	newData.LastUpdate = timestamp
 
 	// Correct name
-	name = utils.FormatName(name)
+	name = formatting.FormatName(name)
 
 	// Trim off whitespace
 	newData.Value = strings.TrimSpace(newData.Value)

@@ -13,7 +13,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/MrDoctorKovacic/MDroid-Core/utils"
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/gorilla/mux"
 )
 
@@ -52,11 +52,11 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 
 	// Format similarly to the rest of MDroid suite, removing plurals
 	// Formatting allows for fuzzier requests
-	device := strings.TrimSuffix(utils.FormatName(params["device"]), "S")
-	command := strings.TrimSuffix(utils.FormatName(params["command"]), "S")
+	device := strings.TrimSuffix(formatting.FormatName(params["device"]), "S")
+	command := strings.TrimSuffix(formatting.FormatName(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
-	isPositive, err := utils.IsPositiveRequest(command)
+	isPositive, err := formatting.IsPositiveRequest(command)
 	if err != nil {
 		json.NewEncoder(w).Encode(err.Error())
 		return
