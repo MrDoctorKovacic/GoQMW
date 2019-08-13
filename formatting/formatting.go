@@ -15,7 +15,7 @@ func FormatName(name string) string {
 // IsValidName verifies the name is alphanumeric
 func IsValidName(name string) bool {
 	for _, r := range name {
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+		if string(r) != "_" && !unicode.IsLetter(r) && !unicode.IsNumber(r) {
 			return false
 		}
 	}
