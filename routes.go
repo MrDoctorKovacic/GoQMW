@@ -71,8 +71,6 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
 	pybus.PybusStatus.Log(logging.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
 
-	// It ain't really that hard to do and
-	// I ain't trying to be in love with you and
 	// All I wanted was a moment or two to
 	// See if you could do that switch-a-roo
 	switch device {
