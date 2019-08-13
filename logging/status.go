@@ -68,38 +68,38 @@ func NewStatus(name string) ProgramStatus {
 		return s
 	}
 
-	s = Status{Name: name}
+	s = &Status{Name: name}
 	StatusMap[name] = s
 	return s
 }
 
 // IsOK simply returns if the program is OK
-func (s Status) IsOK() bool {
+func (s *Status) IsOK() bool {
 	return s.Status != "ERROR"
 }
 
 // Log a message of type OK, ERROR, or WARNING
-func (s Status) Log(messageType MessageType, message string) {
+func (s *Status) Log(messageType MessageType, message string) {
 
 	// Format and log message
 	formattedMessage := fmt.Sprintf("[%s] %s: %s", messageType.Name, s.Name, message)
 
+	// Set last updated time to now
+	s.LastUpdate = time.Now().Format("2006-01-02 15:04:05.999")
+
 	// Log based on status type
 	switch messageType.Name {
 	case "ERROR":
-		s.ErrorLog = append(s.ErrorLog, formattedMessage)
+		s.ErrorLog = append(s.ErrorLog, fmt.Sprintf("%s %s", s.LastUpdate, formattedMessage))
 		s.Status = "ERROR"
 	case "WARNING":
-		s.WarningLog = append(s.WarningLog, formattedMessage)
+		s.WarningLog = append(s.WarningLog, fmt.Sprintf("%s %s", s.LastUpdate, formattedMessage))
 		if s.Status != "ERROR" {
 			s.Status = "WARNING"
 		}
 	case "OK":
 
 	}
-
-	// Set last updated time to now
-	s.LastUpdate = time.Now().Format("2006-01-02 15:04:05.999")
 
 	// Always print
 	log.Println(formattedMessage)
