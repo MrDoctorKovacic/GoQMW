@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/gorilla/mux"
 )
 
@@ -25,6 +25,12 @@ import (
 func reboot(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
 	exec.Command("reboot", "now")
+}
+
+// Shutdown the machine
+func shutdown(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode("OK")
+	exec.Command("poweroff", "now")
 }
 
 // Stop MDroid-Core service
@@ -135,6 +141,7 @@ func startRouter() {
 	// Main routes
 	//
 	router.HandleFunc("/restart", reboot).Methods("GET")
+	router.HandleFunc("/shutdown", shutdown).Methods("GET")
 	router.HandleFunc("/stop", stop).Methods("GET")
 
 	//
