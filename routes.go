@@ -62,11 +62,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	command := strings.TrimSuffix(formatting.FormatName(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
-	isPositive, err := formatting.IsPositiveRequest(command)
-	if err != nil {
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
+	isPositive, _ := formatting.IsPositiveRequest(command)
 
 	// Log if requested
 	pybus.PybusStatus.Log(logging.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
@@ -76,11 +72,15 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	switch device {
 	case "DOOR":
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
-		deviceStatus, err := GetSessionValue("DOORS_LOCKED")
-		if err != nil && Config.HardwareSerialEnabled &&
-			(isPositive && deviceStatus.Value == "FALSE") ||
-			(!isPositive && deviceStatus.Value == "TRUE") {
-			WriteSerial("toggleDoorLocks")
+		if !isPositive {
+			pybus.PushQueue("lockDoors")
+		} else {
+			deviceStatus, err := GetSessionValue("DOORS_LOCKED")
+			if err != nil && Config.HardwareSerialEnabled &&
+				(isPositive && deviceStatus.Value == "FALSE") ||
+				(!isPositive && deviceStatus.Value == "TRUE") {
+				WriteSerial("toggleDoorLocks")
+			}
 		}
 	case "WINDOW":
 		if isPositive {
@@ -99,8 +99,10 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "TRUNK":
 		pybus.PushQueue("openTrunk")
 	case "HAZARD":
-		if Config.HardwareSerialEnabled {
-			WriteSerial("toggleHazards")
+		if isPositive {
+			pybus.PushQueue("turnOnHazards")
+		} else {
+			pybus.PushQueue("turnOffAllExteriorLights")
 		}
 	case "INTERIOR":
 		if isPositive {
@@ -115,7 +117,21 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "STEREO":
 		fallthrough
 	case "RADIO":
-		pybus.PushQueue("pressStereoPower")
+		if command == "AM" {
+			pybus.PushQueue("pressAM")
+		} else if command == "FM" {
+			pybus.PushQueue("pressFM")
+		} else if command == "NEXT" {
+			pybus.PushQueue("pressNext")
+		} else if command == "PREV" {
+			pybus.PushQueue("pressPrev")
+		} else if command == "NUM" {
+			pybus.PushQueue("pressNumPad")
+		} else if command == "MODE" {
+			pybus.PushQueue("pressMode")
+		} else {
+			pybus.PushQueue("pressStereoPower")
+		}
 	default:
 		pybus.PybusStatus.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))
 		json.NewEncoder(w).Encode(fmt.Sprintf("Invalid device %s", device))
@@ -201,7 +217,7 @@ func startRouter() {
 	router.HandleFunc("/status/{name}", logging.SetStatus).Methods("POST")
 
 	//
-	// Catch-All for (hopefully) a pre-approved pybus function
+	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
 	router.HandleFunc("/{device}/{command}", parseCommand).Methods("GET")
