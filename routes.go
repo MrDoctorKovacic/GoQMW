@@ -184,7 +184,6 @@ func startRouter() {
 	//
 	// PyBus Routes
 	//
-	router.HandleFunc("/pybus/queue", pybus.PopQueue).Methods("GET")
 	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
 	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
 	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
