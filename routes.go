@@ -190,6 +190,11 @@ func startRouter() {
 	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
 
 	//
+	// Serial routes
+	//
+	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST")
+
+	//
 	// ALPR Routes
 	//
 	router.HandleFunc("/alpr/restart", RestartALPR).Methods("GET")
