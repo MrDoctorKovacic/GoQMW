@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/gorilla/mux"
 	"github.com/tarm/serial"
 )
 
@@ -61,6 +63,15 @@ func parseSerialJSON(marshalledJSON interface{}) {
 			SerialStatus.Log(logging.Error(), key+" is of a type I don't know how to handle")
 		}
 	}
+}
+
+// WriteSerialHandler handles messages sent through the server
+func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if params["command"] != "" {
+		WriteSerial(params["command"])
+	}
+	json.NewEncoder(w).Encode("OK")
 }
 
 // ReadSerial will continuously pull data from incoming serial
