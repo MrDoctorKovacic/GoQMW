@@ -6,15 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 )
-
-// Queue that the PyBus program will fetch from repeatedly
-var pybusQueue []string
-var pybusQueueLock sync.Mutex
 
 // PybusStatus will control logging and reporting of status / warnings / errors
 var PybusStatus = logging.NewStatus("Pybus")
@@ -39,24 +34,14 @@ func PushQueue(command string) {
 		return
 	}
 
-	pybusQueueLock.Lock()
-	pybusQueue = append(pybusQueue, command)
-	pybusQueueLock.Unlock()
+	// Send request to pybus server
+	_, err := http.Get(fmt.Sprintf("http://localhost:8080/%s", command))
+	if err != nil {
+		PybusStatus.Log(logging.Error(), fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
+		return
+	}
 
 	PybusStatus.Log(logging.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
-}
-
-// PopQueue pops a directive off the queue after confirming it occured
-func PopQueue(w http.ResponseWriter, r *http.Request) {
-	if len(pybusQueue) > 0 {
-		PybusStatus.Log(logging.OK(), fmt.Sprintf("Dumping %s from Pybus queue to get request", pybusQueue[0]))
-		json.NewEncoder(w).Encode(pybusQueue[0])
-
-		// Pop off queue
-		pybusQueue = pybusQueue[1:]
-	} else {
-		json.NewEncoder(w).Encode("{}")
-	}
 }
 
 // StartRoutine handles incoming requests to the pybus program, will add routines to the queue
