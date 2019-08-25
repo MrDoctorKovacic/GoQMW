@@ -79,7 +79,8 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 
 // RepeatCommand endlessly, helps with request functions
 func RepeatCommand(command string, sleepSeconds int) {
-	PushQueue(command)
-	time.Sleep(time.Duration(sleepSeconds) * time.Second)
-	go RepeatCommand(command, sleepSeconds)
+	for {
+		PushQueue(command)
+		time.Sleep(time.Duration(sleepSeconds) * time.Second)
+	}
 }
