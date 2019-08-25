@@ -62,6 +62,9 @@ func SetupSessions(sessionFile string) {
 	} else {
 		SessionStatus.Log(logging.OK(), "Not saving or recovering from file")
 	}
+
+	// Setup triggers
+	initTriggers()
 }
 
 // HandleGetSession responds to an HTTP request for the entire session
@@ -220,7 +223,7 @@ func (newPackage *SessionPackage) SetSessionValue(quiet bool) error {
 	sessionLock.Unlock()
 
 	// Finish post processing
-	go newPackage.postProcessSession()
+	go newPackage.processSessionTriggers()
 
 	// Insert into database
 	if Config.DatabaseEnabled {
