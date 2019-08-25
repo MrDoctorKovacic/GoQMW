@@ -104,6 +104,12 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		} else {
 			pybus.PushQueue("turnOffAllExteriorLights")
 		}
+	case "FLASHER":
+		if isPositive {
+			pybus.PushQueue("flashAllExteriorLights")
+		} else {
+			pybus.PushQueue("turnOffAllExteriorLights")
+		}
 	case "INTERIOR":
 		if isPositive {
 			pybus.PushQueue("interiorLightsOff")
