@@ -83,7 +83,11 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	case "WINDOW":
-		if isPositive {
+		if command == "POPDOWN" {
+			pybus.PushQueue("popWindowsDown")
+		} else if command == "POPUP" {
+			pybus.PushQueue("popWindowsUp")
+		} else if isPositive {
 			pybus.PushQueue("rollWindowsUp")
 		} else {
 			pybus.PushQueue("rollWindowsDown")
