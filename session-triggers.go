@@ -1,6 +1,7 @@
 //
 // This file contains modifier functions for the main session defined in session.go
-// These take a POSTed value and make adjustments depending on the name / value
+// These take a POSTed value and start triggers or make adjustments
+//
 // Most here are specific to my setup only, and likely not generalized
 //
 package main
@@ -27,7 +28,7 @@ func (triggerPackage *SessionPackage) postProcessSession() {
 }
 
 // Resistance values and modifiers to the incoming Voltage sensor value
-func (triggerPackage SessionPackage) modifyAuxVoltage() {
+func (triggerPackage *SessionPackage) modifyAuxVoltage() {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -49,8 +50,8 @@ func (triggerPackage SessionPackage) modifyAuxVoltage() {
 	SetSessionRawValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
 }
 
-// Resistance values and modifiers to the incoming Current sensor value
-func (triggerPackage SessionPackage) modifyAuxCurrent() {
+// Modifiers to the incoming Current sensor value
+func (triggerPackage *SessionPackage) modifyAuxCurrent() {
 	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
