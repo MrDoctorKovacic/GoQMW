@@ -103,13 +103,13 @@ func ReadSerial(serialDevice *serial.Port) {
 
 // WriteSerial pushes out a message to the open serial port
 func WriteSerial(msg string) {
-	if len(msg) == 0 {
-		SerialStatus.Log(logging.Warning(), "Empty message, not writing to serial")
+	if Config.SerialControlDevice == nil {
+		SerialStatus.Log(logging.Error(), "Serial port is not set, nothing to write to.")
 		return
 	}
 
-	if Config.SerialControlDevice == nil {
-		SerialStatus.Log(logging.Error(), "Serial port is not set, nothing to write to.")
+	if len(msg) == 0 {
+		SerialStatus.Log(logging.Warning(), "Empty message, not writing to serial")
 		return
 	}
 
