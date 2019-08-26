@@ -7,7 +7,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os/exec"
 	"strconv"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
@@ -47,6 +51,27 @@ func (triggerPackage *SessionPackage) processSessionTriggers() {
 	trigger(triggerPackage)
 }
 
+func slackAlert(message string) {
+	if Config.SlackURL != "" {
+		var jsonStr = []byte(fmt.Sprintf(`{"text":"%s"}`, message))
+		req, _ := http.NewRequest("POST", Config.SlackURL, bytes.NewBuffer(jsonStr))
+		req.Header.Set("X-Custom-Header", "myvalue")
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		fmt.Println("response Status:", resp.Status)
+		fmt.Println("response Headers:", resp.Header)
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("response Body:", string(body))
+	}
+}
+
 //
 // From here on out are the trigger functions.
 // We're taking actions based on the values or a combination of values
@@ -74,6 +99,12 @@ func tAuxVoltage(triggerPackage *SessionPackage) {
 	realVoltage := voltageModifier * (((voltageFloat * 3.3) / 4095.0) / 0.2)
 	SetSessionRawValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
 	SetSessionRawValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
+
+	// SHUTDOWN the system if voltage is below 11.3 to preserve our battery
+	if realVoltage < 11.3 {
+		slackAlert(fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
+		exec.Command("poweroff", "now")
+	}
 }
 
 // Modifiers to the incoming Current sensor value
@@ -107,14 +138,16 @@ func tKeyPosition(triggerPackage *SessionPackage) {
 func tLightSensorReason(triggerPackage *SessionPackage) {
 	keyPosition, err1 := GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
+	windowsOpen, err2 := GetSessionValue("WINDOWS_OPEN")
 	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, Timezone)
 
 	if err1 == nil && err2 == nil && err3 == nil {
 		if triggerPackage.Data.Value == "RAIN" &&
 			keyPosition.Value == "OFF" &&
 			doorsLocked.Value == "TRUE" &&
+			windowsOpen.Value == "TRUE" &&
 			delta.Minutes() > 5 {
-			// TODO: ALERT ME HERE
+			slackAlert("Windows are down in the rain, eh?")
 		}
 	}
 }

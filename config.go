@@ -27,6 +27,7 @@ type ConfigValues struct {
 	BluetoothEnabled      bool
 	PingHost              string
 	DebugSessionFile      string
+	SlackURL              string
 	HardwareSerialEnabled bool
 	HardwareSerialPort    string
 	HardwareSerialBaud    string
@@ -127,6 +128,9 @@ func parseConfig() {
 
 		// Debug session log
 		Config.DebugSessionFile = configMap["DEBUG_SESSION_LOG"]
+
+		// Slack URL
+		Config.SlackURL = configMap["SLACK_URL"]
 
 		// Set up Auth tokens
 		authToken, usingAuth := configMap["AUTH_TOKEN"]
