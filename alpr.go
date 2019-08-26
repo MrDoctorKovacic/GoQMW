@@ -47,7 +47,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	if plate != "" {
 		if Config.DatabaseEnabled {
 			// Insert into database
-			err := DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
+			err := Config.DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
 
 			if err != nil {
 				errorText := fmt.Sprintf("Error writing %s to influx DB: %s", plate, err.Error())
