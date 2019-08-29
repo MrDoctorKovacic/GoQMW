@@ -35,7 +35,7 @@ func initTriggers() {
 }
 
 // Process session values by combining or otherwise modifying once posted
-func (triggerPackage SessionPackage) processSessionTriggers() {
+func processSessionTriggers(triggerPackage SessionPackage) {
 	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
 	}
