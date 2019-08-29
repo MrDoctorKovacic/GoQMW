@@ -223,7 +223,7 @@ func (newPackage SessionPackage) SetSessionValue(quiet bool) error {
 	sessionLock.Unlock()
 
 	// Finish post processing
-	go newPackage.processSessionTriggers()
+	go processSessionTriggers(newPackage)
 
 	// Insert into database
 	if Config.DatabaseEnabled {
