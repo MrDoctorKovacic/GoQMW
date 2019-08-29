@@ -196,7 +196,7 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetSessionValue does the actual setting of Session Values
-func (newPackage *SessionPackage) SetSessionValue(quiet bool) error {
+func (newPackage SessionPackage) SetSessionValue(quiet bool) error {
 	// Ensure name is valid
 	if !formatting.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
