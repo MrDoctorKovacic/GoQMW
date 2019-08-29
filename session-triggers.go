@@ -19,7 +19,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
 
-type triggerFunction func(triggerPackage *SessionPackage)
+type triggerFunction func(triggerPackage SessionPackage)
 
 // mapping of session names to trigger functions
 var triggers map[string]triggerFunction
@@ -49,7 +49,7 @@ func (triggerPackage SessionPackage) processSessionTriggers() {
 	}
 
 	// Trigger the function
-	trigger(&triggerPackage)
+	trigger(triggerPackage)
 }
 
 func slackAlert(message string) {
@@ -80,7 +80,7 @@ func slackAlert(message string) {
 //
 
 // Resistance values and modifiers to the incoming Voltage sensor value
-func tAuxVoltage(triggerPackage *SessionPackage) {
+func tAuxVoltage(triggerPackage SessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -109,7 +109,7 @@ func tAuxVoltage(triggerPackage *SessionPackage) {
 }
 
 // Modifiers to the incoming Current sensor value
-func tAuxCurrent(triggerPackage *SessionPackage) {
+func tAuxCurrent(triggerPackage SessionPackage) {
 	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -123,7 +123,7 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
-func tKeyPosition(triggerPackage *SessionPackage) {
+func tKeyPosition(triggerPackage SessionPackage) {
 	switch triggerPackage.Data.Value {
 	case "POS_1":
 		WriteSerial("powerOnBoard")
@@ -136,7 +136,7 @@ func tKeyPosition(triggerPackage *SessionPackage) {
 }
 
 // Alert me when it's raining and windows are up
-func tLightSensorReason(triggerPackage *SessionPackage) {
+func tLightSensorReason(triggerPackage SessionPackage) {
 	keyPosition, err1 := GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
 	windowsOpen, err2 := GetSessionValue("WINDOWS_OPEN")
