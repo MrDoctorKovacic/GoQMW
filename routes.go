@@ -75,6 +75,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		if err != nil && !isPositive {
+			pybus.PybusStatus.Log(logging.OK(), "Door status is unknown, but we're locking. Go through the pybus")
 			pybus.PushQueue("lockDoors")
 		} else {
 			if Config.HardwareSerialEnabled {
