@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -63,7 +62,6 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	}
 	if newdata.Altitude != nil {
 		GPS.Altitude = newdata.Altitude
-		log.Println(fmt.Sprintf("%f", *newdata.Altitude))
 		postingString.WriteString(fmt.Sprintf("altitude=%f,", *newdata.Altitude))
 	}
 	if newdata.Speed != nil {
