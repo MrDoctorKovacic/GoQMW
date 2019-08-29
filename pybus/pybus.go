@@ -36,11 +36,12 @@ func PushQueue(command string) {
 	}
 
 	// Send request to pybus server
-	_, err := http.Get(fmt.Sprintf("http://localhost:8080/%s", command))
+	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/%s", command))
 	if err != nil {
 		PybusStatus.Log(logging.Error(), fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
 		return
 	}
+	defer resp.Body.Close()
 
 	PybusStatus.Log(logging.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
 }
