@@ -92,7 +92,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
-		} else {
+		} else if Config.VerboseOutput {
 			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
 		}
 	}
