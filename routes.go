@@ -77,10 +77,11 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		if err != nil && !isPositive {
 			pybus.PushQueue("lockDoors")
 		} else {
-			if Config.HardwareSerialEnabled &&
-				(isPositive && deviceStatus.Value == "FALSE") ||
-				(!isPositive && deviceStatus.Value == "TRUE") {
-				WriteSerial("toggleDoorLocks")
+			if Config.HardwareSerialEnabled {
+				if isPositive && deviceStatus.Value == "FALSE" ||
+					!isPositive && deviceStatus.Value == "TRUE" {
+					WriteSerial("toggleDoorLocks")
+				}
 			}
 		}
 	case "WINDOW":
