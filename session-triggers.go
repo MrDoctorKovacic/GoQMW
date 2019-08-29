@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -116,7 +117,7 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 		return
 	}
 
-	realCurrent := 2000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185)
+	realCurrent := math.Abs(1000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185))
 	SetSessionRawValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
 
