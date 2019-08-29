@@ -19,37 +19,28 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
 
-type triggerFunction func(triggerPackage SessionPackage)
-
-// mapping of session names to trigger functions
-var triggers map[string]triggerFunction
-
-func initTriggers() {
-	triggers = map[string]triggerFunction{
-		"AUX_VOLTAGE_RAW":     tAuxVoltage,
-		"AUX_CURRENT_RAW":     tAuxCurrent,
-		"KEY_POSITION":        tKeyPosition,
-		"LIGHT_SENSOR_REASON": tLightSensorReason,
-	}
-	SessionStatus.Log(logging.OK(), "Initialized triggers")
-}
-
 // Process session values by combining or otherwise modifying once posted
-func processSessionTriggers(triggerPackage SessionPackage) {
+func (triggerPackage *SessionPackage) processSessionTriggers() {
 	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
 	}
 
-	// Pull trigger function from mapping above
-	trigger, ok := triggers[triggerPackage.Name]
-
-	if Config.VerboseOutput && !ok {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
-		return
+	// Pull trigger function
+	switch triggerPackage.Name {
+	case "AUX_VOLTAGE_RAW":
+		tAuxCurrent(triggerPackage)
+	case "AUX_CURRENT_RAW":
+		tAuxCurrent(triggerPackage)
+	case "KEY_POSITION":
+		tKeyPosition(triggerPackage)
+	case "LIGHT_SENSOR_REASON":
+		tLightSensorReason(triggerPackage)
+	default:
+		if Config.VerboseOutput {
+			SessionStatus.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
+			return
+		}
 	}
-
-	// Trigger the function
-	trigger(triggerPackage)
 }
 
 func slackAlert(message string) {
@@ -80,7 +71,7 @@ func slackAlert(message string) {
 //
 
 // Resistance values and modifiers to the incoming Voltage sensor value
-func tAuxVoltage(triggerPackage SessionPackage) {
+func tAuxVoltage(triggerPackage *SessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -109,7 +100,7 @@ func tAuxVoltage(triggerPackage SessionPackage) {
 }
 
 // Modifiers to the incoming Current sensor value
-func tAuxCurrent(triggerPackage SessionPackage) {
+func tAuxCurrent(triggerPackage *SessionPackage) {
 	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -123,7 +114,7 @@ func tAuxCurrent(triggerPackage SessionPackage) {
 
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
-func tKeyPosition(triggerPackage SessionPackage) {
+func tKeyPosition(triggerPackage *SessionPackage) {
 	switch triggerPackage.Data.Value {
 	case "POS_1":
 		WriteSerial("powerOnBoard")
@@ -136,7 +127,7 @@ func tKeyPosition(triggerPackage SessionPackage) {
 }
 
 // Alert me when it's raining and windows are up
-func tLightSensorReason(triggerPackage SessionPackage) {
+func tLightSensorReason(triggerPackage *SessionPackage) {
 	keyPosition, err1 := GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
 	windowsOpen, err2 := GetSessionValue("WINDOWS_OPEN")

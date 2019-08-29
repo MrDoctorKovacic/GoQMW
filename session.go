@@ -64,7 +64,7 @@ func SetupSessions(sessionFile string) {
 	}
 
 	// Setup triggers
-	initTriggers()
+	//initTriggers()
 }
 
 // HandleGetSession responds to an HTTP request for the entire session
@@ -196,7 +196,7 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetSessionValue does the actual setting of Session Values
-func (newPackage SessionPackage) SetSessionValue(quiet bool) error {
+func (newPackage *SessionPackage) SetSessionValue(quiet bool) error {
 	// Ensure name is valid
 	if !formatting.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
@@ -223,7 +223,7 @@ func (newPackage SessionPackage) SetSessionValue(quiet bool) error {
 	sessionLock.Unlock()
 
 	// Finish post processing
-	go processSessionTriggers(newPackage)
+	go newPackage.processSessionTriggers()
 
 	// Insert into database
 	if Config.DatabaseEnabled {
