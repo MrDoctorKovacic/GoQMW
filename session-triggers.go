@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
-	"os/exec"
 	"strconv"
 	"time"
 
@@ -106,10 +105,19 @@ func tAuxVoltage(triggerPackage *SessionPackage) {
 	SetSessionRawValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
 	SetSessionRawValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
 
+	sentPowerWarning, err := GetSessionValue("SENT_POWER_WARNING")
+	if err != nil {
+		SetSessionRawValue("SENT_POWER_WARNING", "FALSE")
+	}
+
 	// SHUTDOWN the system if voltage is below 11.3 to preserve our battery
+	// TODO: right now poweroff doesn't do crap, still drains battery
 	if realVoltage < 11.3 {
-		slackAlert(fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
-		exec.Command("poweroff", "now")
+		if err == nil && sentPowerWarning.Value == "FALSE" {
+			slackAlert(fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
+			SetSessionRawValue("SENT_POWER_WARNING", "TRUE")
+		}
+		//exec.Command("poweroff", "now")
 	}
 }
 
