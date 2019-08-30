@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
@@ -75,13 +74,5 @@ func RestartService(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(err)
 	} else {
 		json.NewEncoder(w).Encode(out)
-	}
-}
-
-// RepeatCommand endlessly, helps with request functions
-func RepeatCommand(command string, sleepSeconds int) {
-	for {
-		PushQueue(command)
-		time.Sleep(time.Duration(sleepSeconds) * time.Second)
 	}
 }

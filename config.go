@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
-
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
@@ -74,12 +72,12 @@ func parseConfig() {
 		// Set up pybus repeat commands
 		_, usingPybus := configMap["PYBUS_DEVICE"]
 		if usingPybus {
-			go pybus.RepeatCommand("requestIgnitionStatus", 10)
-			go pybus.RepeatCommand("requestLampStatus", 20)
-			go pybus.RepeatCommand("requestVehicleStatus", 30)
-			go pybus.RepeatCommand("requestOdometer", 45)
-			go pybus.RepeatCommand("requestTimeStatus", 60)
-			go pybus.RepeatCommand("requestTemperatureStatus", 120)
+			go RepeatCommand("requestIgnitionStatus", 10)
+			go RepeatCommand("requestLampStatus", 20)
+			go RepeatCommand("requestVehicleStatus", 30)
+			go RepeatCommand("requestOdometer", 45)
+			go RepeatCommand("requestTimeStatus", 60)
+			go RepeatCommand("requestTemperatureStatus", 120)
 		}
 
 		// Debug session log
