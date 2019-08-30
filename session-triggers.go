@@ -14,9 +14,11 @@ import (
 	"net/http"
 	"os/exec"
 	"strconv"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 )
 
 // Process session values by combining or otherwise modifying once posted
@@ -28,7 +30,7 @@ func (triggerPackage *SessionPackage) processSessionTriggers() {
 	// Pull trigger function
 	switch triggerPackage.Name {
 	case "AUX_VOLTAGE_RAW":
-		tAuxCurrent(triggerPackage)
+		tAuxVoltage(triggerPackage)
 	case "AUX_CURRENT_RAW":
 		tAuxCurrent(triggerPackage)
 	case "KEY_POSITION":
@@ -61,6 +63,18 @@ func slackAlert(message string) {
 		fmt.Println("response Headers:", resp.Header)
 		body, _ := ioutil.ReadAll(resp.Body)
 		fmt.Println("response Body:", string(body))
+	}
+}
+
+// RepeatCommand endlessly, helps with request functions
+func RepeatCommand(command string, sleepSeconds int) {
+	for {
+		// Only push repeated pybus commands when powered, otherwise the car won't sleep
+		hasPower, err := GetSessionValue("ACC_POWER")
+		if err == nil && hasPower.Value == "TRUE" {
+			pybus.PushQueue(command)
+		}
+		time.Sleep(time.Duration(sleepSeconds) * time.Second)
 	}
 }
 
