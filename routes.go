@@ -247,7 +247,7 @@ func startRouter() {
 	router.HandleFunc("/status", logging.GetStatus).Methods("GET")
 	router.HandleFunc("/status/{name}", logging.GetStatusValue).Methods("GET")
 	router.HandleFunc("/status/{name}", logging.SetStatus).Methods("POST")
-	router.HandleFunc("/alert/{message}", PostSessionValue).Methods("POST")
+	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 
 	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
