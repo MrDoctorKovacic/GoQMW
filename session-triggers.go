@@ -7,11 +7,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"math"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -41,27 +38,6 @@ func (triggerPackage *SessionPackage) processSessionTriggers() {
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
 			return
 		}
-	}
-}
-
-func slackAlert(message string) {
-	if Config.SlackURL != "" {
-		var jsonStr = []byte(fmt.Sprintf(`{"text":"%s"}`, message))
-		req, _ := http.NewRequest("POST", Config.SlackURL, bytes.NewBuffer(jsonStr))
-		req.Header.Set("X-Custom-Header", "myvalue")
-		req.Header.Set("Content-Type", "application/json")
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-
-		fmt.Println("response Status:", resp.Status)
-		fmt.Println("response Headers:", resp.Header)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("response Body:", string(body))
 	}
 }
 
@@ -114,7 +90,7 @@ func tAuxVoltage(triggerPackage *SessionPackage) {
 	// TODO: right now poweroff doesn't do crap, still drains battery
 	if realVoltage < 11.3 {
 		if err == nil && sentPowerWarning.Value == "FALSE" {
-			slackAlert(fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
+			logging.SlackAlert(Config.SlackURL, fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
 			SetSessionRawValue("SENT_POWER_WARNING", "TRUE")
 		}
 		//exec.Command("poweroff", "now")
@@ -161,7 +137,7 @@ func tLightSensorReason(triggerPackage *SessionPackage) {
 			doorsLocked.Value == "TRUE" &&
 			windowsOpen.Value == "TRUE" &&
 			delta.Minutes() > 5 {
-			slackAlert("Windows are down in the rain, eh?")
+			logging.SlackAlert(Config.SlackURL, "Windows are down in the rain, eh?")
 		}
 	}
 }

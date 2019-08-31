@@ -161,6 +161,15 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(device)
 }
 
+func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if Config.SlackURL != "" {
+		logging.SlackAlert(Config.SlackURL, params["message"])
+	} else {
+		json.NewEncoder(w).Encode("Slack URL not set in config.")
+	}
+}
+
 // **
 // end router functions
 // **
@@ -238,6 +247,7 @@ func startRouter() {
 	router.HandleFunc("/status", logging.GetStatus).Methods("GET")
 	router.HandleFunc("/status/{name}", logging.GetStatusValue).Methods("GET")
 	router.HandleFunc("/status/{name}", logging.SetStatus).Methods("POST")
+	router.HandleFunc("/alert/{message}", PostSessionValue).Methods("POST")
 
 	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
