@@ -145,6 +145,12 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		} else {
 			pybus.PushQueue("pressStereoPower")
 		}
+	case "LUCIO":
+		if isPositive {
+			WriteSerial("powerOnBoard")
+		} else {
+			WriteSerial("powerOffBoard")
+		}
 	default:
 		pybus.PybusStatus.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))
 		json.NewEncoder(w).Encode(fmt.Sprintf("Invalid device %s", device))
