@@ -111,9 +111,10 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 		// Very verbose
 		//SessionStatus.Log(logging.OK(), "Received: "+string(message))
 
-		sessionLock.Lock()
-		err = c.WriteJSON(Session)
-		sessionLock.Unlock()
+		// Pass through lock first
+		writeSession := GetSession()
+
+		err = c.WriteJSON(writeSession)
 
 		if err != nil {
 			SessionStatus.Log(logging.Error(), "Error writing to webstream: "+err.Error())
@@ -184,7 +185,7 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 
 	// Call the setter
 	newPackage := SessionPackage{Name: params["name"], Data: newdata}
-	err = newPackage.SetSessionValue(false)
+	err = SetSessionValue(newPackage, false)
 
 	if err != nil {
 		json.NewEncoder(w).Encode(err.Error())
@@ -196,7 +197,7 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetSessionValue does the actual setting of Session Values
-func (newPackage *SessionPackage) SetSessionValue(quiet bool) error {
+func SetSessionValue(newPackage SessionPackage, quiet bool) error {
 	// Ensure name is valid
 	if !formatting.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
@@ -254,6 +255,5 @@ func (newPackage *SessionPackage) SetSessionValue(quiet bool) error {
 
 // SetSessionRawValue prepares a SessionData structure before passing it to the setter
 func SetSessionRawValue(name string, value string) {
-	newPackage := SessionPackage{Name: name, Data: SessionData{Value: value}}
-	newPackage.SetSessionValue(true)
+	SetSessionValue(SessionPackage{Name: name, Data: SessionData{Value: value}}, true)
 }
