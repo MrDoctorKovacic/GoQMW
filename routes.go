@@ -168,6 +168,9 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode("Slack URL not set in config.")
 	}
+
+	// Echo back message
+	json.NewEncoder(w).Encode(params["message"])
 }
 
 // **
