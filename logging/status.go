@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,6 +22,7 @@ type Status struct {
 	DebugLog   []string // For OK messages, or general purpose logging
 	WarningLog []string
 	ErrorLog   []string
+	Mutex      sync.Mutex
 }
 
 // MessageType for implementing all types of messages listed above
@@ -53,6 +55,9 @@ type ProgramStatus interface {
 // StatusMap is a mapping of program names to their status data
 var StatusMap = make(map[string]ProgramStatus, 0)
 
+// Status Lock
+var statusLock sync.Mutex
+
 // StatusStatus will control logging and reporting of status / warnings / errors
 // Holy meta batman
 var StatusStatus = NewStatus("Status")
@@ -64,14 +69,18 @@ var RemotePingAddress string
 func NewStatus(name string) ProgramStatus {
 
 	// Check if program status already exists
+	statusLock.Lock()
 	s, ok := StatusMap[name]
+	statusLock.Unlock()
 	if ok {
 		log.Println("[WARNING] Status: " + name + " already exists in the StatusMap")
 		return s
 	}
 
 	s = &Status{Name: name}
+	statusLock.Lock()
 	StatusMap[name] = s
+	statusLock.Unlock()
 	return s
 }
 
@@ -90,6 +99,7 @@ func (s *Status) Log(messageType MessageType, message string) {
 	s.LastUpdate = time.Now().Format("2006-01-02 15:04:05.999")
 
 	// Log based on status type
+	s.Mutex.Lock()
 	switch messageType.Name {
 	case "ERROR":
 		s.ErrorLog = append(s.ErrorLog, fmt.Sprintf("%s %s", s.LastUpdate, formattedMessage))
@@ -102,6 +112,7 @@ func (s *Status) Log(messageType MessageType, message string) {
 	case "OK":
 
 	}
+	s.Mutex.Unlock()
 
 	// Always print
 	log.Println(formattedMessage)
@@ -115,7 +126,9 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 // GetStatusValue returns a specific status value
 func GetStatusValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	statusLock.Lock()
 	json.NewEncoder(w).Encode(StatusMap[params["name"]])
+	statusLock.Unlock()
 }
 
 // SetStatus updates or posts a new status of the named program
@@ -136,7 +149,9 @@ func SetStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add / update value in global session
+	statusLock.Lock()
 	s, ok := StatusMap[params["name"]]
+	statusLock.Unlock()
 	if !ok {
 		// Status does not exist, we should create one
 		s = NewStatus(params["name"])
