@@ -2,9 +2,11 @@
 
 [![Build Status](https://travis-ci.org/MrDoctorKovacic/MDroid-Core.svg?branch=master)](https://travis-ci.org/MrDoctorKovacic/MDroid-Core) [![Go Report Card](https://goreportcard.com/badge/github.com/MrDoctorKovacic/MDroid-Core)](https://goreportcard.com/report/github.com/MrDoctorKovacic/MDroid-Core)
 
-Screenshots:
-
 ![Controls](https://quinncasey.com/wp-content/uploads/2019/09/MDroidDemo.png "Screenshot 1")
+[Control App](https://github.com/MrDoctorKovacic/MDroid-Control)
+
+![Watch Integration](https://quinncasey.com/wp-content/uploads/2019/09/GIF-190903_143832.gif "Screenshot 2")
+[Galaxy Watch Integration](https://quinncasey.com/unlocking-vehicle-with-mdroid-core-from-smartwatch/)
 
 REST API & control hub for vehicle data. 
 
