@@ -120,7 +120,9 @@ func (s *Status) Log(messageType MessageType, message string) {
 
 // GetStatus returns all known program statuses
 func GetStatus(w http.ResponseWriter, r *http.Request) {
+	statusLock.Lock()
 	json.NewEncoder(w).Encode(StatusMap)
+	statusLock.Unlock()
 }
 
 // GetStatusValue returns a specific status value
