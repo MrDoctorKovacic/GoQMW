@@ -47,7 +47,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	if plate != "" {
 		if Config.DatabaseEnabled {
 			// Insert into database
-			err := Config.DB.Write(fmt.Sprintf("alpr,plate=%s percent=%d", plate, percent))
+			err := Config.DB.Write(fmt.Sprintf("alpr,plate=%s percent=%f", plate, percent))
 
 			if err != nil {
 				errorText := fmt.Sprintf("Error writing %s to influx DB: %s", plate, err.Error())
@@ -59,7 +59,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 			ALPRStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", plate))
 		}
 	} else {
-		errorText := fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %d", plate, percent)
+		errorText := fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %f", plate, percent)
 		ALPRStatus.Log(logging.Error(), errorText)
 		json.NewEncoder(w).Encode(errorText)
 		return
