@@ -12,8 +12,8 @@ import (
 
 // ALPRData holds the plate and percent for each new ALPR value
 type ALPRData struct {
-	Plate   string `json:"plate,omitempty"`
-	Percent int    `json:"percent,omitempty"`
+	Plate   string  `json:"plate,omitempty"`
+	Percent float32 `json:"percent,omitempty"`
 }
 
 // ALPRStatus will control logging and reporting of status / warnings / errors
