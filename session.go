@@ -213,7 +213,7 @@ func SetSessionValue(newPackage SessionPackage, quiet bool) error {
 	// Trim off whitespace
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
 
-	// Log if  requested
+	// Log if requested
 	if Config.VerboseOutput && !quiet {
 		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 	}
