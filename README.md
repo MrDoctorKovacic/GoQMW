@@ -5,7 +5,7 @@
 ![Controls](https://quinncasey.com/wp-content/uploads/2019/09/MDroidDemo.png "Screenshot 1")
 [Control App](https://github.com/MrDoctorKovacic/MDroid-Control)
 
-![Watch Integration](https://media.giphy.com/media/dag5MMMQUPMTOD58yn/source.mp4 "Screenshot 2")
+![Watch Integration](https://media.giphy.com/media/dag5MMMQUPMTOD58yn/giphy.gif)
 [Galaxy Watch Integration](https://quinncasey.com/unlocking-vehicle-with-mdroid-core-from-smartwatch/)
 
 REST API & control hub for vehicle data. 
