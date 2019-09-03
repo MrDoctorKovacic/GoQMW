@@ -2,16 +2,20 @@
 
 [![Build Status](https://travis-ci.org/MrDoctorKovacic/MDroid-Core.svg?branch=master)](https://travis-ci.org/MrDoctorKovacic/MDroid-Core) [![Go Report Card](https://goreportcard.com/badge/github.com/MrDoctorKovacic/MDroid-Core)](https://goreportcard.com/report/github.com/MrDoctorKovacic/MDroid-Core)
 
-REST API for an edge device, which acts as middleman for vehicle data. 
+Screenshots:
 
-Essentially a backend to my own interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus) or other inputs (think GPS, CAN, etc). This aggregates data from various sources to be retrieved by other programs or logged for later analysis. Also used as a hub to delegate specific actions to node devices.
+![Controls](https://quinncasey.com/wp-content/uploads/2019/09/MDroidDemo.png "Screenshot 1")
+
+REST API & control hub for vehicle data. 
+
+Essentially a backend to my own interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus) or other inputs (GPS, [CAN](https://github.com/MrDoctorKovacic/MDroid-CAN), etc). This aggregates data from various sources to be retrieved by other programs or for later analysis. Also used to delegate specific actions to node devices.
 
 ## Benefits
 * Incoming data is logged to [InfluxDB](https://www.influxdata.com/): a performant time series Database.
 * Pipelines vehicle information to one location that can be reliably queried.
 * Global state answers questions like "When should the running lights be on?" to anyone on the network that asks.
-* Goes both ways! Allows for sending remote commands over BMW I-Bus (with [PyBus](https://github.com/MrDoctorKovacic/pyBus)). CAN-Bus writes are planned.
-* Status reporting keeps an eye on a network of temperamental devices, helps squash bad behavior.
+* Allows for sending remote commands over BMW I-Bus (with [PyBus](https://github.com/MrDoctorKovacic/pyBus)). CAN-Bus writes are planned.
+* Status reporting keeps an eye on a network of devices, helps squash bad behavior.
 * It's written in Go and relatively quick. It can (and does) run on OpenWRT ARM routers using the MUSL compiler. Try it, [the MUSL binary is cross-compiled and included.](https://github.com/MrDoctorKovacic/MDroid-Core/blob/master/bin/MDroid-Core-MUSL)
 
 ## Requirements
@@ -40,7 +44,7 @@ This allows for setting generic fields and values, which can be retrieved later.
 Here's a commented example with suggested settings:
 
 ```
-// COMMENTS ARE NOT VALID JSON, AN UNCOMMENTED VERSION OF THE BELOW IS PROVIDED IN THE REPO
+// COMMENTS ARE NOT VALID JSON
 {
 	// Core Configuration
 	"MDROID": {
