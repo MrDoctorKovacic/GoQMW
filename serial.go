@@ -65,6 +65,8 @@ func parseSerialJSON(marshalledJSON interface{}) {
 			for i, u := range vv {
 				fmt.Println(i, u)
 			}
+		case nil:
+			break
 		default:
 			SerialStatus.Log(logging.Error(), fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
 		}
