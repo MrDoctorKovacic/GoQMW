@@ -257,20 +257,3 @@ func SetSessionValue(newPackage SessionPackage, quiet bool) error {
 func SetSessionRawValue(name string, value string) {
 	SetSessionValue(SessionPackage{Name: name, Data: SessionData{Value: value}}, true)
 }
-
-// FlipPowerCycleTrigger will switch what bool for ACC power we're waiting on
-func FlipPowerCycleTrigger() {
-	accPower, aerr := GetSessionValue("ACC_POWER")
-	if aerr != nil {
-		SessionStatus.Log(logging.Error(), "Failed to detect ACC POWER status when flipping cycle trigger")
-		return
-	}
-
-	if accPowerBool, err := strconv.ParseBool(accPower.Value); err == nil {
-		if err != nil {
-			return
-		}
-		SetSessionRawValue("POWER_CYCLE_TRIGGER", strconv.FormatBool(!accPowerBool))
-		SetSessionRawValue("POWER_CYCLE_TRIGGER_ENABLED", "TRUE")
-	}
-}
