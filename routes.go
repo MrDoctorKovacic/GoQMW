@@ -151,16 +151,20 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		fallthrough
 	case "ARTANIS":
 		if isPositive {
+			FlipPowerCycleTrigger()
 			WriteSerial("powerOnBoard")
 		} else {
+			FlipPowerCycleTrigger()
 			WriteSerial("powerOffBoard")
 		}
 	case "LTE":
 		fallthrough
 	case "BRIGHTWING":
 		if isPositive {
+			FlipPowerCycleTrigger()
 			WriteSerial("powerOnWireless")
 		} else {
+			FlipPowerCycleTrigger()
 			WriteSerial("powerOffWireless")
 		}
 	default:
