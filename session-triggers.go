@@ -148,7 +148,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 
 	// Handle wireless power control
 	if berr == nil {
-		if brightwingTargetPower == "AUTO" {
+		if brightwingTargetPower == "AUTO" && wirelessPoweredOn.Value != triggerPackage.Data.Value {
 			WriteSerial(fmt.Sprintf("power%sWireless", targetAction))
 		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
 			WriteSerial("powerOffWireless")
@@ -162,7 +162,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 
 	// Handle video server power control
 	if aerr == nil {
-		if artanisTargetPower == "AUTO" {
+		if artanisTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
 			WriteSerial(fmt.Sprintf("power%sBoard", targetAction))
 		} else if artanisTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
 			WriteSerial("powerOffBoard")
@@ -176,7 +176,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 
 	// Handle tablet power control
 	if rerr == nil {
-		if raynorTargetPower == "AUTO" {
+		if raynorTargetPower == "AUTO" && tabletPoweredOn.Value != triggerPackage.Data.Value {
 			WriteSerial(fmt.Sprintf("power%sTablet", targetAction))
 		} else if raynorTargetPower == "OFF" && tabletPoweredOn.Value == "TRUE" {
 			WriteSerial("powerOffTablet")
