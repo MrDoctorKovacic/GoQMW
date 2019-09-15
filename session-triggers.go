@@ -131,17 +131,17 @@ func tAccPower(triggerPackage *SessionPackage) {
 		// Start board shutdown
 		wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
 		if werr == nil && wirelessPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOffWireless")
+			WriteSerial("powerOnWireless")
 		}
 
 		boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
 		if berr == nil && boardPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOffBoard")
+			WriteSerial("powerOnBoard")
 		}
 
 		tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
 		if terr == nil && tabletPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOffBoard")
+			WriteSerial("powerOnBoard")
 		}
 	case "FALSE":
 		// Start board shutdown
