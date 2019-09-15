@@ -11,7 +11,7 @@
 
 REST API & control hub for vehicle data. 
 
-Essentially a backend to my own interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus) or other inputs (GPS, [CAN](https://github.com/MrDoctorKovacic/MDroid-CAN), etc). This aggregates data from various sources to be retrieved by other programs or for later analysis. Also used to delegate specific actions to node devices.
+Essentially a backend to my own interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus) or other inputs ([GPS](https://github.com/MrDoctorKovacic/MDroid-GPS), [CAN](https://github.com/MrDoctorKovacic/MDroid-CAN), etc). This aggregates data from various sources to be retrieved by other programs or for later analysis. Also used to delegate specific actions to node devices.
 
 ## Benefits
 * Incoming data is logged to [InfluxDB](https://www.influxdata.com/): a performant time series Database.
