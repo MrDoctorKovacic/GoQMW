@@ -145,11 +145,23 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		} else {
 			pybus.PushQueue("pressStereoPower")
 		}
-	case "LUCIO":
+	case "CAMERA":
+		fallthrough
+	case "BOARD":
+		fallthrough
+	case "ARTANIS":
 		if isPositive {
 			WriteSerial("powerOnBoard")
 		} else {
 			WriteSerial("powerOffBoard")
+		}
+	case "LTE":
+		fallthrough
+	case "BRIGHTWING":
+		if isPositive {
+			WriteSerial("powerOnWireless")
+		} else {
+			WriteSerial("powerOffWireless")
 		}
 	default:
 		pybus.PybusStatus.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))
