@@ -94,6 +94,7 @@ func ReadSerial(serialDevice *serial.Port) {
 			connected = false
 		} else {
 			var data interface{}
+			SerialStatus.Log(logging.OK(), string(msg))
 			json.Unmarshal(msg, &data)
 
 			parseSerialJSON(data)
