@@ -127,41 +127,65 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *SessionPackage) {
+	// Pull needed values for power logic
 	wirelessPoweredOn, _ := GetSessionValue("WIRELESS_POWER")
 	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
 	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
-
 	raynorTargetPower, rerr := settings.GetSettingByName("RAYNOR", "POWER")
 	artanisTargetPower, aerr := settings.GetSettingByName("ARTANIS", "POWER")
 	brightwingTargetPower, berr := settings.GetSettingByName("BRIGHTWING", "POWER")
 
-	switch triggerPackage.Data.Value {
-	case "TRUE":
-		// Start board shutdown
-		if berr == nil && brightwingTargetPower == "AUTO" && wirelessPoweredOn.Value == "FALSE" {
+	// Read the target action based on current ACC Power value
+	var targetAction string
+	if triggerPackage.Data.Value == "TRUE" {
+		targetAction = "On"
+	} else if triggerPackage.Data.Value == "FALSE" {
+		targetAction = "Off"
+	} else {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
+		return
+	}
+
+	// Handle wireless power control
+	if berr == nil {
+		if brightwingTargetPower == "AUTO" {
+			WriteSerial(fmt.Sprintf("power%sWireless", targetAction))
+		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffWireless")
+		} else if brightwingTargetPower == "ON" && wirelessPoweredOn.Value == "FALSE" {
 			WriteSerial("powerOnWireless")
 		}
+	} else {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
+		settings.SetSetting("BRIGHTWING", "POWER", "AUTO")
+	}
 
-		if aerr == nil && artanisTargetPower == "AUTO" && boardPoweredOn.Value == "FALSE" {
+	// Handle video server power control
+	if aerr == nil {
+		if artanisTargetPower == "AUTO" {
+			WriteSerial(fmt.Sprintf("power%sBoard", targetAction))
+		} else if artanisTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffBoard")
+		} else if artanisTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
 			WriteSerial("powerOnBoard")
 		}
+	} else {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
+		settings.SetSetting("ARTANIS", "POWER", "AUTO")
+	}
 
-		if rerr == nil && raynorTargetPower == "AUTO" && tabletPoweredOn.Value == "FALSE" {
+	// Handle tablet power control
+	if rerr == nil {
+		if raynorTargetPower == "AUTO" {
+			WriteSerial(fmt.Sprintf("power%sTablet", targetAction))
+		} else if raynorTargetPower == "OFF" && tabletPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffTablet")
+		} else if raynorTargetPower == "ON" && tabletPoweredOn.Value == "FALSE" {
 			WriteSerial("powerOnTablet")
 		}
-	case "FALSE":
-		// Start board shutdown
-		if berr == nil && brightwingTargetPower == "AUTO" && wirelessPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffWireless")
-		}
-
-		if aerr == nil && artanisTargetPower == "AUTO" && boardPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffBoard")
-		}
-
-		if rerr == nil && raynorTargetPower == "AUTO" && tabletPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffTablet")
-		}
+	} else {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
+		settings.SetSetting("RAYNOR", "POWER", "AUTO")
 	}
 }
 
