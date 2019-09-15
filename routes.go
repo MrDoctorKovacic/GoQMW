@@ -150,7 +150,10 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "BOARD":
 		fallthrough
 	case "ARTANI":
-		if isPositive {
+		if formatting.FormatName(command) == "AUTO" {
+			settings.SetSetting("ARTANIS", "POWER", "AUTO")
+			return
+		} else if isPositive {
 			settings.SetSetting("ARTANIS", "POWER", "ON")
 			WriteSerial("powerOnBoard")
 		} else {
@@ -160,6 +163,10 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	case "LTE":
 		fallthrough
 	case "BRIGHTWING":
+		if formatting.FormatName(command) == "AUTO" {
+			settings.SetSetting("ARTANIS", "POWER", "AUTO")
+			return
+		}
 		if isPositive {
 			settings.SetSetting("BRIGHTWING", "POWER", "ON")
 			WriteSerial("powerOnWireless")
