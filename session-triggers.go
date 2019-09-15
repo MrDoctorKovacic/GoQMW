@@ -126,38 +126,57 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *SessionPackage) {
-	switch triggerPackage.Data.Value {
-	case "TRUE":
-		// Start board shutdown
-		wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
-		if werr == nil && wirelessPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOnWireless")
+	if accPowerBool, err := strconv.ParseBool(triggerPackage.Data.Value); err == nil {
+
+		// Check if we're waiting on a power cycle
+		powerLogicEnabled := true
+		powerCycleTriggerEnabled, perr := GetSessionValue("POWER_CYCLE_TRIGGER_ENABLED")
+		if perr == nil && powerCycleTriggerEnabled.Value == "TRUE" {
+			powerCycleTrigger, perr := GetSessionValue("POWER_CYCLE_TRIGGER")
+			if perr != nil {
+				SessionStatus.Log(logging.OK(), "Power cycle trigger value not set, setting now...")
+				SetSessionRawValue("POWER_CYCLE_TRIGGER", strconv.FormatBool(accPowerBool))
+			} else {
+				powerLogicEnabled = powerCycleTrigger.Value == triggerPackage.Data.Value
+			}
 		}
 
-		boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
-		if berr == nil && boardPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOnBoard")
-		}
+		if powerLogicEnabled {
+			SetSessionRawValue("POWER_CYCLE_TRIGGER_ENABLED", "FALSE")
+			switch triggerPackage.Data.Value {
+			case "TRUE":
+				// Start board shutdown
+				wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
+				if werr == nil && wirelessPoweredOn.Value == "FALSE" {
+					WriteSerial("powerOnWireless")
+				}
 
-		tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
-		if terr == nil && tabletPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOnTablet")
-		}
-	case "FALSE":
-		// Start board shutdown
-		wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
-		if werr == nil && wirelessPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffWireless")
-		}
+				boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
+				if berr == nil && boardPoweredOn.Value == "FALSE" {
+					WriteSerial("powerOnBoard")
+				}
 
-		boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
-		if berr == nil && boardPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffBoard")
-		}
+				tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
+				if terr == nil && tabletPoweredOn.Value == "FALSE" {
+					WriteSerial("powerOnTablet")
+				}
+			case "FALSE":
+				// Start board shutdown
+				wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
+				if werr == nil && wirelessPoweredOn.Value == "TRUE" {
+					WriteSerial("powerOffWireless")
+				}
 
-		tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
-		if terr == nil && tabletPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffTablet")
+				boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
+				if berr == nil && boardPoweredOn.Value == "TRUE" {
+					WriteSerial("powerOffBoard")
+				}
+
+				tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
+				if terr == nil && tabletPoweredOn.Value == "TRUE" {
+					WriteSerial("powerOffTablet")
+				}
+			}
 		}
 	}
 }
