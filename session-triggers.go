@@ -25,12 +25,16 @@ func (triggerPackage *SessionPackage) processSessionTriggers() {
 
 	// Pull trigger function
 	switch triggerPackage.Name {
+	case "MAIN_VOLTAGE_RAW":
+		tMainVoltage(triggerPackage)
 	case "AUX_VOLTAGE_RAW":
 		tAuxVoltage(triggerPackage)
 	case "AUX_CURRENT_RAW":
 		tAuxCurrent(triggerPackage)
 	case "KEY_POSITION":
 		tKeyPosition(triggerPackage)
+	case "ACC_POWER":
+		tAccPower(triggerPackage)
 	case "LIGHT_SENSOR_REASON":
 		tLightSensorReason(triggerPackage)
 	default:
@@ -58,6 +62,17 @@ func RepeatCommand(command string, sleepSeconds int) {
 // We're taking actions based on the values or a combination of values
 // from the session.
 //
+
+// Convert main raw voltage into an actual number
+func tMainVoltage(triggerPackage *SessionPackage) {
+	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
+	if err != nil {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
+		return
+	}
+
+	SetSessionRawValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+}
 
 // Resistance values and modifiers to the incoming Voltage sensor value
 func tAuxVoltage(triggerPackage *SessionPackage) {
@@ -119,6 +134,22 @@ func tKeyPosition(triggerPackage *SessionPackage) {
 		WriteSerial("powerOnTablet")
 	case "OFF":
 		// Start board shutdown
+		WriteSerial("powerOffBoard")
+		WriteSerial("powerOffTablet")
+	}
+}
+
+// Trigger for booting boards/tablets
+// TODO: Smarter shutdown timings? After 10 mins?
+func tAccPower(triggerPackage *SessionPackage) {
+	switch triggerPackage.Data.Value {
+	case "TRUE":
+		WriteSerial("powerOnWireless")
+		WriteSerial("powerOnBoard")
+		WriteSerial("powerOnTablet")
+	case "FALSE":
+		// Start board shutdown
+		WriteSerial("powerOffWireless")
 		WriteSerial("powerOffBoard")
 		WriteSerial("powerOffTablet")
 	}
