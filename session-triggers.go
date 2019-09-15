@@ -31,8 +31,6 @@ func (triggerPackage *SessionPackage) processSessionTriggers() {
 		tAuxVoltage(triggerPackage)
 	case "AUX_CURRENT_RAW":
 		tAuxCurrent(triggerPackage)
-	case "KEY_POSITION":
-		tKeyPosition(triggerPackage)
 	case "ACC_POWER":
 		tAccPower(triggerPackage)
 	case "LIGHT_SENSOR_REASON":
@@ -127,31 +125,40 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
-func tKeyPosition(triggerPackage *SessionPackage) {
-	switch triggerPackage.Data.Value {
-	case "POS_1":
-		WriteSerial("powerOnBoard")
-		WriteSerial("powerOnTablet")
-	case "OFF":
-		// Start board shutdown
-		WriteSerial("powerOffBoard")
-		WriteSerial("powerOffTablet")
-	}
-}
-
-// Trigger for booting boards/tablets
-// TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *SessionPackage) {
 	switch triggerPackage.Data.Value {
 	case "TRUE":
-		WriteSerial("powerOnWireless")
-		WriteSerial("powerOnBoard")
-		WriteSerial("powerOnTablet")
+		// Start board shutdown
+		wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
+		if werr == nil && wirelessPoweredOn.Value == "FALSE" {
+			WriteSerial("powerOffWireless")
+		}
+
+		boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
+		if berr == nil && boardPoweredOn.Value == "FALSE" {
+			WriteSerial("powerOffBoard")
+		}
+
+		tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
+		if terr == nil && tabletPoweredOn.Value == "FALSE" {
+			WriteSerial("powerOffBoard")
+		}
 	case "FALSE":
 		// Start board shutdown
-		WriteSerial("powerOffWireless")
-		WriteSerial("powerOffBoard")
-		WriteSerial("powerOffTablet")
+		wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
+		if werr == nil && wirelessPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffWireless")
+		}
+
+		boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
+		if berr == nil && boardPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffBoard")
+		}
+
+		tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
+		if terr == nil && tabletPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffBoard")
+		}
 	}
 }
 
