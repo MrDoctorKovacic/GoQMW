@@ -66,7 +66,7 @@ func parseSerialJSON(marshalledJSON interface{}) {
 				fmt.Println(i, u)
 			}
 		default:
-			SerialStatus.Log(logging.Error(), key+" is of a type I don't know how to handle")
+			SerialStatus.Log(logging.Error(), fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
 		}
 	}
 }
