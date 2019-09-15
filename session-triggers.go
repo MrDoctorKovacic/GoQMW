@@ -15,6 +15,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
 // Process session values by combining or otherwise modifying once posted
@@ -126,57 +127,40 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *SessionPackage) {
-	if accPowerBool, err := strconv.ParseBool(triggerPackage.Data.Value); err == nil {
+	wirelessPoweredOn, _ := GetSessionValue("WIRELESS_POWER")
+	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
+	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
 
-		// Check if we're waiting on a power cycle
-		powerLogicEnabled := true
-		powerCycleTriggerEnabled, perr := GetSessionValue("POWER_CYCLE_TRIGGER_ENABLED")
-		if perr == nil && powerCycleTriggerEnabled.Value == "TRUE" {
-			powerCycleTrigger, perr := GetSessionValue("POWER_CYCLE_TRIGGER")
-			if perr != nil {
-				SessionStatus.Log(logging.OK(), "Power cycle trigger value not set, setting now...")
-				SetSessionRawValue("POWER_CYCLE_TRIGGER", strconv.FormatBool(accPowerBool))
-			} else {
-				powerLogicEnabled = powerCycleTrigger.Value == triggerPackage.Data.Value
-			}
+	raynorTargetPower, rerr := settings.GetSettingByName("RAYNOR", "POWER")
+	artanisTargetPower, aerr := settings.GetSettingByName("ARTANIS", "POWER")
+	brightwingTargetPower, berr := settings.GetSettingByName("BRIGHTWING", "POWER")
+
+	switch triggerPackage.Data.Value {
+	case "TRUE":
+		// Start board shutdown
+		if berr == nil && brightwingTargetPower == "AUTO" && wirelessPoweredOn.Value == "FALSE" {
+			WriteSerial("powerOnWireless")
 		}
 
-		if powerLogicEnabled {
-			SetSessionRawValue("POWER_CYCLE_TRIGGER_ENABLED", "FALSE")
-			switch triggerPackage.Data.Value {
-			case "TRUE":
-				// Start board shutdown
-				wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
-				if werr == nil && wirelessPoweredOn.Value == "FALSE" {
-					WriteSerial("powerOnWireless")
-				}
+		if aerr == nil && artanisTargetPower == "AUTO" && boardPoweredOn.Value == "FALSE" {
+			WriteSerial("powerOnBoard")
+		}
 
-				boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
-				if berr == nil && boardPoweredOn.Value == "FALSE" {
-					WriteSerial("powerOnBoard")
-				}
+		if rerr == nil && raynorTargetPower == "AUTO" && tabletPoweredOn.Value == "FALSE" {
+			WriteSerial("powerOnTablet")
+		}
+	case "FALSE":
+		// Start board shutdown
+		if berr == nil && brightwingTargetPower == "AUTO" && wirelessPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffWireless")
+		}
 
-				tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
-				if terr == nil && tabletPoweredOn.Value == "FALSE" {
-					WriteSerial("powerOnTablet")
-				}
-			case "FALSE":
-				// Start board shutdown
-				wirelessPoweredOn, werr := GetSessionValue("WIRELESS_POWER")
-				if werr == nil && wirelessPoweredOn.Value == "TRUE" {
-					WriteSerial("powerOffWireless")
-				}
+		if aerr == nil && artanisTargetPower == "AUTO" && boardPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffBoard")
+		}
 
-				boardPoweredOn, berr := GetSessionValue("BOARD_POWER")
-				if berr == nil && boardPoweredOn.Value == "TRUE" {
-					WriteSerial("powerOffBoard")
-				}
-
-				tabletPoweredOn, terr := GetSessionValue("TABLET_POWER")
-				if terr == nil && tabletPoweredOn.Value == "TRUE" {
-					WriteSerial("powerOffTablet")
-				}
-			}
+		if rerr == nil && raynorTargetPower == "AUTO" && tabletPoweredOn.Value == "TRUE" {
+			WriteSerial("powerOffTablet")
 		}
 	}
 }

@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 )
 
@@ -133,7 +133,9 @@ func GetAllSettings(w http.ResponseWriter, r *http.Request) {
 	if verboseOutput {
 		SettingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
 	}
+	settingsLock.Lock()
 	json.NewEncoder(w).Encode(Settings)
+	settingsLock.Unlock()
 }
 
 // GetSetting returns all the values of a specific setting
@@ -145,7 +147,30 @@ func GetSetting(w http.ResponseWriter, r *http.Request) {
 		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 	}
 
+	settingsLock.Lock()
 	json.NewEncoder(w).Encode(Settings[componentName])
+	settingsLock.Unlock()
+}
+
+// GetSettingByName returns all the values of a specific setting
+func GetSettingByName(componentName string, settingName string) (string, error) {
+	componentName = formatting.FormatName(componentName)
+
+	if verboseOutput {
+		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for setting component %s", componentName))
+	}
+
+	settingsLock.Lock()
+	componenet, ok := Settings[componentName]
+	if ok {
+		setting, ok := componenet[settingName]
+		if ok {
+			settingsLock.Unlock()
+			return setting, nil
+		}
+	}
+	settingsLock.Unlock()
+	return "", fmt.Errorf("Could not find componenet/setting with those values")
 }
 
 // GetSettingValue returns a specific setting value
