@@ -27,6 +27,7 @@ import (
 type SessionData struct {
 	Value      string `json:"value,omitempty"`
 	LastUpdate string `json:"lastUpdate,omitempty"`
+	Quiet      bool   `json:"quiet,omitempty"`
 }
 
 // SessionPackage contains both name and data
@@ -184,7 +185,7 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 
 	// Call the setter
 	newPackage := SessionPackage{Name: params["name"], Data: newdata}
-	err = SetSessionValue(newPackage, false)
+	err = SetSessionValue(newPackage, newdata.Quiet)
 
 	if err != nil {
 		json.NewEncoder(w).Encode(err.Error())
