@@ -50,12 +50,10 @@ func parseConfig() {
 	settingsData, VerboseOutput := settings.SetupSettings(Config.SettingsFile)
 	Config.VerboseOutput = VerboseOutput
 
-	// Log settings
-	out, err := json.Marshal(settingsData)
-	if err != nil {
+	// Check settings
+	if _, err := json.Marshal(settingsData); err != nil {
 		panic(err)
 	}
-	MainStatus.Log(logging.OK(), "Using settings: "+string(out))
 
 	// Init session tracking (with or without Influx)
 	// Fetch and append old session from disk if allowed
@@ -129,12 +127,12 @@ func setupDatabase(configAddr *map[string]string) {
 		if configMap["PING_HOST"] != "" {
 			logging.RemotePingAddress = configMap["PING_HOST"]
 		} else {
-			MainStatus.Log(logging.OK(), "[DISABLED] Not forwarding pings to host")
+			MainStatus.Log(logging.OK(), "Not forwarding pings to host")
 		}
 
 	} else {
 		Config.DatabaseEnabled = false
-		MainStatus.Log(logging.OK(), "[DISABLED] Not logging to influx db")
+		MainStatus.Log(logging.OK(), "Not logging to influx db")
 	}
 }
 
