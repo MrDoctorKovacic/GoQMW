@@ -9,6 +9,7 @@ import (
 type Influx struct {
 	Host     string
 	Database string
+	Started  bool
 }
 
 // Ping influx DB server for connectivity
@@ -28,12 +29,15 @@ func (db *Influx) Write(msg string) (bool, error) {
 	// Check for positive ping response first.
 	// Throw away these requests, since they're being saved in session & will
 	// be outdated by the time Influx wakes up
-	isOnline, err := db.Ping()
-	if !isOnline {
-		if err != nil {
-			return false, err
+	if !db.Started {
+		isOnline, err := db.Ping()
+		if !isOnline {
+			if err != nil {
+				return false, err
+			}
+			return false, nil
 		}
-		return false, nil
+		db.Started = true
 	}
 
 	request := gorequest.New()
