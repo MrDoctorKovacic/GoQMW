@@ -129,6 +129,7 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 func tAccPower(triggerPackage *SessionPackage) {
 	// Pull needed values for power logic
 	wirelessPoweredOn, _ := GetSessionValue("WIRELESS_POWER")
+	wifiAvailable, _ := GetSessionValue("WIFI_CONNECTED")
 	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
 	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
 	raynorTargetPower, rerr := settings.GetSettingByName("RAYNOR", "POWER")
@@ -148,7 +149,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 
 	// Handle wireless power control
 	if berr == nil {
-		if brightwingTargetPower == "AUTO" && wirelessPoweredOn.Value != triggerPackage.Data.Value {
+		if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value || wifiAvailable.Value != "TRUE") {
 			WriteSerial(fmt.Sprintf("power%sWireless", targetAction))
 		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
 			WriteSerial("powerOffWireless")
