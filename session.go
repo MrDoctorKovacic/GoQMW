@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -239,12 +238,15 @@ func SetSessionValue(newPackage SessionPackage, quiet bool) error {
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
-		err := Config.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
+		online, err := Config.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
-			SessionStatus.Log(logging.Error(), errorText)
-			return errors.New(errorText)
+			// Only spam our log if Influx is online
+			if online {
+				SessionStatus.Log(logging.Error(), errorText)
+			}
+			return fmt.Errorf(errorText)
 		} else if !quiet {
 			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
 		}

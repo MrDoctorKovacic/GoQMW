@@ -19,32 +19,35 @@ type Influx struct {
 var InfluxStatus = logging.NewStatus("Influx")
 
 // Ping influx DB server for connectivity
-func (db *Influx) Ping() error {
+func (db *Influx) Ping() bool {
 	// Ping db instance
 	request := gorequest.New()
 	resp, _, errs := request.Get(db.Host + "/ping").End()
 	if errs != nil {
 		InfluxStatus.Log(logging.Error(), "Error opening JSON file on disk: "+errs[0].Error())
 		log.Println("Errored: " + errs[0].Error())
-		return errs[0]
+		return false
 	}
 
 	InfluxStatus.Log(logging.OK(), fmt.Sprintf("[Influx] Ping response: %d", resp.StatusCode))
 
-	// Create Database if it doesn't exist
-	db.CreateDatabase()
-
-	return nil
+	return resp.StatusCode == 204
 }
 
 // Write to influx DB server with data pairs
-func (db *Influx) Write(msg string) error {
-	//log.Println("Sending " + msg)
+func (db *Influx) Write(msg string) (bool, error) {
+
+	// Check for positive ping response first.
+	// Throw away these requests, since they're being saved in session & will
+	// be outdated by the time Influx wakes up
+	if !db.Ping() {
+		return false, nil
+	}
+
 	request := gorequest.New()
 	resp, body, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
 	if errs != nil {
-		InfluxStatus.Log(logging.Error(), fmt.Sprintf("Error when writing to DB: %s/write?db=%s with message %s", db.Host, db.Database, msg))
-		return errs[0]
+		return true, errs[0]
 	}
 
 	if resp.StatusCode != 204 {
@@ -52,7 +55,7 @@ func (db *Influx) Write(msg string) error {
 		InfluxStatus.Log(logging.Warning(), "Received: "+body)
 	}
 
-	return nil
+	return true, nil
 }
 
 // Query to influx DB server with data pairs
