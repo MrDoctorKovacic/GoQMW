@@ -149,12 +149,13 @@ func tAccPower(triggerPackage *SessionPackage) {
 
 	// Handle wireless power control
 	if berr == nil {
-		if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value || wifiAvailable.Value != "TRUE") {
+		if (brightwingTargetPower == "AUTO" && wifiAvailable.Value != "TRUE" && wirelessPoweredOn.Value != "TRUE") ||
+			(brightwingTargetPower == "ON" && wirelessPoweredOn.Value == "FALSE") {
+			WriteSerial("powerOnWireless")
+		} else if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value) {
 			WriteSerial(fmt.Sprintf("power%sWireless", targetAction))
 		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
 			WriteSerial("powerOffWireless")
-		} else if brightwingTargetPower == "ON" && wirelessPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOnWireless")
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
@@ -190,7 +191,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 	}
 }
 
-// Alert me when it's raining and windows are up
+// Alert me when it's raining and windows are down
 func tLightSensorReason(triggerPackage *SessionPackage) {
 	keyPosition, err1 := GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
