@@ -86,9 +86,9 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into database
 	if Config.DatabaseEnabled {
-		err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
+		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
-		if err != nil {
+		if err != nil && online {
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
 		} else if Config.VerboseOutput {
 			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
