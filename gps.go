@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
@@ -19,6 +20,7 @@ type GPSData struct {
 	EPT       *float32 `json:"ept,omitempty"`
 	Speed     *float32 `json:"speed,omitempty"`
 	Climb     *float32 `json:"climb,omitempty"`
+	Course    *float32 `json:"course,omitempty"`
 }
 
 // GPS is the last posted GPS fix
@@ -72,9 +74,10 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		GPS.Climb = newdata.Climb
 		postingString.WriteString(fmt.Sprintf("climb=%f,", *newdata.Climb))
 	}
-	if newdata.Time != "" {
-		GPS.Time = newdata.Time
+	if newdata.Time == "" {
+		newdata.Time = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
 	}
+	GPS.Time = newdata.Time
 	if newdata.EPV != nil {
 		GPS.EPV = newdata.EPV
 		postingString.WriteString(fmt.Sprintf("EPV=%f,", *newdata.EPV))
@@ -82,6 +85,10 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 	if newdata.EPT != nil {
 		GPS.EPT = newdata.EPT
 		postingString.WriteString(fmt.Sprintf("EPT=%f,", *newdata.EPT))
+	}
+	if newdata.Course != nil {
+		GPS.Course = newdata.Course
+		postingString.WriteString(fmt.Sprintf("Course=%f,", *newdata.Course))
 	}
 
 	// Insert into database
