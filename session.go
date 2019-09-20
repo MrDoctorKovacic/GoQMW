@@ -19,10 +19,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//
-// Is Influx logging a core aspect of the route? It's probably in here then.
-//
-
 // SessionData holds the data and last update info for each session value
 type SessionData struct {
 	Value      string `json:"value,omitempty"`
@@ -62,9 +58,6 @@ func SetupSessions(sessionFile string) {
 	} else {
 		SessionStatus.Log(logging.OK(), "Not saving or recovering from file")
 	}
-
-	// Setup triggers
-	//initTriggers()
 }
 
 // HandleGetSession responds to an HTTP request for the entire session
@@ -123,8 +116,8 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetSessionValueHandler returns a specific session value
-func GetSessionValueHandler(w http.ResponseWriter, r *http.Request) {
+// HandleGetSessionValue returns a specific session value
+func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	sessionValue, err := GetSessionValue(params["name"])
@@ -155,8 +148,8 @@ func GetSessionValue(name string) (value SessionData, err error) {
 	return sessionValue, nil
 }
 
-// PostSessionValue updates or posts a new session value to the common session
-func PostSessionValue(w http.ResponseWriter, r *http.Request) {
+// HandlePostSessionValue updates or posts a new session value to the common session
+func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
@@ -194,6 +187,11 @@ func PostSessionValue(w http.ResponseWriter, r *http.Request) {
 
 	// Respond with success
 	json.NewEncoder(w).Encode("OK")
+}
+
+// CreateSessionValue prepares a SessionData structure before passing it to the setter
+func CreateSessionValue(name string, value string) {
+	SetSessionValue(SessionPackage{Name: name, Data: SessionData{Value: value}}, true)
 }
 
 // SetSessionValue does the actual setting of Session Values
@@ -254,9 +252,4 @@ func SetSessionValue(newPackage SessionPackage, quiet bool) error {
 	}
 
 	return nil
-}
-
-// SetSessionRawValue prepares a SessionData structure before passing it to the setter
-func SetSessionRawValue(name string, value string) {
-	SetSessionValue(SessionPackage{Name: name, Data: SessionData{Value: value}}, true)
 }

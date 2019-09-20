@@ -70,7 +70,7 @@ func tMainVoltage(triggerPackage *SessionPackage) {
 		return
 	}
 
-	SetSessionRawValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+	CreateSessionValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
 }
 
 // Resistance values and modifiers to the incoming Voltage sensor value
@@ -92,12 +92,12 @@ func tAuxVoltage(triggerPackage *SessionPackage) {
 	}
 
 	realVoltage := voltageModifier * (((voltageFloat * 3.3) / 4095.0) / 0.2)
-	SetSessionRawValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
-	SetSessionRawValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
+	CreateSessionValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
+	CreateSessionValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
 
 	sentPowerWarning, err := GetSessionValue("SENT_POWER_WARNING")
 	if err != nil {
-		SetSessionRawValue("SENT_POWER_WARNING", "FALSE")
+		CreateSessionValue("SENT_POWER_WARNING", "FALSE")
 	}
 
 	// SHUTDOWN the system if voltage is below 11.3 to preserve our battery
@@ -105,7 +105,7 @@ func tAuxVoltage(triggerPackage *SessionPackage) {
 	if realVoltage < 11.3 {
 		if err == nil && sentPowerWarning.Value == "FALSE" {
 			logging.SlackAlert(Config.SlackURL, fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
-			SetSessionRawValue("SENT_POWER_WARNING", "TRUE")
+			CreateSessionValue("SENT_POWER_WARNING", "TRUE")
 		}
 		//exec.Command("poweroff", "now")
 	}
@@ -121,7 +121,7 @@ func tAuxCurrent(triggerPackage *SessionPackage) {
 	}
 
 	realCurrent := math.Abs(1000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185))
-	SetSessionRawValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
+	CreateSessionValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
 
 // Trigger for booting boards/tablets
@@ -132,9 +132,9 @@ func tAccPower(triggerPackage *SessionPackage) {
 	wifiAvailable, _ := GetSessionValue("WIFI_CONNECTED")
 	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
 	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
-	raynorTargetPower, rerr := settings.GetSettingByName("RAYNOR", "POWER")
-	artanisTargetPower, aerr := settings.GetSettingByName("ARTANIS", "POWER")
-	brightwingTargetPower, berr := settings.GetSettingByName("BRIGHTWING", "POWER")
+	raynorTargetPower, rerr := settings.Get("RAYNOR", "POWER")
+	artanisTargetPower, aerr := settings.Get("ARTANIS", "POWER")
+	brightwingTargetPower, berr := settings.Get("BRIGHTWING", "POWER")
 
 	// Read the target action based on current ACC Power value
 	var targetAction string
@@ -159,7 +159,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
-		settings.SetSetting("BRIGHTWING", "POWER", "AUTO")
+		settings.Set("BRIGHTWING", "POWER", "AUTO")
 	}
 
 	// Handle video server power control
@@ -173,7 +173,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
-		settings.SetSetting("ARTANIS", "POWER", "AUTO")
+		settings.Set("ARTANIS", "POWER", "AUTO")
 	}
 
 	// Handle tablet power control
@@ -187,7 +187,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
-		settings.SetSetting("RAYNOR", "POWER", "AUTO")
+		settings.Set("RAYNOR", "POWER", "AUTO")
 	}
 }
 
