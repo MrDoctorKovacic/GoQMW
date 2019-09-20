@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/gorilla/mux"
 )
 
 // MainStatus will control logging and reporting of status / warnings / errors
@@ -36,20 +36,36 @@ func main() {
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("OK")
-	MainStatus.Log(logging.OK(), "Stopping MDroid Service")
+	MainStatus.Log(logging.OK(), "Stopping MDroid Service as per request")
 	os.Exit(0)
 }
 
 // Reboot the machine
-func rebootMDroid(w http.ResponseWriter, r *http.Request) {
+func handleReboot(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	machine, ok := params["machine"]
+
+	if !ok {
+		json.NewEncoder(w).Encode("Machine name required")
+		return
+	}
+
 	json.NewEncoder(w).Encode("OK")
-	exec.Command("reboot", "now")
+	commandNetworkMachine(machine, "reboot")
 }
 
 // Shutdown the current machine
-func shutdownMDroid(w http.ResponseWriter, r *http.Request) {
+func handleShutdown(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	machine, ok := params["machine"]
+
+	if !ok {
+		json.NewEncoder(w).Encode("Machine name required")
+		return
+	}
+
 	json.NewEncoder(w).Encode("OK")
-	exec.Command("poweroff", "now")
+	commandNetworkMachine(machine, "shutdown")
 }
 
 // Send a command to a network machine, using a simple python server to recieve

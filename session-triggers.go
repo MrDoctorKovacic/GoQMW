@@ -155,7 +155,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 		} else if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value) {
 			WriteSerial(fmt.Sprintf("power%sWireless", targetAction))
 		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffWireless")
+			go serialMachineShutdown("brightwing", time.Second*10, "powerOffWireless")
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
@@ -167,7 +167,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 		if artanisTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
 			WriteSerial(fmt.Sprintf("power%sBoard", targetAction))
 		} else if artanisTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffBoard")
+			go serialMachineShutdown("artanis", time.Second*10, "powerOffBoard")
 		} else if artanisTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
 			WriteSerial("powerOnBoard")
 		}

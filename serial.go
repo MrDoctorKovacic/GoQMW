@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
@@ -151,4 +152,11 @@ func StartSerialComms(deviceName string, baudrate int) {
 		go ReadSerial(s)
 	}
 
+}
+
+// Shutdown the named machine safely
+func serialMachineShutdown(machine string, timeToSleep time.Duration, serialMessage string) {
+	commandNetworkMachine(machine, "shutdown")
+	time.Sleep(timeToSleep)
+	WriteSerial(serialMessage)
 }
