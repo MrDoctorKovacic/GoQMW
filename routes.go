@@ -182,8 +182,10 @@ func startRouter() {
 	//
 	// Main routes
 	//
-	router.HandleFunc("/restart", rebootMDroid).Methods("GET")
-	router.HandleFunc("/shutdown", shutdownMDroid).Methods("GET")
+	router.HandleFunc("/restart/{machine}", handleReboot).Methods("GET")
+	router.HandleFunc("/shutdown/{machine}", handleShutdown).Methods("GET")
+	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
+	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 
 	//
@@ -212,7 +214,6 @@ func startRouter() {
 	//
 	// PyBus Routes
 	//
-	router.HandleFunc("/pybus/restart", pybus.RestartService).Methods("GET")
 	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
 	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
 
