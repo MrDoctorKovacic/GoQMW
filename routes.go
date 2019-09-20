@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
@@ -20,30 +18,6 @@ import (
 // **
 // Start with some router functions
 // **
-
-// Reboot the machine
-func reboot(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
-	exec.Command("reboot", "now")
-}
-
-// Shutdown the machine
-func shutdown(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
-	exec.Command("poweroff", "now")
-}
-
-// Stop MDroid-Core service
-func stop(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
-	MainStatus.Log(logging.OK(), "Stopping MDroid Service")
-	os.Exit(0)
-}
-
-// welcomeRoute intros MDroid-Core, proving port and service works
-func welcomeRoute(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("Welcome to MDroid! This port is fully operational, see the docs for applicable routes.")
-}
 
 // a list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
@@ -208,9 +182,9 @@ func startRouter() {
 	//
 	// Main routes
 	//
-	router.HandleFunc("/restart", reboot).Methods("GET")
-	router.HandleFunc("/shutdown", shutdown).Methods("GET")
-	router.HandleFunc("/stop", stop).Methods("GET")
+	router.HandleFunc("/restart", rebootMDroid).Methods("GET")
+	router.HandleFunc("/shutdown", shutdownMDroid).Methods("GET")
+	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 
 	//
 	// Ping routes
