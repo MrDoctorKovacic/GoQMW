@@ -55,6 +55,9 @@ func shutdownMDroid(w http.ResponseWriter, r *http.Request) {
 // Send a command to a network machine, using a simple python server to recieve
 func commandNetworkMachine(name string, command string) {
 	machineServiceAddress, err := settings.GetSettingByName(formatting.FormatName(name), "ADDRESS")
+	if machineServiceAddress == "" {
+		return
+	}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
