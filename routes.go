@@ -125,27 +125,27 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		fallthrough
 	case "ARTANI":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.SetSetting("ARTANIS", "POWER", "AUTO")
+			settings.Set("ARTANIS", "POWER", "AUTO")
 			return
 		} else if isPositive {
-			settings.SetSetting("ARTANIS", "POWER", "ON")
+			settings.Set("ARTANIS", "POWER", "ON")
 			WriteSerial("powerOnBoard")
 		} else {
-			settings.SetSetting("ARTANIS", "POWER", "OFF")
+			settings.Set("ARTANIS", "POWER", "OFF")
 			WriteSerial("powerOffBoard")
 		}
 	case "LTE":
 		fallthrough
 	case "BRIGHTWING":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.SetSetting("ARTANIS", "POWER", "AUTO")
+			settings.Set("ARTANIS", "POWER", "AUTO")
 			return
 		}
 		if isPositive {
-			settings.SetSetting("BRIGHTWING", "POWER", "ON")
+			settings.Set("BRIGHTWING", "POWER", "ON")
 			WriteSerial("powerOnWireless")
 		} else {
-			settings.SetSetting("BRIGHTWING", "POWER", "OFF")
+			settings.Set("BRIGHTWING", "POWER", "OFF")
 			WriteSerial("powerOffWireless")
 		}
 	default:
@@ -200,16 +200,16 @@ func startRouter() {
 	router.HandleFunc("/session/socket", GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
 	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")
-	router.HandleFunc("/session/{name}", GetSessionValueHandler).Methods("GET")
-	router.HandleFunc("/session/{name}", PostSessionValue).Methods("POST")
+	router.HandleFunc("/session/{name}", HandleGetSessionValue).Methods("GET")
+	router.HandleFunc("/session/{name}", HandlePostSessionValue).Methods("POST")
 
 	//
 	// Settings routes
 	//
-	router.HandleFunc("/settings", settings.GetAllSettings).Methods("GET")
-	router.HandleFunc("/settings/{component}", settings.GetSetting).Methods("GET")
-	router.HandleFunc("/settings/{component}/{name}", settings.GetSettingValue).Methods("GET")
-	router.HandleFunc("/settings/{component}/{name}/{value}", settings.SetSettingValue).Methods("POST")
+	router.HandleFunc("/settings", settings.HandleGetAll).Methods("GET")
+	router.HandleFunc("/settings/{component}", settings.HandleGet).Methods("GET")
+	router.HandleFunc("/settings/{component}/{name}", settings.HandleGetValue).Methods("GET")
+	router.HandleFunc("/settings/{component}/{name}/{value}", settings.HandleSet).Methods("POST")
 
 	//
 	// PyBus Routes

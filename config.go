@@ -47,7 +47,7 @@ func parseConfig() {
 	flag.Parse()
 
 	// Parse settings file
-	settingsData, VerboseOutput := settings.SetupSettings(Config.SettingsFile)
+	settingsData, VerboseOutput := settings.ReadFile(Config.SettingsFile)
 	Config.VerboseOutput = VerboseOutput
 
 	// Check settings

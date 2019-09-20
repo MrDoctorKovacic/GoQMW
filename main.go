@@ -70,7 +70,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 // Send a command to a network machine, using a simple python server to recieve
 func commandNetworkMachine(name string, command string) {
-	machineServiceAddress, err := settings.GetSettingByName(formatting.FormatName(name), "ADDRESS")
+	machineServiceAddress, err := settings.Get(formatting.FormatName(name), "ADDRESS")
 	if machineServiceAddress == "" {
 		return
 	}

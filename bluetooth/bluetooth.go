@@ -111,7 +111,7 @@ func SetAddress(address string) {
 		BluetoothStatus.Log(logging.OK(), "Now routing Bluetooth commands to "+btAddress)
 
 		// Set new address to persist in settings file
-		settings.SetSetting("CONFIG", "BLUETOOTH_ADDRESS", btAddress)
+		settings.Set("CONFIG", "BLUETOOTH_ADDRESS", btAddress)
 	}
 }
 

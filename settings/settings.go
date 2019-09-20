@@ -30,15 +30,15 @@ var SettingsStatus = logging.NewStatus("Settings")
 // Configure verbose output
 var verboseOutput bool
 
-// SetupSettings will handle the initialization of settings,
+// ReadFile will handle the initialization of settings,
 // either from past mapping or by creating a new one
-func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) {
+func ReadFile(useSettingsFile string) (map[string]map[string]string, bool) {
 	// Default to false
 	verboseOutput = false
 
 	if useSettingsFile != "" {
 		settingsFile = useSettingsFile
-		initSettings, err := parseSettings(settingsFile)
+		initSettings, err := parseSettingsFile(settingsFile)
 		if err == nil && initSettings != nil && len(initSettings) != 0 {
 			Settings = initSettings
 
@@ -77,16 +77,16 @@ func SetupSettings(useSettingsFile string) (map[string]map[string]string, bool) 
 	Settings = make(map[string]map[string]string, 0)
 
 	if useSettingsFile != "" {
-		SetSetting("MDROID", "LAST_USED", time.Now().String())
+		Set("MDROID", "LAST_USED", time.Now().String())
 	}
 
 	// Return empty map
 	return Settings, verboseOutput
 }
 
-// parseSettings will open and interpret program settings,
+// parseSettingsFile will open and interpret program settings,
 // as well as return the generic settings from last session
-func parseSettings(settingsFile string) (map[string]map[string]string, error) {
+func parseSettingsFile(settingsFile string) (map[string]map[string]string, error) {
 	var data map[string]map[string]string
 
 	// Open settings file
@@ -106,8 +106,8 @@ func parseSettings(settingsFile string) (map[string]map[string]string, error) {
 	return data, nil
 }
 
-// writeSettings to given file, create one if it doesn't exist
-func writeSettings(file string) error {
+// writeFile to given file, TODO: create one if it doesn't exist
+func writeFile(file string) error {
 	settingsLock.Lock()
 	settingsJSON, err := json.Marshal(Settings)
 	settingsLock.Unlock()
@@ -128,8 +128,8 @@ func writeSettings(file string) error {
 	return nil
 }
 
-// GetAllSettings returns all current settings
-func GetAllSettings(w http.ResponseWriter, r *http.Request) {
+// HandleGetAll returns all current settings
+func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	if verboseOutput {
 		SettingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
 	}
@@ -138,8 +138,8 @@ func GetAllSettings(w http.ResponseWriter, r *http.Request) {
 	settingsLock.Unlock()
 }
 
-// GetSetting returns all the values of a specific setting
-func GetSetting(w http.ResponseWriter, r *http.Request) {
+// HandleGet returns all the values of a specific setting
+func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	componentName := formatting.FormatName(params["componentName"])
 
@@ -152,8 +152,21 @@ func GetSetting(w http.ResponseWriter, r *http.Request) {
 	settingsLock.Unlock()
 }
 
-// GetSettingByName returns all the values of a specific setting
-func GetSettingByName(componentName string, settingName string) (string, error) {
+// HandleGetValue returns a specific setting value
+func HandleGetValue(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	componentName := formatting.FormatName(params["componentName"])
+	settingName := formatting.FormatName(params["name"])
+
+	if verboseOutput {
+		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+	}
+
+	json.NewEncoder(w).Encode(Settings[componentName][settingName])
+}
+
+// Get returns all the values of a specific setting
+func Get(componentName string, settingName string) (string, error) {
 	componentName = formatting.FormatName(componentName)
 
 	if verboseOutput {
@@ -173,21 +186,8 @@ func GetSettingByName(componentName string, settingName string) (string, error) 
 	return "", fmt.Errorf("Could not find componenet/setting with those values")
 }
 
-// GetSettingValue returns a specific setting value
-func GetSettingValue(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	componentName := formatting.FormatName(params["componentName"])
-	settingName := formatting.FormatName(params["name"])
-
-	if verboseOutput {
-		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
-	}
-
-	json.NewEncoder(w).Encode(Settings[componentName][settingName])
-}
-
-// SetSettingValue is the http wrapper for our setting setter
-func SetSettingValue(w http.ResponseWriter, r *http.Request) {
+// HandleSet is the http wrapper for our setting setter
+func HandleSet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Parse out params
@@ -201,14 +201,14 @@ func SetSettingValue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Do the dirty work elsewhere
-	SetSetting(componentName, settingName, settingValue)
+	Set(componentName, settingName, settingValue)
 
 	// Respond with ack
 	json.NewEncoder(w).Encode("OK")
 }
 
-// SetSetting will handle actually updates or posts a new setting value
-func SetSetting(componentName string, settingName string, settingValue string) {
+// Set will handle actually updates or posts a new setting value
+func Set(componentName string, settingName string, settingValue string) {
 	// Insert componentName into Map if not exists
 	settingsLock.Lock()
 	if _, ok := Settings[componentName]; !ok {
@@ -223,5 +223,5 @@ func SetSetting(componentName string, settingName string, settingValue string) {
 	SettingsStatus.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
-	writeSettings(settingsFile)
+	writeFile(settingsFile)
 }
