@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os/exec"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
@@ -62,17 +61,5 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode("OK")
 	} else {
 		json.NewEncoder(w).Encode("Invalid command")
-	}
-}
-
-// RestartService will attempt to restart the pybus service
-func RestartService(w http.ResponseWriter, r *http.Request) {
-	out, err := exec.Command("/home/pi/le/auto/pyBus/startup_pybus.sh").Output()
-
-	if err != nil {
-		PybusStatus.Log(logging.Error(), fmt.Sprintf("Error restarting PyBus: \n%s", err.Error()))
-		json.NewEncoder(w).Encode(err)
-	} else {
-		json.NewEncoder(w).Encode(out)
 	}
 }
