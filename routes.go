@@ -235,7 +235,7 @@ func startRouter() {
 	router.HandleFunc("/bluetooth/getDeviceInfo", bluetooth.GetDeviceInfo).Methods("GET")
 	router.HandleFunc("/bluetooth/getMediaInfo", bluetooth.GetMediaInfo).Methods("GET")
 	router.HandleFunc("/bluetooth/connect", bluetooth.Connect).Methods("GET")
-	router.HandleFunc("/bluetooth/disconnect", bluetooth.Connect).Methods("GET")
+	router.HandleFunc("/bluetooth/disconnect", bluetooth.Disconnect).Methods("GET")
 	router.HandleFunc("/bluetooth/prev", bluetooth.Prev).Methods("GET")
 	router.HandleFunc("/bluetooth/next", bluetooth.Next).Methods("GET")
 	router.HandleFunc("/bluetooth/pause", bluetooth.Pause).Methods("GET")
@@ -279,4 +279,20 @@ func startRouter() {
 	}
 
 	log.Fatal(http.ListenAndServe(":5353", router))
+}
+
+// AuthMiddleware will match http bearer token again the one hardcoded in our config
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		reqToken := r.Header.Get("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer")
+		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != Config.AuthToken {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("403 - Invalid Auth Token!"))
+		}
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
 }

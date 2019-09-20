@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
@@ -178,20 +176,4 @@ func setupSerial(configAddr *map[string]map[string]string) {
 		// Setup other devices
 		parseSerialDevices(settingsData)
 	}
-}
-
-// AuthMiddleware will match http bearer token again the one hardcoded in our config
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		reqToken := r.Header.Get("Authorization")
-		splitToken := strings.Split(reqToken, "Bearer")
-		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != Config.AuthToken {
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte("403 - Invalid Auth Token!"))
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
 }
