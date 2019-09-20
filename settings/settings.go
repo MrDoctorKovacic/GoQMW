@@ -38,7 +38,7 @@ func ReadFile(useSettingsFile string) (map[string]map[string]string, bool) {
 
 	if useSettingsFile != "" {
 		settingsFile = useSettingsFile
-		initSettings, err := parseSettingsFile(settingsFile)
+		initSettings, err := parseFile(settingsFile)
 		if err == nil && initSettings != nil && len(initSettings) != 0 {
 			Settings = initSettings
 
@@ -84,9 +84,9 @@ func ReadFile(useSettingsFile string) (map[string]map[string]string, bool) {
 	return Settings, verboseOutput
 }
 
-// parseSettingsFile will open and interpret program settings,
+// parseFile will open and interpret program settings,
 // as well as return the generic settings from last session
-func parseSettingsFile(settingsFile string) (map[string]map[string]string, error) {
+func parseFile(settingsFile string) (map[string]map[string]string, error) {
 	var data map[string]map[string]string
 
 	// Open settings file
