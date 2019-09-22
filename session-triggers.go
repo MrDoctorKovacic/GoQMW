@@ -133,7 +133,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
 	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
 	raynorTargetPower, rerr := settings.Get("RAYNOR", "POWER")
-	artanisTargetPower, aerr := settings.Get("ARTANIS", "POWER")
+	lucioTargetPower, aerr := settings.Get("LUCIO", "POWER")
 	brightwingTargetPower, berr := settings.Get("BRIGHTWING", "POWER")
 
 	// Read the target action based on current ACC Power value
@@ -164,17 +164,17 @@ func tAccPower(triggerPackage *SessionPackage) {
 
 	// Handle video server power control
 	if aerr == nil {
-		if artanisTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
+		if lucioTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
 			WriteSerial(fmt.Sprintf("power%sBoard", targetAction))
-		} else if artanisTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
+		} else if lucioTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
 			commandNetworkMachine("etc", "shutdown")
-			go serialMachineShutdown("artanis", time.Second*10, "powerOffBoard")
-		} else if artanisTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
+			go serialMachineShutdown("lucio", time.Second*10, "powerOffBoard")
+		} else if lucioTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
 			WriteSerial("powerOnBoard")
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
-		settings.Set("ARTANIS", "POWER", "AUTO")
+		settings.Set("LUCIO", "POWER", "AUTO")
 	}
 
 	// Handle tablet power control

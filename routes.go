@@ -123,22 +123,22 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		fallthrough
 	case "BOARD":
 		fallthrough
-	case "ARTANI":
+	case "LUCIO":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.Set("ARTANIS", "POWER", "AUTO")
+			settings.Set("LUCIO", "POWER", "AUTO")
 			return
 		} else if isPositive {
-			settings.Set("ARTANIS", "POWER", "ON")
+			settings.Set("LUCIO", "POWER", "ON")
 			WriteSerial("powerOnBoard")
 		} else {
-			settings.Set("ARTANIS", "POWER", "OFF")
+			settings.Set("LUCIO", "POWER", "OFF")
 			WriteSerial("powerOffBoard")
 		}
 	case "LTE":
 		fallthrough
 	case "BRIGHTWING":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.Set("ARTANIS", "POWER", "AUTO")
+			settings.Set("LUCIO", "POWER", "AUTO")
 			return
 		}
 		if isPositive {
