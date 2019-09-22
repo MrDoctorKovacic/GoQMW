@@ -167,6 +167,7 @@ func tAccPower(triggerPackage *SessionPackage) {
 		if artanisTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
 			WriteSerial(fmt.Sprintf("power%sBoard", targetAction))
 		} else if artanisTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
+			commandNetworkMachine("etc", "shutdown")
 			go serialMachineShutdown("artanis", time.Second*10, "powerOffBoard")
 		} else if artanisTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
 			WriteSerial("powerOnBoard")
