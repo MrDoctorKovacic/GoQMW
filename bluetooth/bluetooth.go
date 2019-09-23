@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gosimple/slug"
@@ -161,7 +162,7 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		BluetoothStatus.Log(logging.Error(), stderr.String())
 	}
 
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // Disconnect bluetooth device
@@ -180,7 +181,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 		BluetoothStatus.Log(logging.Error(), stderr.String())
 	}
 
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // GetDeviceInfo attempts to get metadata about connected device
@@ -188,9 +189,9 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(logging.OK(), "Getting device info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
 	if ok {
-		json.NewEncoder(w).Encode(cleanDBusOutput(result))
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: cleanDBusOutput(result), Status: "success", OK: true})
 	} else {
-		json.NewEncoder(w).Encode("Error")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting device info", Status: "fail", OK: false})
 	}
 }
 
@@ -216,12 +217,12 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Echo back all info
-			json.NewEncoder(w).Encode(cleanResult)
+			json.NewEncoder(w).Encode(formatting.JSONResponse{Output: cleanResult, Status: "success", OK: true})
 		} else {
-			json.NewEncoder(w).Encode("Error")
+			json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
 		}
 	} else {
-		json.NewEncoder(w).Encode("Error")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
 	}
 }
 
@@ -229,26 +230,26 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 func Prev(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(logging.OK(), "Going to previous track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false)
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(logging.OK(), "Going to next track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false)
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // Play attempts to play bluetooth media
 func Play(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(logging.OK(), "Attempting to play media...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Play"}, false)
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // Pause attempts to pause bluetooth media
 func Pause(w http.ResponseWriter, r *http.Request) {
 	BluetoothStatus.Log(logging.OK(), "Attempting to pause media...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.bluez.MediaPlayer1.Pause"}, false)
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
