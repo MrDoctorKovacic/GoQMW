@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"./logging"
 	"github.com/gorilla/mux"
 )
 

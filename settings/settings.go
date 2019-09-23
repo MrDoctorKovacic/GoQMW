@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"../formatting"
+	"../logging"
 	"github.com/gorilla/mux"
 )
 

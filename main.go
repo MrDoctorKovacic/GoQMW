@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"./formatting"
+	"./logging"
+	"./settings"
 	"github.com/gorilla/mux"
 )
 

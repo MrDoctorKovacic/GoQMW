@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"./formatting"
+	"./logging"
+	"./pybus"
+	"./settings"
 )
 
 // Process session values by combining or otherwise modifying once posted

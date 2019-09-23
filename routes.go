@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"./bluetooth"
+	"./formatting"
+	"./logging"
+	"./pybus"
+	"./settings"
 	"github.com/gorilla/mux"
 )
 
