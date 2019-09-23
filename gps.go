@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"./logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
 
 // GPSData holds various data points we expect to receive

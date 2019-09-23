@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"./logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 	"github.com/tarm/serial"
 )
