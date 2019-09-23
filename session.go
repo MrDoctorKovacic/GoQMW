@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -62,7 +61,7 @@ func SetupSessions(sessionFile string) {
 
 // HandleGetSession responds to an HTTP request for the entire session
 func HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	response := formatting.JSONResponse{Value: GetSession(), Error: "null", OK: true}
+	response := formatting.JSONResponse{Output: GetSession(), Status: "success", OK: true}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -122,10 +121,19 @@ func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	sessionValue, err := GetSessionValue(params["name"])
+	response := formatting.JSONResponse{}
 	if err != nil {
-		json.NewEncoder(w).Encode("Error: " + err.Error())
+		response.Status = "fail"
+		response.Output = err.Error()
+		response.OK = false
+		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	// Craft OK response
+	response.Status = "success"
+	response.Output = sessionValue
+	response.OK = true
 
 	json.NewEncoder(w).Encode(sessionValue)
 }
@@ -152,8 +160,14 @@ func GetSessionValue(name string) (value SessionData, err error) {
 // HandlePostSessionValue updates or posts a new session value to the common session
 func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
+
+	// Default to NOT OK response
+	response := formatting.JSONResponse{}
+	response.Status = "fail"
+	response.OK = false
+
 	if err != nil {
-		log.Printf("Error reading body: %v", err)
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
@@ -163,7 +177,8 @@ func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 	if len(body) == 0 {
-		json.NewEncoder(w).Encode("Error: Empty body")
+		response.Output = "Error: Empty body"
+		json.NewEncoder(w).Encode(response)
 	}
 
 	params := mux.Vars(r)
@@ -173,7 +188,9 @@ func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		SessionStatus.Log(logging.Error(), "Error decoding incoming JSON")
 		SessionStatus.Log(logging.Error(), err.Error())
-		json.NewEncoder(w).Encode(err.Error())
+
+		response.Output = err.Error()
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -182,12 +199,18 @@ func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	err = SetSessionValue(newPackage, newdata.Quiet)
 
 	if err != nil {
-		json.NewEncoder(w).Encode(err.Error())
+		response.Output = err.Error()
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
+	// Craft OK response
+	response.Status = "success"
+	response.OK = true
+	response.Output = newPackage
+
 	// Respond with success
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(response)
 }
 
 // CreateSessionValue prepares a SessionData structure before passing it to the setter

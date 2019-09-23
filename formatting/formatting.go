@@ -10,9 +10,11 @@ import (
 
 // JSONResponse for common return value to API
 type JSONResponse struct {
-	Value interface{} `json:"value,omitempty"`
-	Error string      `json:"error,omitempty"`
-	OK    bool        `json:"OK,omitempty"`
+	Output interface{} `json:"output,omitempty"`
+	Status string      `json:"status,omitempty"`
+	OK     bool        `json:"ok,omitempty"`
+	Method string      `json:"method,omitempty"`
+	ID     int         `json:"id,omitempty"`
 }
 
 // FormatName returns string in upper case with underscores replacing spaces
