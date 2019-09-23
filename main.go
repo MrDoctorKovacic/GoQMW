@@ -35,8 +35,8 @@ func main() {
 
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
 	MainStatus.Log(logging.OK(), "Stopping MDroid Service as per request")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	os.Exit(0)
 }
 
@@ -46,11 +46,11 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		json.NewEncoder(w).Encode("Machine name required")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	commandNetworkMachine(machine, "reboot")
 }
 
@@ -60,11 +60,11 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		json.NewEncoder(w).Encode("Machine name required")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	commandNetworkMachine(machine, "shutdown")
 }
 
@@ -85,5 +85,5 @@ func commandNetworkMachine(name string, command string) {
 
 // welcomeRoute intros MDroid-Core, proving port and service works
 func welcomeRoute(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("Welcome to MDroid! This port is fully operational, see the docs for applicable routes.")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
 }
