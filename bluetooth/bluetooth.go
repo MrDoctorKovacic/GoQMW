@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"../logging"
+	"../settings"
 	"github.com/gosimple/slug"
 )
 

@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"./bluetooth"
+	"./influx"
+	"./logging"
+	"./settings"
 	"github.com/tarm/serial"
 )
 
