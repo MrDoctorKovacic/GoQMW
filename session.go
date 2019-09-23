@@ -135,7 +135,7 @@ func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	response.Output = sessionValue
 	response.OK = true
 
-	json.NewEncoder(w).Encode(sessionValue)
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetSessionValue returns the named session, if it exists. Nil otherwise
