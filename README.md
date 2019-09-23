@@ -5,11 +5,11 @@
 ![Controls](https://quinncasey.com/wp-content/uploads/2019/09/MDroidDemo.png "Screenshot 1")
 [Control App](https://github.com/MrDoctorKovacic/MDroid-Control)
 
-![](https://i.imgur.com/r2EArt8.gif)
+![Watch Intgration](https://i.imgur.com/r2EArt8.gif)
 
 [Galaxy Watch Integration](https://quinncasey.com/unlocking-vehicle-with-mdroid-core-from-smartwatch/)
 
-REST API & control hub for vehicle data. 
+REST API & control hub for vehicle data.
 
 Essentially a backend to my own interfaces like [PyBus](https://github.com/MrDoctorKovacic/pyBus) or other inputs ([GPS](https://github.com/MrDoctorKovacic/MDroid-GPS), [CAN](https://github.com/MrDoctorKovacic/MDroid-CAN), etc). This aggregates data from various sources to be retrieved by other programs or for later analysis. Also used to delegate specific actions to node devices.
 
@@ -24,7 +24,7 @@ Essentially a backend to my own interfaces like [PyBus](https://github.com/MrDoc
 
 ## Requirements
 
-* Go v1.11 at a minimum ([Raspberry Pi Install](https://gist.github.com/kbeflo/9d981573aad107da6fa7ac0603259b3b)) 
+* Go v1.11 at a minimum ([Raspberry Pi Install](https://gist.github.com/kbeflo/9d981573aad107da6fa7ac0603259b3b))
 
 ## Installation
 
@@ -38,7 +38,7 @@ Having [InfluxDB & the rest of the TICK stack](https://www.influxdata.com/blog/r
 
 ## Configuration
 
-The `settings.json` file is a simple JSON document for program settings that should persist through each load. The ones under the header `MDROID` are suggested for the program to function properly. The program provides endpoints for user-defined settings to be POST-ed at will. 
+The `settings.json` file is a simple JSON document for program settings that should persist through each load. The ones under the header `MDROID` are suggested for the program to function properly. The program provides endpoints for user-defined settings to be POST-ed at will.
 
 This allows for setting generic fields and values, which can be retrieved later. Some notes:
 
@@ -72,9 +72,9 @@ Here's a commented example with suggested settings:
 }
 ```
 
-### What's the difference between settings and session values?
+### The difference between settings and session values
 
-All incoming data typically falls into one of these two categories. They are made distinct with entirely different endpoints and processing. But together they make up the bulk of query-able vehicle information. 
+All incoming data typically falls into one of these two categories. They are made distinct with entirely different endpoints and processing. But together they make up the bulk of query-able vehicle information.
 
 Generally, **Settings** will define values that should persist through reboots of the program and device (since these are saved to disk frequently). Examples:
 
