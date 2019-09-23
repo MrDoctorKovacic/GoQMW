@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 )
@@ -54,12 +55,12 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 
 	if srcOK && destOK && dataOK && len(src) == 2 && len(dest) == 2 && len(data) > 0 {
 		go PushQueue(fmt.Sprintf(`["%s", "%s", "%s"]`, src, dest, data))
-		json.NewEncoder(w).Encode("OK")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	} else if params["command"] != "" {
 		// Some commands need special timing functions
 		go PushQueue(params["command"])
-		json.NewEncoder(w).Encode("OK")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	} else {
-		json.NewEncoder(w).Encode("Invalid command")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Invalid command", Status: "fail", OK: false})
 	}
 }
