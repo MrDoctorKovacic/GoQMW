@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 )
@@ -54,7 +55,7 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 				if online {
 					ALPRStatus.Log(logging.Error(), errorText)
 				}
-				json.NewEncoder(w).Encode(errorText)
+				json.NewEncoder(w).Encode(formatting.JSONResponse{Output: errorText, Status: "fail", OK: false})
 				return
 			}
 
@@ -63,15 +64,15 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	} else {
 		errorText := fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %f", plate, percent)
 		ALPRStatus.Log(logging.Error(), errorText)
-		json.NewEncoder(w).Encode(errorText)
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: errorText, Status: "fail", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // RestartALPR posts remote device to restart ALPR service
 // TODO
 func RestartALPR(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/mux"
 	"github.com/tarm/serial"
@@ -80,7 +81,7 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	if params["command"] != "" {
 		WriteSerial(params["command"])
 	}
-	json.NewEncoder(w).Encode("OK")
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // ReadSerial will continuously pull data from incoming serial

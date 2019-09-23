@@ -26,7 +26,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
-		json.NewEncoder(w).Encode("Error: One or more required params is empty")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error: One or more required params is empty", Status: "fail", OK: false})
 		return
 	}
 
@@ -150,12 +150,12 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		pybus.PybusStatus.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))
-		json.NewEncoder(w).Encode(fmt.Sprintf("Invalid device %s", device))
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), Status: "fail", OK: false})
 		return
 	}
 
 	// Yay
-	json.NewEncoder(w).Encode(device)
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: device, Status: "success", OK: true})
 }
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
