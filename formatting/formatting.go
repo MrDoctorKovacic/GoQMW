@@ -3,9 +3,9 @@ package formatting
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
-	"unicode"
 )
 
 // JSONResponse for common return value to API
@@ -19,17 +19,14 @@ type JSONResponse struct {
 
 // FormatName returns string in upper case with underscores replacing spaces
 func FormatName(name string) string {
-	return strings.TrimSpace(strings.ToUpper(strings.Replace(name, " ", "_", -1)))
+	spaceRemover := regexp.MustCompile(`\s+`)
+	name = spaceRemover.ReplaceAllString(name, " ")
+	return strings.ToUpper(strings.Replace(strings.TrimSpace(name), " ", "_", -1))
 }
 
 // IsValidName verifies the name is alphanumeric
 func IsValidName(name string) bool {
-	for _, r := range name {
-		if string(r) != "_" && !unicode.IsLetter(r) && !unicode.IsNumber(r) {
-			return false
-		}
-	}
-	return true
+	return name == FormatName(name)
 }
 
 // IsPositiveRequest helps translate UP or LOCK into true or false
