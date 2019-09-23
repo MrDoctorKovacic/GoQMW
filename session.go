@@ -62,7 +62,8 @@ func SetupSessions(sessionFile string) {
 
 // HandleGetSession responds to an HTTP request for the entire session
 func HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(GetSession())
+	response := formatting.JSONResponse{Value: GetSession(), Error: "null", OK: true}
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetSession returns the entire current session

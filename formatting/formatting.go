@@ -8,6 +8,13 @@ import (
 	"unicode"
 )
 
+// JSONResponse for common return value to API
+type JSONResponse struct {
+	Value interface{} `json:"value,omitempty"`
+	Error string      `json:"error,omitempty"`
+	OK    bool        `json:"OK,omitempty"`
+}
+
 // FormatName returns string in upper case with underscores replacing spaces
 func FormatName(name string) string {
 	return strings.TrimSpace(strings.ToUpper(strings.Replace(name, " ", "_", -1)))
