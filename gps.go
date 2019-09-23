@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
 
@@ -26,6 +28,7 @@ type GPSData struct {
 
 // GPS is the last posted GPS fix
 var GPS GPSData
+var gpsLock sync.Mutex
 
 //
 // GPS Functions
@@ -37,7 +40,9 @@ func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 	if Config.VerboseOutput {
 		SessionStatus.Log(logging.OK(), "Responding to GET request for all GPS values")
 	}
-	json.NewEncoder(w).Encode(GPS)
+	gpsLock.Lock()
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: GPS, Status: "success", OK: true})
+	gpsLock.Unlock()
 }
 
 // SetGPSValue posts a new GPS fix
@@ -55,6 +60,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 
 	// Update value for global session if the data is newer (not nil)
 	// Can't find a better way to go about this
+	gpsLock.Lock()
 	if newdata.Latitude != "" {
 		GPS.Latitude = newdata.Latitude
 		postingString.WriteString(fmt.Sprintf("latitude=\"%s\",", newdata.Latitude))
@@ -95,6 +101,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		convFloat, _ := strconv.ParseFloat(newdata.Course, 32)
 		postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
 	}
+	gpsLock.Unlock()
 
 	// Insert into database
 	if Config.DatabaseEnabled {
@@ -107,5 +114,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode("OK")
+	gpsLock.Lock()
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: GPS, Status: "success", OK: true})
+	gpsLock.Unlock()
 }
