@@ -12,7 +12,7 @@ import (
 type JSONResponse struct {
 	Output interface{} `json:"output,omitempty"`
 	Status string      `json:"status,omitempty"`
-	OK     bool        `json:"ok,omitempty"`
+	OK     bool        `json:"ok"`
 	Method string      `json:"method,omitempty"`
 	ID     int         `json:"id,omitempty"`
 }
