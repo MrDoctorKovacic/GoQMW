@@ -36,6 +36,12 @@ func (triggerPackage *SessionPackage) processSessionTriggers() {
 		tAccPower(triggerPackage)
 	case "LIGHT_SENSOR_REASON":
 		tLightSensorReason(triggerPackage)
+	case "SEAT_MEMORY_1":
+		fallthrough
+	case "SEAT_MEMORY_2":
+		fallthrough
+	case "SEAT_MEMORY_3":
+		tSeatMemory(triggerPackage)
 	default:
 		if Config.VerboseOutput {
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
@@ -207,5 +213,17 @@ func tLightSensorReason(triggerPackage *SessionPackage) {
 			delta.Minutes() > 5 {
 			logging.SlackAlert(Config.SlackURL, "Windows are down in the rain, eh?")
 		}
+	}
+}
+
+// Restart different machines when seat memory buttons are pressed
+func tSeatMemory(triggerPackage *SessionPackage) {
+	switch triggerPackage.Name {
+	case "SEAT_MEMORY_1":
+		commandNetworkMachine("LUCIO", "restart")
+	case "SEAT_MEMORY_2":
+		commandNetworkMachine("BRIGHTWING", "restart")
+	case "SEAT_MEMORY_3":
+		commandNetworkMachine("MDROID", "restart")
 	}
 }
