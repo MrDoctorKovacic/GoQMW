@@ -135,7 +135,7 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 		SettingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
 	}
 	settingsLock.Lock()
-	json.NewEncoder(w).Encode(Settings)
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Settings, Status: "success", OK: true})
 	settingsLock.Unlock()
 }
 
@@ -149,8 +149,18 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	settingsLock.Lock()
-	json.NewEncoder(w).Encode(Settings[componentName])
+	responseVal, ok := Settings[componentName]
 	settingsLock.Unlock()
+
+	var response formatting.JSONResponse
+	if !ok {
+		response = formatting.JSONResponse{Output: "Setting not found.", Status: "fail", OK: false}
+	} else {
+		response = formatting.JSONResponse{Output: responseVal, Status: "success", OK: true}
+	}
+
+	json.NewEncoder(w).Encode(response)
+
 }
 
 // HandleGetValue returns a specific setting value
@@ -163,7 +173,18 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 	}
 
-	json.NewEncoder(w).Encode(Settings[componentName][settingName])
+	settingsLock.Lock()
+	responseVal, ok := Settings[componentName][settingName]
+	settingsLock.Unlock()
+
+	var response formatting.JSONResponse
+	if !ok {
+		response = formatting.JSONResponse{Output: "Setting not found.", Status: "fail", OK: false}
+	} else {
+		response = formatting.JSONResponse{Output: responseVal, Status: "success", OK: true}
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 // Get returns all the values of a specific setting
@@ -204,8 +225,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	// Do the dirty work elsewhere
 	Set(componentName, settingName, settingValue)
 
-	// Respond with ack
-	json.NewEncoder(w).Encode("OK")
+	// Respond with OK
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: componentName, Status: "success", OK: true})
 }
 
 // Set will handle actually updates or posts a new setting value
