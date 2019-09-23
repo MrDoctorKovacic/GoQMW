@@ -141,7 +141,7 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 // HandleGet returns all the values of a specific setting
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatting.FormatName(params["componentName"])
+	componentName := formatting.FormatName(params["component"])
 
 	if verboseOutput {
 		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
@@ -155,7 +155,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 // HandleGetValue returns a specific setting value
 func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatting.FormatName(params["componentName"])
+	componentName := formatting.FormatName(params["component"])
 	settingName := formatting.FormatName(params["name"])
 
 	if verboseOutput {
