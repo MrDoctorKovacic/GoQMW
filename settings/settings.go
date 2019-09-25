@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/tarm/serial"
@@ -32,6 +33,7 @@ type ConfigValues struct {
 	HardwareSerialEnabled bool
 	HardwareSerialPort    string
 	HardwareSerialBaud    string
+	Location              gps.Location
 	PingHost              string
 	SerialControlDevice   *serial.Port
 	SettingsFile          string

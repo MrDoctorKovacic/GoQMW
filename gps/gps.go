@@ -69,7 +69,7 @@ func (loc *Location) Set(newdata Fix) string {
 	loc.Mutex.Lock()
 	if newdata.Latitude == "" && newdata.Longitude == "" {
 		gpsStatus.Log(logging.Warning(), "Not inserting new GPS fix, no new Lat or Long")
-		return
+		return ""
 	}
 
 	// Update Loc fixes
