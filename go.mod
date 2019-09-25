@@ -16,5 +16,5 @@ require (
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/sys v0.0.0-20190924154521-2837fb4f24fe // indirect
 	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190925164712-ae58c0ff6b32 // indirect
+	golang.org/x/tools v0.0.0-20190925195333-2e68ad74ea7f // indirect
 )

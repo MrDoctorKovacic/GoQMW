@@ -16,10 +16,10 @@ import (
 	"github.com/tarm/serial"
 )
 
-// a list of pre-approved routes to PyBus for easier routing
+// ParseCommand is a list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
 // and are actually preferred, since we can handle strange cases
-func (session *Session) parseCommand(w http.ResponseWriter, r *http.Request) {
+func (session *Session) ParseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {

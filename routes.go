@@ -113,7 +113,7 @@ func startRouter() {
 	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
-	router.HandleFunc("/{device}/{command}", MainSession.parseCommand).Methods("GET")
+	router.HandleFunc("/{device}/{command}", MainSession.ParseCommand).Methods("GET")
 
 	//
 	// Finally, welcome and meta routes
