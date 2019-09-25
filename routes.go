@@ -45,12 +45,12 @@ func (loc *gps.Location) handleSetGPS(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into database
 	if postingString != "" && Config.DatabaseEnabled {
-		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
+		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
 
 		if err != nil && online {
-			MainStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
+			MainStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
 		} else if Config.VerboseOutput {
-			MainStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
+			MainStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString))
 		}
 	}
 }
