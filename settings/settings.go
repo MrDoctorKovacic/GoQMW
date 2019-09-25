@@ -37,6 +37,7 @@ type ConfigValues struct {
 	SettingsFile          string
 	SessionFile           string
 	SlackURL              string
+	Timezone              *time.Location
 	VerboseOutput         bool
 }
 

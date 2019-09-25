@@ -30,6 +30,9 @@ type GPSData struct {
 var GPS GPSData
 var gpsLock sync.Mutex
 
+// gpsStatus will control logging and reporting of status / warnings / errors
+var gpsStatus = logging.NewStatus("Main")
+
 //
 // GPS Functions
 //
@@ -38,7 +41,7 @@ var gpsLock sync.Mutex
 func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
 	if Config.VerboseOutput {
-		SessionStatus.Log(logging.OK(), "Responding to GET request for all GPS values")
+		gpsStatus.Log(logging.OK(), "Responding to GET request for all GPS values")
 	}
 	gpsLock.Lock()
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: GPS, Status: "success", OK: true})
@@ -52,7 +55,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 
 	// Log if requested
 	if Config.VerboseOutput {
-		SessionStatus.Log(logging.OK(), "Responding to POST request for gps values")
+		gpsStatus.Log(logging.OK(), "Responding to POST request for gps values")
 	}
 
 	// Prepare new value
@@ -85,7 +88,7 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}
 	if newdata.Time == "" {
-		newdata.Time = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
+		newdata.Time = time.Now().In(Config.Timezone).Format("2006-01-02 15:04:05.999")
 	}
 	GPS.Time = newdata.Time
 	if newdata.EPV != "" {
@@ -108,9 +111,9 @@ func SetGPSValue(w http.ResponseWriter, r *http.Request) {
 		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 		if err != nil && online {
-			SessionStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
+			gpsStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
 		} else if Config.VerboseOutput {
-			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
+			gpsStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
 		}
 	}
 

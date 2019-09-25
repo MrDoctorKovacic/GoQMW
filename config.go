@@ -3,14 +3,19 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/gorilla/mux"
+	"github.com/tarm/serial"
 )
 
 // Config defined here, to be saved to below
@@ -84,14 +89,14 @@ func setupTimezone(configAddr *map[string]string) {
 	if usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
 		if err == nil {
-			Timezone = loc
+			Config.Timezone = loc
 		} else {
 			// If timezone has errored
-			Timezone, _ = time.LoadLocation("UTC")
+			Config.Timezone, _ = time.LoadLocation("UTC")
 		}
 	} else {
 		// If timezone is not set in config
-		Timezone, _ = time.LoadLocation("UTC")
+		Config.Timezone, _ = time.LoadLocation("UTC")
 	}
 }
 
@@ -132,6 +137,16 @@ func setupBluetooth(configAddr *map[string]string) {
 // PROPRIETARY
 // Configure hardware serials, should not be used outside my own config
 //
+
+// WriteSerialHandler handles messages sent through the server
+func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if params["command"] != "" {
+		mserial.WriteSerial(Config.SerialControlDevice, params["command"])
+	}
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
+}
+
 func setupSerial(configAddr *map[string]map[string]string) {
 	settingsData := *configAddr
 	configMap := settingsData["MDROID"]
@@ -154,9 +169,32 @@ func setupSerial(configAddr *map[string]map[string]string) {
 			HardwareSerialBaud = baudrateString
 		}
 		// Start initial reader / writer
-		StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
+		startSerialComms(HardwareSerialPort, HardwareSerialBaud)
 
 		// Setup other devices
-		parseSerialDevices(settingsData)
+		for device, baudrate := range mserial.ParseSerialDevices(settingsData) {
+			startSerialComms(device, baudrate)
+		}
+	}
+}
+
+// startSerialComms will set up the serial port,
+// and start the ReadSerial goroutine
+func startSerialComms(deviceName string, baudrate int) {
+	MainStatus.Log(logging.OK(), "Opening serial device "+deviceName)
+	c := &serial.Config{Name: deviceName, Baud: baudrate}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		MainStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)
+		MainStatus.Log(logging.Error(), err.Error())
+	} else {
+		// Use first Serial device as a R/W, all others will only be read from
+		if Config.SerialControlDevice == nil {
+			Config.SerialControlDevice = s
+			MainStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
+		}
+
+		// Continiously read from serial port
+		go mserial.ReadSerial(s, MainSession)
 	}
 }
