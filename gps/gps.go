@@ -11,6 +11,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/bradfitz/latlong"
 )
 
 // Location contains GPS meta data and other location information
@@ -64,14 +65,13 @@ func (loc *Location) Set(newdata Fix) string {
 	// Prepare new value
 	var postingString strings.Builder
 
-	// Update value for global session if the data is newer (not nil)
-	// Can't find a better way to go about this
-	loc.Mutex.Lock()
+	// Update value for global session if the data is newer
 	if newdata.Latitude == "" && newdata.Longitude == "" {
 		gpsStatus.Log(logging.Warning(), "Not inserting new GPS fix, no new Lat or Long")
 		return ""
 	}
 
+	loc.Mutex.Lock()
 	// Update Loc fixes
 	loc.LastFix = loc.CurrentFix
 	loc.CurrentFix = newdata
@@ -114,6 +114,30 @@ func (loc *Location) Set(newdata Fix) string {
 	return postingString.String()
 }
 
+// Parses GPS coordinates into a time.Location timezone
 func (loc *Location) processTimezone() {
+	loc.Mutex.Lock()
+	latFloat, err1 := strconv.ParseFloat(loc.CurrentFix.Latitude, 64)
+	longFloat, err2 := strconv.ParseFloat(loc.CurrentFix.Longitude, 64)
+	loc.Mutex.Unlock()
 
+	if err1 != nil {
+		gpsStatus.Log(logging.Error(), fmt.Sprintf("Error converting lat into float64: %s", err1.Error()))
+		return
+	}
+	if err2 != nil {
+		gpsStatus.Log(logging.Error(), fmt.Sprintf("Error converting long into float64: %s", err2.Error()))
+		return
+	}
+
+	timezoneName := latlong.LookupZoneName(latFloat, longFloat)
+	newTimezone, err := time.LoadLocation(timezoneName)
+	if err != nil {
+		gpsStatus.Log(logging.Error(), fmt.Sprintf("Error parsing lat long into location: %s", err.Error()))
+		return
+	}
+
+	loc.Mutex.Lock()
+	loc.Timezone = newTimezone
+	loc.Mutex.Unlock()
 }

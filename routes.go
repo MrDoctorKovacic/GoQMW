@@ -74,12 +74,21 @@ func startRouter() {
 	router.HandleFunc("/ping/{device}", logging.Ping).Methods("POST")
 
 	//
+	// GPS Routes
+	//
+	router.HandleFunc("/session/gps", Config.Location.HandleGet).Methods("GET")
+	router.HandleFunc("/session/gps", handleSetGPS).Methods("POST")
+	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
+		Config.Location.Mutex.Lock()
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Config.Location.Timezone, Status: "success", OK: true})
+		Config.Location.Mutex.Unlock()
+	}).Methods("GET")
+
+	//
 	// Session routes
 	//
 	router.HandleFunc("/session", MainSession.HandleGetSession).Methods("GET")
 	router.HandleFunc("/session/socket", MainSession.GetSessionSocket).Methods("GET")
-	router.HandleFunc("/session/gps", Config.Location.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", handleSetGPS).Methods("POST")
 	router.HandleFunc("/session/{name}", MainSession.HandleGetSessionValue).Methods("GET")
 	router.HandleFunc("/session/{name}", MainSession.HandlePostSessionValue).Methods("POST")
 
