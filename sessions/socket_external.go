@@ -30,7 +30,7 @@ func (session *Session) CheckServer(host string, token string) {
 			timeToWait = time.Second * 1
 		}
 
-		resp, err := http.Get(fmt.Sprintf("http://%s/ping", host))
+		resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
 		if err != nil {
 			// handle error
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
