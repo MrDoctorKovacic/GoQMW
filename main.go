@@ -7,6 +7,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/gorilla/mux"
 )
 
@@ -45,7 +46,7 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	commandNetworkMachine(machine, "reboot")
+	mserial.CommandNetworkMachine(machine, "reboot")
 }
 
 // Shutdown the current machine
@@ -59,7 +60,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	commandNetworkMachine(machine, "shutdown")
+	mserial.CommandNetworkMachine(machine, "shutdown")
 }
 
 // welcomeRoute intros MDroid-Core, proving port and service works

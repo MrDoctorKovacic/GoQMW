@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/tarm/serial"
 )
@@ -41,52 +39,14 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 	return devices
 }
 
-func parseSerialJSON(marshalledJSON interface{}, session *sessions.Session) {
-
-	if marshalledJSON == nil {
-		SerialStatus.Log(logging.Error(), " marshalled JSON is nil.")
-		return
-	}
-
-	data := marshalledJSON.(map[string]interface{})
-
-	// Switch through various types of JSON data
-	for key, value := range data {
-		switch vv := value.(type) {
-		case bool:
-			session.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
-		case string:
-			session.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
-		case int:
-			session.CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
-		case float32:
-			floatValue, _ := value.(float32)
-			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
-		case float64:
-			floatValue, _ := value.(float64)
-			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
-		case []interface{}:
-			SerialStatus.Log(logging.Error(), key+" is an array. Data: ")
-			for i, u := range vv {
-				fmt.Println(i, u)
-			}
-		case nil:
-			break
-		default:
-			SerialStatus.Log(logging.Error(), fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
-		}
-	}
-}
-
 // ReadSerial will continuously pull data from incoming serial
-func ReadSerial(serialDevice *serial.Port, session *sessions.Session) {
-	serialReads := 0
+func ReadSerial(serialDevice *serial.Port) interface{} {
 	reader := bufio.NewReader(serialDevice)
 	SerialStatus.Log(logging.OK(), "Starting serial read")
 
 	// While connected, try to read from the device
 	// If we become disconnected, the goroutine will end and will have to be restarted
-	for connected := true; connected; serialReads++ {
+	for connected := true; connected; {
 		//buf := make([]byte, 1024)
 		//n, err := serialDevice.Read(buf)
 		msg, err := reader.ReadBytes('}')
@@ -100,9 +60,10 @@ func ReadSerial(serialDevice *serial.Port, session *sessions.Session) {
 			var data interface{}
 			json.Unmarshal(msg, &data)
 
-			parseSerialJSON(data, session)
+			return data
 		}
 	}
+	return nil
 }
 
 // WriteSerial pushes out a message to the open serial port
