@@ -195,6 +195,6 @@ func startSerialComms(deviceName string, baudrate int) {
 		}
 
 		// Continiously read from serial port
-		go mserial.ReadSerial(s, MainSession)
+		go MainSession.ReadFromSerial(s)
 	}
 }
