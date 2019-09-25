@@ -9,33 +9,15 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/tarm/serial"
 )
 
-// ConfigValues controls program settings and general persistent settings
-type ConfigValues struct {
-	AuthToken             string
-	BluetoothAddress      string
-	BluetoothEnabled      bool
-	DB                    *influx.Influx
-	DatabaseEnabled       bool
-	DatabaseHost          string
-	DatabaseName          string
-	DebugSessionFile      string
-	HardwareSerialEnabled bool
-	HardwareSerialPort    string
-	HardwareSerialBaud    string
-	PingHost              string
-	SerialControlDevice   *serial.Port
-	SettingsFile          string
-	SessionFile           string
-	SlackURL              string
-	VerboseOutput         bool
-}
-
 // Config defined here, to be saved to below
-var Config ConfigValues
+var Config settings.ConfigValues
+
+// MainSession object
+var MainSession sessions.Session
 
 // Main config parsing
 func parseConfig() {
@@ -55,7 +37,8 @@ func parseConfig() {
 
 	// Init session tracking (with or without Influx)
 	// Fetch and append old session from disk if allowed
-	SetupSessions(Config.SettingsFile)
+	MainSession = sessions.CreateSession(Config.SettingsFile)
+	MainSession.Config = &Config
 
 	// Parse through config if found in settings file
 	configMap, ok := settingsData["MDROID"]
@@ -68,12 +51,12 @@ func parseConfig() {
 		// Set up pybus repeat commands
 		_, usingPybus := configMap["PYBUS_DEVICE"]
 		if usingPybus {
-			go RepeatCommand("requestIgnitionStatus", 10)
-			go RepeatCommand("requestLampStatus", 20)
-			go RepeatCommand("requestVehicleStatus", 30)
-			go RepeatCommand("requestOdometer", 45)
-			go RepeatCommand("requestTimeStatus", 60)
-			go RepeatCommand("requestTemperatureStatus", 120)
+			go MainSession.RepeatCommand("requestIgnitionStatus", 10)
+			go MainSession.RepeatCommand("requestLampStatus", 20)
+			go MainSession.RepeatCommand("requestVehicleStatus", 30)
+			go MainSession.RepeatCommand("requestOdometer", 45)
+			go MainSession.RepeatCommand("requestTimeStatus", 60)
+			go MainSession.RepeatCommand("requestTemperatureStatus", 120)
 		}
 
 		// Debug session log

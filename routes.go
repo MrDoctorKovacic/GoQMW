@@ -11,6 +11,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 )
@@ -22,7 +23,7 @@ import (
 // a list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
 // and are actually preferred, since we can handle strange cases
-func parseCommand(w http.ResponseWriter, r *http.Request) {
+func (session *sessions.Session) parseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
@@ -45,7 +46,7 @@ func parseCommand(w http.ResponseWriter, r *http.Request) {
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
-		deviceStatus, err := GetSessionValue("DOORS_LOCKED")
+		deviceStatus, err := session.GetSessionValue("DOORS_LOCKED")
 
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		if err != nil && !isPositive {
@@ -196,12 +197,12 @@ func startRouter() {
 	//
 	// Session routes
 	//
-	router.HandleFunc("/session", HandleGetSession).Methods("GET")
-	router.HandleFunc("/session/socket", GetSessionSocket).Methods("GET")
+	router.HandleFunc("/session", MainSession.HandleGetSession).Methods("GET")
+	router.HandleFunc("/session/socket", MainSession.GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
 	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")
-	router.HandleFunc("/session/{name}", HandleGetSessionValue).Methods("GET")
-	router.HandleFunc("/session/{name}", HandlePostSessionValue).Methods("POST")
+	router.HandleFunc("/session/{name}", MainSession.HandleGetSessionValue).Methods("GET")
+	router.HandleFunc("/session/{name}", MainSession.HandlePostSessionValue).Methods("POST")
 
 	//
 	// Settings routes
@@ -254,7 +255,7 @@ func startRouter() {
 	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
-	router.HandleFunc("/{device}/{command}", parseCommand).Methods("GET")
+	router.HandleFunc("/{device}/{command}", MainSession.parseCommand).Methods("GET")
 
 	//
 	// Finally, welcome and meta routes
