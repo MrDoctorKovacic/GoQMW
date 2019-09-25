@@ -36,6 +36,7 @@ type Session struct {
 	data   map[string]Value
 	Mutex  sync.Mutex
 	Config *settings.ConfigValues
+	File   string
 }
 
 // SessionStatus will control logging and reporting of status / warnings / errors
@@ -191,7 +192,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 	}
 
 	// Set last updated time to now
-	var timestamp = time.Now().In(session.Config.Timezone).Format("2006-01-02 15:04:05.999")
+	var timestamp = time.Now().In(session.Config.Location.Timezone).Format("2006-01-02 15:04:05.999")
 	newPackage.Data.LastUpdate = timestamp
 
 	// Correct name

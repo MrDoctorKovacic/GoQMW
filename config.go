@@ -27,8 +27,9 @@ var MainSession *sessions.Session
 // Main config parsing
 func parseConfig() {
 
+	var sessionFile string
 	flag.StringVar(&Config.SettingsFile, "settings-file", "", "File to recover the persistent settings.")
-	flag.StringVar(&Config.SessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
+	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
 	flag.Parse()
 
 	// Parse settings file
@@ -44,6 +45,7 @@ func parseConfig() {
 	// Fetch and append old session from disk if allowed
 	MainSession = sessions.CreateSession(Config.SettingsFile)
 	MainSession.Config = &Config
+	MainSession.File = sessionFile
 
 	// Parse through config if found in settings file
 	configMap, ok := settingsData["MDROID"]
@@ -52,6 +54,8 @@ func parseConfig() {
 		setupTimezone(&configMap)
 		setupDatabase(&configMap)
 		setupBluetooth(&configMap)
+		setupTokens(&configMap)
+		setupSerial(&settingsData)
 
 		// Set up pybus repeat commands
 		_, usingPybus := configMap["PYBUS_DEVICE"]
@@ -64,22 +68,25 @@ func parseConfig() {
 			go MainSession.RepeatCommand("requestTemperatureStatus", 120)
 		}
 
-		// Debug session log
-		Config.DebugSessionFile = configMap["DEBUG_SESSION_LOG"]
-
 		// Slack URL
 		Config.SlackURL = configMap["SLACK_URL"]
 
-		// Set up Auth tokens
-		authToken, usingAuth := configMap["AUTH_TOKEN"]
-		if usingAuth {
-			Config.AuthToken = authToken
-		}
-
-		setupSerial(&settingsData)
-
 	} else {
 		mainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
+	}
+}
+
+func setupTokens(configAddr *map[string]string) {
+	configMap := *configAddr
+
+	// Set up Auth tokens
+	token, usingTokens := configMap["AUTH_TOKEN"]
+	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
+
+	if usingTokens && usingCentralHost {
+		go MainSession.CheckServer(serverHost, token)
+	} else {
+		mainStatus.Log(logging.Warning(), "Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
 	}
 }
 
@@ -89,14 +96,14 @@ func setupTimezone(configAddr *map[string]string) {
 	if usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
 		if err == nil {
-			Config.Timezone = loc
+			Config.Location.Timezone = loc
 		} else {
 			// If timezone has errored
-			Config.Timezone, _ = time.LoadLocation("UTC")
+			Config.Location.Timezone, _ = time.LoadLocation("UTC")
 		}
 	} else {
 		// If timezone is not set in config
-		Config.Timezone, _ = time.LoadLocation("UTC")
+		Config.Location.Timezone, _ = time.LoadLocation("UTC")
 	}
 }
 
@@ -106,7 +113,6 @@ func setupDatabase(configAddr *map[string]string) {
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if usingDatabase {
 		Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
-		Config.DatabaseEnabled = true
 
 		// Set up ping functionality
 		// Proprietary pinging for component tracking
@@ -117,7 +123,7 @@ func setupDatabase(configAddr *map[string]string) {
 		}
 
 	} else {
-		Config.DatabaseEnabled = false
+		Config.DB = nil
 		mainStatus.Log(logging.OK(), "Not logging to influx db")
 	}
 }
@@ -130,7 +136,7 @@ func setupBluetooth(configAddr *map[string]string) {
 		bluetooth.SetAddress(bluetoothAddress)
 		Config.BluetoothAddress = bluetoothAddress
 	}
-	Config.BluetoothEnabled = usingBluetooth
+	Config.BluetoothAddress = ""
 }
 
 //

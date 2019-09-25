@@ -24,22 +24,16 @@ import (
 type ConfigValues struct {
 	AuthToken             string
 	BluetoothAddress      string
-	BluetoothEnabled      bool
 	DB                    *influx.Influx
 	DatabaseEnabled       bool
-	DatabaseHost          string
-	DatabaseName          string
-	DebugSessionFile      string
 	HardwareSerialEnabled bool
 	HardwareSerialPort    string
 	HardwareSerialBaud    string
-	Location              gps.Location
+	Location              *gps.Location
 	PingHost              string
 	SerialControlDevice   *serial.Port
 	SettingsFile          string
-	SessionFile           string
 	SlackURL              string
-	Timezone              *time.Location
 	VerboseOutput         bool
 }
 

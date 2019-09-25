@@ -205,7 +205,7 @@ func (session *Session) tLightSensorReason(triggerPackage *sessionPackage) {
 	keyPosition, err1 := session.GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := session.GetSessionValue("DOORS_LOCKED")
 	windowsOpen, err2 := session.GetSessionValue("WINDOWS_OPEN")
-	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, session.Config.Timezone)
+	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, session.Config.Location.Timezone)
 
 	if err1 == nil && err2 == nil && err3 == nil {
 		if triggerPackage.Data.Value == "RAIN" &&

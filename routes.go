@@ -146,18 +146,6 @@ func startRouter() {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
 	}).Methods("GET")
 
-	if Config.DebugSessionFile != "" {
-		// Log all routes for debugging later, if enabled
-		// The locks here slow things down, should only be used to generate a run file, not in production
-		enabled, err := logging.EnableLogging(Config.DebugSessionFile, Config.Timezone)
-		if enabled {
-			router.Use(logging.LogMiddleware)
-		} else {
-			mainStatus.Log(logging.Error(), "Failed to open debug file, is it writable?")
-			mainStatus.Log(logging.Error(), err.Error())
-		}
-	}
-
 	if Config.AuthToken != "" {
 		// Ask for matching Auth Token before taking requests
 		router.Use(authMiddleware)
