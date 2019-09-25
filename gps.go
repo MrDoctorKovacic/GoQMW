@@ -31,7 +31,7 @@ var GPS GPSData
 var gpsLock sync.Mutex
 
 // gpsStatus will control logging and reporting of status / warnings / errors
-var gpsStatus = logging.NewStatus("Main")
+var gpsStatus = logging.NewStatus("GPS")
 
 //
 // GPS Functions
