@@ -1,4 +1,4 @@
-package main
+package mserial
 
 import (
 	"bufio"
@@ -11,17 +11,19 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/gorilla/mux"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/tarm/serial"
 )
 
 // SerialStatus will control logging and reporting of status / warnings / errors
 var SerialStatus = logging.NewStatus("Serial")
 
-// Sub function to parse through other serial devices, if enabled
-func parseSerialDevices(settingsData map[string]map[string]string) {
+// ParseSerialDevices parses through other serial devices, if enabled
+func ParseSerialDevices(settingsData map[string]map[string]string) map[string]int {
 
 	serialDevices, additionalSerialDevices := settingsData["TLV"]
+	var devices map[string]int
 
 	if additionalSerialDevices {
 		// Loop through each READONLY serial device and set up
@@ -29,16 +31,17 @@ func parseSerialDevices(settingsData map[string]map[string]string) {
 		for deviceName, baudrateString := range serialDevices {
 			deviceBaud, err := strconv.Atoi(baudrateString)
 			if err != nil {
-				MainStatus.Log(logging.Error(), "Failed to convert given baudrate string to int. Found values: "+deviceName+": "+baudrateString)
-				return
+				SerialStatus.Log(logging.Error(), "Failed to convert given baudrate string to int. Found values: "+deviceName+": "+baudrateString)
+				return nil
 			}
-
-			StartSerialComms(deviceName, deviceBaud)
+			devices[deviceName] = deviceBaud
 		}
 	}
+
+	return devices
 }
 
-func parseSerialJSON(marshalledJSON interface{}) {
+func parseSerialJSON(marshalledJSON interface{}, session *sessions.Session) {
 
 	if marshalledJSON == nil {
 		SerialStatus.Log(logging.Error(), " marshalled JSON is nil.")
@@ -51,17 +54,17 @@ func parseSerialJSON(marshalledJSON interface{}) {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+			session.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
 		case string:
-			CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
+			session.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
 		case int:
-			CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
+			session.CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
 			floatValue, _ := value.(float32)
-			CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case float64:
 			floatValue, _ := value.(float64)
-			CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case []interface{}:
 			SerialStatus.Log(logging.Error(), key+" is an array. Data: ")
 			for i, u := range vv {
@@ -75,17 +78,8 @@ func parseSerialJSON(marshalledJSON interface{}) {
 	}
 }
 
-// WriteSerialHandler handles messages sent through the server
-func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	if params["command"] != "" {
-		WriteSerial(params["command"])
-	}
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-}
-
 // ReadSerial will continuously pull data from incoming serial
-func ReadSerial(serialDevice *serial.Port) {
+func ReadSerial(serialDevice *serial.Port, session *sessions.Session) {
 	serialReads := 0
 	reader := bufio.NewReader(serialDevice)
 	SerialStatus.Log(logging.OK(), "Starting serial read")
@@ -106,14 +100,14 @@ func ReadSerial(serialDevice *serial.Port) {
 			var data interface{}
 			json.Unmarshal(msg, &data)
 
-			parseSerialJSON(data)
+			parseSerialJSON(data, session)
 		}
 	}
 }
 
 // WriteSerial pushes out a message to the open serial port
-func WriteSerial(msg string) {
-	if Config.SerialControlDevice == nil {
+func WriteSerial(device *serial.Port, msg string) {
+	if device == nil {
 		SerialStatus.Log(logging.Error(), "Serial port is not set, nothing to write to.")
 		return
 	}
@@ -123,7 +117,7 @@ func WriteSerial(msg string) {
 		return
 	}
 
-	n, err := Config.SerialControlDevice.Write([]byte(msg))
+	n, err := device.Write([]byte(msg))
 	if err != nil {
 		SerialStatus.Log(logging.Error(), "Failed to write to serial port")
 		SerialStatus.Log(logging.Error(), err.Error())
@@ -133,31 +127,24 @@ func WriteSerial(msg string) {
 	SerialStatus.Log(logging.OK(), fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
 }
 
-// StartSerialComms will set up the serial port,
-// and start the ReadSerial goroutine
-func StartSerialComms(deviceName string, baudrate int) {
-	SerialStatus.Log(logging.OK(), "Opening serial device "+deviceName)
-	c := &serial.Config{Name: deviceName, Baud: baudrate}
-	s, err := serial.OpenPort(c)
-	if err != nil {
-		SerialStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)
-		SerialStatus.Log(logging.Error(), err.Error())
-	} else {
-		// Use first Serial device as a R/W, all others will only be read from
-		if Config.SerialControlDevice == nil {
-			Config.SerialControlDevice = s
-			SerialStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
-		}
-
-		// Continiously read from serial port
-		go ReadSerial(s)
-	}
-
+// MachineShutdown shutdowns the named machine safely
+func MachineShutdown(serialDevice *serial.Port, machine string, timeToSleep time.Duration, serialMessage string) {
+	CommandNetworkMachine(machine, "shutdown")
+	time.Sleep(timeToSleep)
+	WriteSerial(serialDevice, serialMessage)
 }
 
-// Shutdown the named machine safely
-func serialMachineShutdown(machine string, timeToSleep time.Duration, serialMessage string) {
-	commandNetworkMachine(machine, "shutdown")
-	time.Sleep(timeToSleep)
-	WriteSerial(serialMessage)
+// CommandNetworkMachine sends a command to a network machine, using a simple python server to recieve
+func CommandNetworkMachine(name string, command string) {
+	machineServiceAddress, err := settings.Get(formatting.FormatName(name), "ADDRESS")
+	if machineServiceAddress == "" {
+		return
+	}
+
+	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
+	if err != nil {
+		SerialStatus.Log(logging.Error(), fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
+		return
+	}
+	defer resp.Body.Close()
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
@@ -158,11 +159,11 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 	if berr == nil {
 		if (brightwingTargetPower == "AUTO" && wifiAvailable.Value != "TRUE" && wirelessPoweredOn.Value != "TRUE") ||
 			(brightwingTargetPower == "ON" && wirelessPoweredOn.Value == "FALSE") {
-			WriteSerial("powerOnWireless")
+			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnWireless")
 		} else if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value) {
-			WriteSerial(fmt.Sprintf("power%sWireless", targetAction))
+			mserial.WriteSerial(session.Config.SerialControlDevice, fmt.Sprintf("power%sWireless", targetAction))
 		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
-			go serialMachineShutdown("brightwing", time.Second*10, "powerOffWireless")
+			go mserial.MachineShutdown(session.Config.SerialControlDevice, "brightwing", time.Second*10, "powerOffWireless")
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
@@ -172,12 +173,12 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 	// Handle video server power control
 	if aerr == nil {
 		if lucioTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
-			WriteSerial(fmt.Sprintf("power%sBoard", targetAction))
+			mserial.WriteSerial(session.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
 		} else if lucioTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
-			commandNetworkMachine("etc", "shutdown")
-			go serialMachineShutdown("lucio", time.Second*10, "powerOffBoard")
+			mserial.CommandNetworkMachine("etc", "shutdown")
+			go mserial.MachineShutdown(session.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
 		} else if lucioTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOnBoard")
+			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnBoard")
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
@@ -187,11 +188,11 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 	// Handle tablet power control
 	if rerr == nil {
 		if raynorTargetPower == "AUTO" && tabletPoweredOn.Value != triggerPackage.Data.Value {
-			WriteSerial(fmt.Sprintf("power%sTablet", targetAction))
+			mserial.WriteSerial(session.Config.SerialControlDevice, fmt.Sprintf("power%sTablet", targetAction))
 		} else if raynorTargetPower == "OFF" && tabletPoweredOn.Value == "TRUE" {
-			WriteSerial("powerOffTablet")
+			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOffTablet")
 		} else if raynorTargetPower == "ON" && tabletPoweredOn.Value == "FALSE" {
-			WriteSerial("powerOnTablet")
+			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnTablet")
 		}
 	} else {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
@@ -204,7 +205,7 @@ func (session *Session) tLightSensorReason(triggerPackage *sessionPackage) {
 	keyPosition, err1 := session.GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := session.GetSessionValue("DOORS_LOCKED")
 	windowsOpen, err2 := session.GetSessionValue("WINDOWS_OPEN")
-	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, Timezone)
+	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, session.Config.Timezone)
 
 	if err1 == nil && err2 == nil && err3 == nil {
 		if triggerPackage.Data.Value == "RAIN" &&
@@ -212,7 +213,7 @@ func (session *Session) tLightSensorReason(triggerPackage *sessionPackage) {
 			doorsLocked.Value == "TRUE" &&
 			windowsOpen.Value == "TRUE" &&
 			delta.Minutes() > 5 {
-			logging.SlackAlert(Config.SlackURL, "Windows are down in the rain, eh?")
+			logging.SlackAlert(session.Config.SlackURL, "Windows are down in the rain, eh?")
 		}
 	}
 }
@@ -221,10 +222,10 @@ func (session *Session) tLightSensorReason(triggerPackage *sessionPackage) {
 func (session *Session) tSeatMemory(triggerPackage *sessionPackage) {
 	switch triggerPackage.Name {
 	case "SEAT_MEMORY_1":
-		commandNetworkMachine("LUCIO", "restart")
+		mserial.CommandNetworkMachine("LUCIO", "restart")
 	case "SEAT_MEMORY_2":
-		commandNetworkMachine("BRIGHTWING", "restart")
+		mserial.CommandNetworkMachine("BRIGHTWING", "restart")
 	case "SEAT_MEMORY_3":
-		commandNetworkMachine("MDROID", "restart")
+		mserial.CommandNetworkMachine("MDROID", "restart")
 	}
 }

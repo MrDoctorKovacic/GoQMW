@@ -2,22 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 )
 
 // MainStatus will control logging and reporting of status / warnings / errors
 var MainStatus = logging.NewStatus("Main")
-
-// Timezone location for session last used and logging
-var Timezone *time.Location
 
 // define our router and subsequent routes here
 func main() {
@@ -66,21 +60,6 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	commandNetworkMachine(machine, "shutdown")
-}
-
-// Send a command to a network machine, using a simple python server to recieve
-func commandNetworkMachine(name string, command string) {
-	machineServiceAddress, err := settings.Get(formatting.FormatName(name), "ADDRESS")
-	if machineServiceAddress == "" {
-		return
-	}
-
-	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
-	if err != nil {
-		MainStatus.Log(logging.Error(), fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
-		return
-	}
-	defer resp.Body.Close()
 }
 
 // welcomeRoute intros MDroid-Core, proving port and service works
