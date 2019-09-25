@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/websocket"
 )
@@ -65,6 +66,12 @@ func requestServerSocket(host string, token string) {
 	go func() {
 		clientConnected = true
 		defer close(done)
+		err = c.WriteJSON(formatting.JSONResponse{Output: "Ready and willing.", Status: "success", OK: true})
+		if err != nil {
+			SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
+			return
+		}
+
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
@@ -80,12 +87,6 @@ func requestServerSocket(host string, token string) {
 		case <-done:
 			clientConnected = false
 			return
-			/*case t := <-ticker.C:
-			err := c.WriteMessage(websocket.TextMessage, []byte(t.String()))
-			if err != nil {
-				SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
-				return
-			}*/
 		}
 	}
 }
