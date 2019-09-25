@@ -75,20 +75,17 @@ func requestServerSocket(host string, token string) {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-done:
 			clientConnected = false
 			return
-		case t := <-ticker.C:
+			/*case t := <-ticker.C:
 			err := c.WriteMessage(websocket.TextMessage, []byte(t.String()))
 			if err != nil {
 				SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
 				return
-			}
+			}*/
 		}
 	}
 }
