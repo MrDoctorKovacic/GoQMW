@@ -37,6 +37,7 @@ func (session *Session) CheckServer(host string, token string) {
 		} else {
 			resp.Body.Close()
 			if resp.StatusCode == 200 {
+				SessionStatus.Log(logging.OK(), "Client is waiting on us, connect to server to acquire a websocket")
 				requestServerSocket(host, token)
 			}
 		}
@@ -54,7 +55,8 @@ func requestServerSocket(host string, token string) {
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		SessionStatus.Log(logging.Error(), "Error dialing websocket: "+err.Error())
+		return
 	}
 	defer c.Close()
 
@@ -66,10 +68,10 @@ func requestServerSocket(host string, token string) {
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Println("read:", err)
+				SessionStatus.Log(logging.Error(), "Error reading from websocket: "+err.Error())
 				return
 			}
-			log.Printf("recv: %s", message)
+			SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read:  %s"+string(message)))
 		}
 	}()
 
@@ -84,7 +86,7 @@ func requestServerSocket(host string, token string) {
 		case t := <-ticker.C:
 			err := c.WriteMessage(websocket.TextMessage, []byte(t.String()))
 			if err != nil {
-				log.Println("write:", err)
+				SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
 				return
 			}
 		}
