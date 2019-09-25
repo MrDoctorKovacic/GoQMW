@@ -51,17 +51,17 @@ func parseSerialJSON(marshalledJSON interface{}) {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+			MainSession.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
 		case string:
-			CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
+			MainSession.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
 		case int:
-			CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
+			MainSession.CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
 			floatValue, _ := value.(float32)
-			CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			MainSession.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case float64:
 			floatValue, _ := value.(float64)
-			CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			MainSession.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case []interface{}:
 			SerialStatus.Log(logging.Error(), key+" is an array. Data: ")
 			for i, u := range vv {

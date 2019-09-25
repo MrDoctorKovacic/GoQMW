@@ -12,10 +12,33 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/tarm/serial"
 
 	"github.com/gorilla/mux"
 )
+
+// ConfigValues controls program settings and general persistent settings
+type ConfigValues struct {
+	AuthToken             string
+	BluetoothAddress      string
+	BluetoothEnabled      bool
+	DB                    *influx.Influx
+	DatabaseEnabled       bool
+	DatabaseHost          string
+	DatabaseName          string
+	DebugSessionFile      string
+	HardwareSerialEnabled bool
+	HardwareSerialPort    string
+	HardwareSerialBaud    string
+	PingHost              string
+	SerialControlDevice   *serial.Port
+	SettingsFile          string
+	SessionFile           string
+	SlackURL              string
+	VerboseOutput         bool
+}
 
 // settingsFile is the internal reference file for saving settings to
 var settingsFile = "./settings.json"
