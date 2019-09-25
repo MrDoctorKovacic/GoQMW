@@ -3,6 +3,7 @@ module github.com/MrDoctorKovacic/MDroid-Core
 go 1.12
 
 require (
+	github.com/bradfitz/latlong v0.0.0-20170410180902-f3db6d0dff40
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
 	github.com/gosimple/slug v1.7.0
