@@ -11,8 +11,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// MainStatus will control logging and reporting of status / warnings / errors
-var MainStatus = logging.NewStatus("Main")
+// mainStatus will control logging and reporting of status / warnings / errors
+var mainStatus = logging.NewStatus("Main")
 
 // define our router and subsequent routes here
 func main() {
@@ -30,7 +30,7 @@ func main() {
 
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
-	MainStatus.Log(logging.OK(), "Stopping MDroid Service as per request")
+	mainStatus.Log(logging.OK(), "Stopping MDroid Service as per request")
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	os.Exit(0)
 }

@@ -79,7 +79,7 @@ func parseConfig() {
 		setupSerial(&settingsData)
 
 	} else {
-		MainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
+		mainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
 	}
 }
 
@@ -113,12 +113,12 @@ func setupDatabase(configAddr *map[string]string) {
 		if configMap["PING_HOST"] != "" {
 			logging.RemotePingAddress = configMap["PING_HOST"]
 		} else {
-			MainStatus.Log(logging.OK(), "Not forwarding pings to host")
+			mainStatus.Log(logging.OK(), "Not forwarding pings to host")
 		}
 
 	} else {
 		Config.DatabaseEnabled = false
-		MainStatus.Log(logging.OK(), "Not logging to influx db")
+		mainStatus.Log(logging.OK(), "Not logging to influx db")
 	}
 }
 
@@ -160,8 +160,8 @@ func setupSerial(configAddr *map[string]map[string]string) {
 		if usingHardwareBaud {
 			baudrateString, err := strconv.Atoi(hardwareSerialBaud)
 			if err != nil {
-				MainStatus.Log(logging.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
-				MainStatus.Log(logging.Warning(), "Disabling hardware serial functionality")
+				mainStatus.Log(logging.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
+				mainStatus.Log(logging.Warning(), "Disabling hardware serial functionality")
 				Config.HardwareSerialEnabled = false
 				return
 			}
@@ -181,17 +181,17 @@ func setupSerial(configAddr *map[string]map[string]string) {
 // startSerialComms will set up the serial port,
 // and start the ReadSerial goroutine
 func startSerialComms(deviceName string, baudrate int) {
-	MainStatus.Log(logging.OK(), "Opening serial device "+deviceName)
+	mainStatus.Log(logging.OK(), "Opening serial device "+deviceName)
 	c := &serial.Config{Name: deviceName, Baud: baudrate}
 	s, err := serial.OpenPort(c)
 	if err != nil {
-		MainStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)
-		MainStatus.Log(logging.Error(), err.Error())
+		mainStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)
+		mainStatus.Log(logging.Error(), err.Error())
 	} else {
 		// Use first Serial device as a R/W, all others will only be read from
 		if Config.SerialControlDevice == nil {
 			Config.SerialControlDevice = s
-			MainStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
+			mainStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
 		}
 
 		// Continiously read from serial port
