@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
@@ -36,19 +38,19 @@ func welcomeRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleSetGPS posts a new GPS fix
-func (loc *Location) handleSetGPS(w http.ResponseWriter, r *http.Request) {
+func (loc *gps.Location) handleSetGPS(w http.ResponseWriter, r *http.Request) {
 	var newdata gps.Fix
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
 	postingString := loc.Set(newdata)
 
 	// Insert into database
-	if Config.DatabaseEnabled {
+	if postingString != "" && Config.DatabaseEnabled {
 		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString.String(), ",")))
 
 		if err != nil && online {
-			gpsStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
+			MainStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString.String(), err.Error()))
 		} else if Config.VerboseOutput {
-			gpsStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
+			MainStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString.String()))
 		}
 	}
 }
@@ -81,8 +83,8 @@ func startRouter() {
 	//
 	router.HandleFunc("/session", MainSession.HandleGetSession).Methods("GET")
 	router.HandleFunc("/session/socket", MainSession.GetSessionSocket).Methods("GET")
-	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", HandleSetGPS).Methods("POST")
+	router.HandleFunc("/session/gps", Config.Location.HandleGet).Methods("GET")
+	router.HandleFunc("/session/gps", Config.Location.handleSetGPS).Methods("POST")
 	router.HandleFunc("/session/{name}", MainSession.HandleGetSessionValue).Methods("GET")
 	router.HandleFunc("/session/{name}", MainSession.HandlePostSessionValue).Methods("POST")
 
@@ -104,12 +106,6 @@ func startRouter() {
 	// Serial routes
 	//
 	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST")
-
-	//
-	// ALPR Routes
-	//
-	router.HandleFunc("/alpr/restart", restartALPR).Methods("GET")
-	router.HandleFunc("/alpr/{plate}", logALPR).Methods("POST")
 
 	//
 	// Bluetooth routes
