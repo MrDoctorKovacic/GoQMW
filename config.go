@@ -22,7 +22,7 @@ import (
 var Config settings.ConfigValues
 
 // MainSession object
-var MainSession sessions.Session
+var MainSession *sessions.Session
 
 // Main config parsing
 func parseConfig() {
