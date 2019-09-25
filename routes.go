@@ -32,11 +32,6 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(params["message"])
 }
 
-// welcomeRoute intros MDroid-Core, proving port and service works
-func welcomeRoute(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
-}
-
 // handleSetGPS posts a new GPS fix
 func handleSetGPS(w http.ResponseWriter, r *http.Request) {
 	var newdata gps.Fix
@@ -138,7 +133,9 @@ func startRouter() {
 	//
 	// Finally, welcome and meta routes
 	//
-	router.HandleFunc("/", welcomeRoute).Methods("GET")
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
+	}).Methods("GET")
 
 	if Config.DebugSessionFile != "" {
 		// Log all routes for debugging later, if enabled
