@@ -35,7 +35,7 @@ type sessionPackage struct {
 type Session struct {
 	data   map[string]Value
 	Mutex  sync.Mutex
-	Config *settings.Config
+	Config *settings.ConfigValues
 }
 
 // Session WebSocket upgrader
