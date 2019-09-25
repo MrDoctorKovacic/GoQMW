@@ -42,7 +42,6 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 // ReadSerial will continuously pull data from incoming serial
 func ReadSerial(serialDevice *serial.Port) interface{} {
 	reader := bufio.NewReader(serialDevice)
-	SerialStatus.Log(logging.OK(), "Starting serial read")
 
 	// While connected, try to read from the device
 	// If we become disconnected, the goroutine will end and will have to be restarted
