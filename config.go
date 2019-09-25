@@ -9,6 +9,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
@@ -92,6 +93,7 @@ func setupTokens(configAddr *map[string]string) {
 
 func setupTimezone(configAddr *map[string]string) {
 	configMap := *configAddr
+	Config.Location = &gps.Location{}
 	timezoneLocation, usingTimezone := configMap["Timezone"]
 	if usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
