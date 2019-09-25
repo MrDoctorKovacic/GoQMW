@@ -38,10 +38,10 @@ func welcomeRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleSetGPS posts a new GPS fix
-func (loc *gps.Location) handleSetGPS(w http.ResponseWriter, r *http.Request) {
+func handleSetGPS(w http.ResponseWriter, r *http.Request) {
 	var newdata gps.Fix
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
-	postingString := loc.Set(newdata)
+	postingString := Config.Location.Set(newdata)
 
 	// Insert into database
 	if postingString != "" && Config.DatabaseEnabled {
@@ -84,7 +84,7 @@ func startRouter() {
 	router.HandleFunc("/session", MainSession.HandleGetSession).Methods("GET")
 	router.HandleFunc("/session/socket", MainSession.GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/gps", Config.Location.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", Config.Location.handleSetGPS).Methods("POST")
+	router.HandleFunc("/session/gps", handleSetGPS).Methods("POST")
 	router.HandleFunc("/session/{name}", MainSession.HandleGetSessionValue).Methods("GET")
 	router.HandleFunc("/session/{name}", MainSession.HandlePostSessionValue).Methods("POST")
 
