@@ -80,7 +80,7 @@ func startRouter() {
 	router.HandleFunc("/session/gps", handleSetGPS).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
 		Config.Location.Mutex.Lock()
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Config.Location.Timezone, Status: "success", OK: true})
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Config.Location.Timezone.String(), Status: "success", OK: true})
 		Config.Location.Mutex.Unlock()
 	}).Methods("GET")
 
