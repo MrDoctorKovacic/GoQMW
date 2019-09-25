@@ -22,15 +22,12 @@ import (
 
 // ConfigValues controls program settings and general persistent settings
 type ConfigValues struct {
-	AuthToken             string
 	BluetoothAddress      string
 	DB                    *influx.Influx
-	DatabaseEnabled       bool
 	HardwareSerialEnabled bool
 	HardwareSerialPort    string
 	HardwareSerialBaud    string
 	Location              *gps.Location
-	PingHost              string
 	SerialControlDevice   *serial.Port
 	SettingsFile          string
 	SlackURL              string

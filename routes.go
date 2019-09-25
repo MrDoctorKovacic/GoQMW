@@ -39,7 +39,7 @@ func handleSetGPS(w http.ResponseWriter, r *http.Request) {
 	postingString := Config.Location.Set(newdata)
 
 	// Insert into database
-	if postingString != "" && Config.DatabaseEnabled {
+	if postingString != "" && Config.DB != nil {
 		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
 
 		if err != nil && online {
@@ -146,15 +146,11 @@ func startRouter() {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
 	}).Methods("GET")
 
-	if Config.AuthToken != "" {
-		// Ask for matching Auth Token before taking requests
-		router.Use(authMiddleware)
-	}
-
 	log.Fatal(http.ListenAndServe(":5353", router))
 }
 
 // authMiddleware will match http bearer token again the one hardcoded in our config
+/*
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -168,4 +164,4 @@ func authMiddleware(next http.Handler) http.Handler {
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
-}
+}*/
