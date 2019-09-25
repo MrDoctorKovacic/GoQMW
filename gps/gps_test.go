@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestprocessTimezone(t *testing.T) {
+func TestProcessTimezone(t *testing.T) {
 
 	laTime, _ := time.LoadLocation("America/Los_Angeles")
 	ceTime, _ := time.LoadLocation("America/Denver")
