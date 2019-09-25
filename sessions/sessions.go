@@ -16,7 +16,6 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
 // Value holds the data and last update info for each session value
@@ -38,9 +37,6 @@ type Session struct {
 	Mutex  sync.Mutex
 	Config *settings.ConfigValues
 }
-
-// Session WebSocket upgrader
-var upgrader = websocket.Upgrader{} // use default options
 
 // SessionStatus will control logging and reporting of status / warnings / errors
 var SessionStatus = logging.NewStatus("Session")
