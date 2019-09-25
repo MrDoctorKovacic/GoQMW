@@ -37,8 +37,8 @@ var gpsStatus = logging.NewStatus("GPS")
 // GPS Functions
 //
 
-// GetGPSValue returns the latest GPS fix
-func GetGPSValue(w http.ResponseWriter, r *http.Request) {
+// getGPSValue returns the latest GPS fix
+func getGPSValue(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
 	if Config.VerboseOutput {
 		gpsStatus.Log(logging.OK(), "Responding to GET request for all GPS values")
@@ -48,8 +48,8 @@ func GetGPSValue(w http.ResponseWriter, r *http.Request) {
 	gpsLock.Unlock()
 }
 
-// SetGPSValue posts a new GPS fix
-func SetGPSValue(w http.ResponseWriter, r *http.Request) {
+// setGPSValue posts a new GPS fix
+func setGPSValue(w http.ResponseWriter, r *http.Request) {
 	var newdata GPSData
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
 

@@ -11,33 +11,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// ALPRData holds the plate and percent for each new ALPR value
-type ALPRData struct {
+// alprData holds the plate and percent for each new ALPR value
+type alprData struct {
 	Plate   string  `json:"plate,omitempty"`
 	Percent float32 `json:"percent,omitempty"`
 }
 
-// ALPRStatus will control logging and reporting of status / warnings / errors
-var ALPRStatus = logging.NewStatus("ALPR")
+// alprStatus will control logging and reporting of status / warnings / errors
+var alprStatus = logging.NewStatus("ALPR")
 
 //
 // ALPR Functions
 //
 
-// LogALPR creates a new entry in running SQL DB
-func LogALPR(w http.ResponseWriter, r *http.Request) {
+// logALPR creates a new entry in running SQL DB
+func logALPR(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	decoder := json.NewDecoder(r.Body)
-	var newplate ALPRData
+	var newplate alprData
 	err := decoder.Decode(&newplate)
 
 	// Log if requested
 	if Config.VerboseOutput {
-		ALPRStatus.Log(logging.OK(), "Responding to POST request for ALPR")
+		alprStatus.Log(logging.OK(), "Responding to POST request for ALPR")
 	}
 
 	if err != nil {
-		ALPRStatus.Log(logging.Error(), fmt.Sprintf("Error decoding incoming ALPR data: %s", err.Error()))
+		alprStatus.Log(logging.Error(), fmt.Sprintf("Error decoding incoming ALPR data: %s", err.Error()))
 		return
 	}
 
@@ -53,17 +53,17 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				errorText := fmt.Sprintf("Error writing %s to influx DB: %s", plate, err.Error())
 				if online {
-					ALPRStatus.Log(logging.Error(), errorText)
+					alprStatus.Log(logging.Error(), errorText)
 				}
 				json.NewEncoder(w).Encode(formatting.JSONResponse{Output: errorText, Status: "fail", OK: false})
 				return
 			}
 
-			ALPRStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", plate))
+			alprStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", plate))
 		}
 	} else {
 		errorText := fmt.Sprintf("Missing arguments, ignoring post of %s with percent of %f", plate, percent)
-		ALPRStatus.Log(logging.Error(), errorText)
+		alprStatus.Log(logging.Error(), errorText)
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: errorText, Status: "fail", OK: false})
 		return
 	}
@@ -71,8 +71,8 @@ func LogALPR(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
-// RestartALPR posts remote device to restart ALPR service
+// restartALPR posts remote device to restart ALPR service
 // TODO
-func RestartALPR(w http.ResponseWriter, r *http.Request) {
+func restartALPR(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }

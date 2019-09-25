@@ -57,8 +57,8 @@ func startRouter() {
 	//
 	router.HandleFunc("/session", MainSession.HandleGetSession).Methods("GET")
 	router.HandleFunc("/session/socket", MainSession.GetSessionSocket).Methods("GET")
-	router.HandleFunc("/session/gps", GetGPSValue).Methods("GET")
-	router.HandleFunc("/session/gps", SetGPSValue).Methods("POST")
+	router.HandleFunc("/session/gps", getGPSValue).Methods("GET")
+	router.HandleFunc("/session/gps", setGPSValue).Methods("POST")
 	router.HandleFunc("/session/{name}", MainSession.HandleGetSessionValue).Methods("GET")
 	router.HandleFunc("/session/{name}", MainSession.HandlePostSessionValue).Methods("POST")
 
@@ -84,8 +84,8 @@ func startRouter() {
 	//
 	// ALPR Routes
 	//
-	router.HandleFunc("/alpr/restart", RestartALPR).Methods("GET")
-	router.HandleFunc("/alpr/{plate}", LogALPR).Methods("POST")
+	router.HandleFunc("/alpr/restart", restartALPR).Methods("GET")
+	router.HandleFunc("/alpr/{plate}", logALPR).Methods("POST")
 
 	//
 	// Bluetooth routes
@@ -127,21 +127,21 @@ func startRouter() {
 		if enabled {
 			router.Use(logging.LogMiddleware)
 		} else {
-			MainStatus.Log(logging.Error(), "Failed to open debug file, is it writable?")
-			MainStatus.Log(logging.Error(), err.Error())
+			mainStatus.Log(logging.Error(), "Failed to open debug file, is it writable?")
+			mainStatus.Log(logging.Error(), err.Error())
 		}
 	}
 
 	if Config.AuthToken != "" {
 		// Ask for matching Auth Token before taking requests
-		router.Use(AuthMiddleware)
+		router.Use(authMiddleware)
 	}
 
 	log.Fatal(http.ListenAndServe(":5353", router))
 }
 
-// AuthMiddleware will match http bearer token again the one hardcoded in our config
-func AuthMiddleware(next http.Handler) http.Handler {
+// authMiddleware will match http bearer token again the one hardcoded in our config
+func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		reqToken := r.Header.Get("Authorization")
