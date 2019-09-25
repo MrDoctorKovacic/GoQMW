@@ -62,8 +62,3 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	mserial.CommandNetworkMachine(machine, "shutdown")
 }
-
-// welcomeRoute intros MDroid-Core, proving port and service works
-func welcomeRoute(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
-}
