@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -66,7 +67,7 @@ func requestServerSocket(host string, token string) {
 	go func() {
 		clientConnected = true
 		defer close(done)
-		err = c.WriteJSON(formatting.JSONResponse{Output: "Ready and willing.", Status: "success", OK: true})
+		err = c.WriteJSON(formatting.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
 		if err != nil {
 			SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
 			return
@@ -78,7 +79,18 @@ func requestServerSocket(host string, token string) {
 				SessionStatus.Log(logging.Error(), "Error reading from websocket: "+err.Error())
 				return
 			}
-			SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read:  %s"+string(message)))
+			response := formatting.JSONResponse{}
+			err = json.Unmarshal(message, &response)
+
+			if err != nil {
+				SessionStatus.Log(logging.Error(), "Error marshalling json from websocket: "+err.Error())
+				return
+			}
+
+			// Check if the server is echoing back to us, or if it's a legitimate request from the server
+			if response.Method != "response" {
+				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s"+string(message)))
+			}
 		}
 	}()
 
