@@ -111,7 +111,7 @@ func (loc *Location) Set(newdata Fix) string {
 	}
 	loc.Mutex.Unlock()
 
-	return postingString
+	return postingString.String()
 }
 
 func (loc *Location) processTimezone() {
