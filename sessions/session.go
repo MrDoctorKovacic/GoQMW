@@ -32,6 +32,7 @@ type sessionPackage struct {
 	Data Value
 }
 
+// Session is a mapping of sessionPackages, which contain session values
 type Session struct {
 	data   map[string]Value
 	Mutex  sync.Mutex
@@ -45,7 +46,7 @@ var upgrader = websocket.Upgrader{} // use default options
 var SessionStatus = logging.NewStatus("Session")
 
 // CreateSession will init the current session with a file
-func CreateSession(sessionFile string) Session {
+func CreateSession(sessionFile string) *Session {
 	var session Session
 	session.data = make(map[string]Value)
 
@@ -61,7 +62,7 @@ func CreateSession(sessionFile string) Session {
 	} else {
 		SessionStatus.Log(logging.OK(), "Not saving or recovering from file")
 	}
-	return session
+	return &session
 }
 
 // HandleGetSession responds to an HTTP request for the entire session
