@@ -131,8 +131,6 @@ func runServerSocket(host string, token string) {
 
 			// Check if the server is echoing back to us, or if it's a legitimate request from the server
 			if response.Method != "response" {
-				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s", string(message)))
-
 				// TODO! Match this path against a walk through of our router
 				//output := fmt.Sprintf("%v", response.Output)
 				output, ok := response.Output.(string)
@@ -148,6 +146,7 @@ func runServerSocket(host string, token string) {
 					return
 				}
 
+				SessionStatus.Log(logging.OK(), fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
 				response := formatting.JSONResponse{}
 				err = json.Unmarshal(internalResponse, &response)
 				if err != nil {
