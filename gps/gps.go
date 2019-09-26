@@ -45,7 +45,7 @@ var gpsStatus = logging.NewStatus("GPS")
 // HandleGet returns the latest GPS fix
 func (loc *Location) HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
-	gpsStatus.Log(logging.Warning(), "Responding to get request.")
+	//gpsStatus.Log(logging.Warning(), "Responding to get request.")
 	data := loc.Get()
 	if data.Latitude == "" && data.Longitude == "" {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
@@ -66,7 +66,7 @@ func (loc *Location) Get() Fix {
 
 // Set posts a new GPS fix
 func (loc *Location) Set(newdata Fix) string {
-	gpsStatus.Log(logging.Warning(), fmt.Sprintf("Responding to set request. Lat: %s, Long: %s", newdata.Latitude, newdata.Longitude))
+	//gpsStatus.Log(logging.Warning(), fmt.Sprintf("Responding to set request. Lat: %s, Long: %s", newdata.Latitude, newdata.Longitude))
 	// Update value for global session if the data is newer
 	if newdata.Latitude == "" && newdata.Longitude == "" {
 		gpsStatus.Log(logging.Warning(), "Not inserting new GPS fix, no new Lat or Long")
@@ -121,10 +121,8 @@ func (loc *Location) Set(newdata Fix) string {
 
 // Parses GPS coordinates into a time.Location timezone
 func (loc *Location) processTimezone() {
-	loc.Mutex.Lock()
 	latFloat, err1 := strconv.ParseFloat(loc.CurrentFix.Latitude, 64)
 	longFloat, err2 := strconv.ParseFloat(loc.CurrentFix.Longitude, 64)
-	loc.Mutex.Unlock()
 
 	if err1 != nil {
 		gpsStatus.Log(logging.Error(), fmt.Sprintf("Error converting lat into float64: %s", err1.Error()))
@@ -142,7 +140,5 @@ func (loc *Location) processTimezone() {
 		return
 	}
 
-	loc.Mutex.Lock()
 	loc.Timezone = newTimezone
-	loc.Mutex.Unlock()
 }
