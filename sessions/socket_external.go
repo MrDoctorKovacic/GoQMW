@@ -1,11 +1,13 @@
 package sessions
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
@@ -40,7 +42,7 @@ func (session *Session) CheckServer(host string, token string) {
 			resp.Body.Close()
 			if resp.StatusCode == 200 {
 				SessionStatus.Log(logging.OK(), "Client is waiting on us, connect to server to acquire a websocket")
-				requestServerSocket(host, token)
+				runServerSocket(host, token)
 			}
 		}
 
@@ -48,7 +50,47 @@ func (session *Session) CheckServer(host string, token string) {
 	}
 }
 
-func requestServerSocket(host string, token string) {
+func getAPIResponse(dataString string) ([]byte, error) {
+	dataArray := strings.Split(dataString, ";")
+	if len(dataArray) != 3 {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not break response into core components. Got response: %s", dataString))
+		return nil, fmt.Errorf("Could not break response into core components. Got response: %s", dataString)
+	}
+
+	method := dataArray[0]
+	path := dataArray[1]
+	postingString := dataArray[2]
+
+	var (
+		resp *http.Response
+		err  error
+	)
+	if method == "POST" {
+		jsonStr := []byte(postingString)
+		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353/%s", path), bytes.NewBuffer(jsonStr))
+		if err != nil {
+			SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
+			return nil, fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
+		}
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err = client.Do(req)
+	} else if method == "GET" {
+		resp, err = http.Get(fmt.Sprintf("http://localhost:5353/%s", path))
+	}
+
+	if err != nil {
+		SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
+		return nil, fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
+	}
+
+	defer resp.Body.Close()
+	var response []byte
+	resp.Body.Read(response)
+	return response, nil
+}
+
+func runServerSocket(host string, token string) {
 	// Copyright 2015 The Gorilla WebSocket Authors. All rights reserved.
 	// Use of this source code is governed by a BSD-style
 	// license that can be found in the LICENSE file.
@@ -90,6 +132,23 @@ func requestServerSocket(host string, token string) {
 			// Check if the server is echoing back to us, or if it's a legitimate request from the server
 			if response.Method != "response" {
 				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s"+string(message)))
+
+				// TODO! Match this path against a walk through of our router
+				internalResponse, err := getAPIResponse(fmt.Sprintf("%v", response.Output))
+				if err == nil {
+					response := formatting.JSONResponse{}
+					err = json.Unmarshal(internalResponse, &response)
+					if err != nil {
+						SessionStatus.Log(logging.Error(), "Error marshalling response to websocket: "+err.Error())
+						return
+					}
+
+					err = c.WriteJSON(response)
+					if err != nil {
+						SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
+						return
+					}
+				}
 			}
 		}
 	}()
