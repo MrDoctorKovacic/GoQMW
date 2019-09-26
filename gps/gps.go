@@ -45,9 +45,9 @@ var gpsStatus = logging.NewStatus("GPS")
 // HandleGet returns the latest GPS fix
 func (loc *Location) HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
+	gpsStatus.Log(logging.Warning(), "Responding to get request.")
 	data := loc.Get()
 	if data.Latitude == "" && data.Longitude == "" {
-		gpsStatus.Log(logging.Warning(), "data empty, responding with failure.")
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
 	} else {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: data, Status: "success", OK: true})
@@ -66,6 +66,7 @@ func (loc *Location) Get() Fix {
 
 // Set posts a new GPS fix
 func (loc *Location) Set(newdata Fix) string {
+	gpsStatus.Log(logging.Warning(), fmt.Sprintf("Responding to set request. Lat: %s, Long: %s", newdata.Latitude, newdata.Longitude))
 	// Update value for global session if the data is newer
 	if newdata.Latitude == "" && newdata.Longitude == "" {
 		gpsStatus.Log(logging.Warning(), "Not inserting new GPS fix, no new Lat or Long")
