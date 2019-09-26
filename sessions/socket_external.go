@@ -53,11 +53,11 @@ func (session *Session) CheckServer(host string, token string) {
 	}
 }
 
-func getAPIResponse(dataString string) ([]byte, error) {
+func getAPIResponse(dataString string) ([]byte, string, error) {
 	dataArray := strings.Split(dataString, ";")
 	if len(dataArray) != 3 {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not break response into core components. Got response: %s", dataString))
-		return nil, fmt.Errorf("Could not break response into core components. Got response: %s", dataString)
+		return nil, "", fmt.Errorf("Could not break response into core components. Got response: %s", dataString)
 	}
 
 	method := dataArray[0]
@@ -73,7 +73,7 @@ func getAPIResponse(dataString string) ([]byte, error) {
 		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353%s", path), bytes.NewBuffer(jsonStr))
 		if err != nil {
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
-			return nil, fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
+			return nil, "", fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
 		}
 		req.Header.Set("Content-Type", "application/json")
 		client := &http.Client{}
@@ -84,12 +84,12 @@ func getAPIResponse(dataString string) ([]byte, error) {
 
 	if err != nil {
 		SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
-		return nil, fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
+		return nil, "", fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	return body, nil
+	return body, path, nil
 }
 
 func runServerSocket(host string, token string) {
@@ -142,7 +142,7 @@ func runServerSocket(host string, token string) {
 				}
 
 				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read output:  %s", output))
-				internalResponse, err := getAPIResponse(output)
+				internalResponse, path, err := getAPIResponse(output)
 				if err != nil {
 					SessionStatus.Log(logging.Error(), "Error from forwarded request websocket: "+err.Error())
 					return
@@ -156,6 +156,7 @@ func runServerSocket(host string, token string) {
 					return
 				}
 				response.Method = "response"
+				response.Status = path
 
 				err = c.WriteJSON(response)
 				if err != nil {
