@@ -22,7 +22,7 @@ func TestProcessTimezone(t *testing.T) {
 
 	for _, table := range tables {
 		table.input.processTimezone()
-		if table.input.Timezone != table.output {
+		if table.input.Timezone.String() != table.output.String() {
 			t.Errorf("processTimezone() = %s; want %s", table.input.Timezone.String(), table.output.String())
 		}
 	}
