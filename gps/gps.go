@@ -45,7 +45,6 @@ var gpsStatus = logging.NewStatus("GPS")
 // HandleGet returns the latest GPS fix
 func (loc *Location) HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
-	loc.Mutex.Lock()
 	data := loc.Get()
 	if data.Latitude == "" && data.Longitude == "" {
 		gpsStatus.Log(logging.Warning(), "GPS data empty, responding with failure.")
@@ -53,7 +52,6 @@ func (loc *Location) HandleGet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: data, Status: "success", OK: true})
 	}
-	loc.Mutex.Unlock()
 }
 
 // Get returns the latest GPS fix
