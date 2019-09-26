@@ -67,7 +67,7 @@ func getAPIResponse(dataString string) ([]byte, error) {
 	)
 	if method == "POST" {
 		jsonStr := []byte(postingString)
-		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353/%s", path), bytes.NewBuffer(jsonStr))
+		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353%s", path), bytes.NewBuffer(jsonStr))
 		if err != nil {
 			SessionStatus.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
 			return nil, fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
@@ -76,7 +76,7 @@ func getAPIResponse(dataString string) ([]byte, error) {
 		client := &http.Client{}
 		resp, err = client.Do(req)
 	} else if method == "GET" {
-		resp, err = http.Get(fmt.Sprintf("http://localhost:5353/%s", path))
+		resp, err = http.Get(fmt.Sprintf("http://localhost:5353%s", path))
 	}
 
 	if err != nil {
@@ -134,21 +134,27 @@ func runServerSocket(host string, token string) {
 				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s"+string(message)))
 
 				// TODO! Match this path against a walk through of our router
-				internalResponse, err := getAPIResponse(fmt.Sprintf("%v", response.Output))
-				if err == nil {
-					response := formatting.JSONResponse{}
-					err = json.Unmarshal(internalResponse, &response)
-					if err != nil {
-						SessionStatus.Log(logging.Error(), "Error marshalling response to websocket: "+err.Error())
-						return
-					}
-
-					err = c.WriteJSON(response)
-					if err != nil {
-						SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
-						return
-					}
+				output := fmt.Sprintf("%v", response.Output)
+				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read output:  %s"+output))
+				internalResponse, err := getAPIResponse(output)
+				if err != nil {
+					SessionStatus.Log(logging.Error(), "Error from forwarded request websocket: "+err.Error())
+					return
 				}
+
+				response := formatting.JSONResponse{}
+				err = json.Unmarshal(internalResponse, &response)
+				if err != nil {
+					SessionStatus.Log(logging.Error(), "Error marshalling response to websocket: "+err.Error())
+					return
+				}
+
+				err = c.WriteJSON(response)
+				if err != nil {
+					SessionStatus.Log(logging.Error(), "Error writing to websocket: "+err.Error())
+					return
+				}
+
 			}
 		}
 	}()
