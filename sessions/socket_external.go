@@ -134,7 +134,13 @@ func runServerSocket(host string, token string) {
 				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s"+string(message)))
 
 				// TODO! Match this path against a walk through of our router
-				output := fmt.Sprintf("%v", response.Output)
+				//output := fmt.Sprintf("%v", response.Output)
+				output, ok := response.Output.(string)
+				if !ok {
+					SessionStatus.Log(logging.Error(), "Cannot cast output to string.")
+					return
+				}
+
 				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read output:  %s"+output))
 				internalResponse, err := getAPIResponse(output)
 				if err != nil {
