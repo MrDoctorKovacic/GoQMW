@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -85,9 +86,8 @@ func getAPIResponse(dataString string) ([]byte, error) {
 	}
 
 	defer resp.Body.Close()
-	var response []byte
-	resp.Body.Read(response)
-	return response, nil
+	body, err := ioutil.ReadAll(resp.Body)
+	return body, nil
 }
 
 func runServerSocket(host string, token string) {
