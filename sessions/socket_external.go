@@ -131,7 +131,7 @@ func runServerSocket(host string, token string) {
 
 			// Check if the server is echoing back to us, or if it's a legitimate request from the server
 			if response.Method != "response" {
-				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s"+string(message)))
+				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read request:  %s", string(message)))
 
 				// TODO! Match this path against a walk through of our router
 				//output := fmt.Sprintf("%v", response.Output)
@@ -141,7 +141,7 @@ func runServerSocket(host string, token string) {
 					return
 				}
 
-				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read output:  %s"+output))
+				SessionStatus.Log(logging.OK(), fmt.Sprintf("Websocket read output:  %s", output))
 				internalResponse, err := getAPIResponse(output)
 				if err != nil {
 					SessionStatus.Log(logging.Error(), "Error from forwarded request websocket: "+err.Error())
