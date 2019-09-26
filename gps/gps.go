@@ -46,7 +46,13 @@ var gpsStatus = logging.NewStatus("GPS")
 func (loc *Location) HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
 	loc.Mutex.Lock()
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: loc.Get(), Status: "success", OK: true})
+	data := loc.Get()
+	if data.Latitude == "" && data.Longitude == "" {
+		gpsStatus.Log(logging.Warning(), "GPS data empty, responding with failure.")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
+	} else {
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: data, Status: "success", OK: true})
+	}
 	loc.Mutex.Unlock()
 }
 
