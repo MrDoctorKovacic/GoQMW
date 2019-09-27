@@ -30,27 +30,30 @@ type ConfigValues struct {
 	VerboseOutput         bool
 }
 
-// settingsFile is the internal reference file for saving settings to
-var settingsFile = "./settings.json"
-
 // Settings control generic user defined field:value mappings, which will persist each run
-// The mutex should be unnecessary, but is provided just in case
-var Settings map[string]map[string]string
-var settingsLock sync.Mutex
+var (
+	Data         map[string]map[string]string // Main settings map
+	Config       ConfigValues
+	status       logging.ProgramStatus // status will control logging and reporting of status / warnings / errors
+	settingsLock sync.Mutex            // Mutex allow concurrent reads/writes
+)
 
-// settingsStatus will control logging and reporting of status / warnings / errors
-var settingsStatus = logging.NewStatus("Settings")
+func init() {
+	status = logging.NewStatus("Settings")
 
-// Configure verbose output
-var verboseOutput bool
+	Config = ConfigValues{SettingsFile: "./settings.json", VerboseOutput: false}
+
+	// Default to empty map
+	Data = make(map[string]map[string]string, 0)
+}
 
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	if verboseOutput {
-		settingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
+	if Config.VerboseOutput {
+		status.Log(logging.OK(), "Responding to GET request with entire settings map.")
 	}
 	settingsLock.Lock()
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Settings, Status: "success", OK: true})
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Data, Status: "success", OK: true})
 	settingsLock.Unlock()
 }
 
@@ -59,12 +62,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	componentName := formatting.FormatName(params["component"])
 
-	if verboseOutput {
-		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
+	if Config.VerboseOutput {
+		status.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 	}
 
 	settingsLock.Lock()
-	responseVal, ok := Settings[componentName]
+	responseVal, ok := Data[componentName]
 	settingsLock.Unlock()
 
 	var response formatting.JSONResponse
@@ -83,12 +86,12 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	componentName := formatting.FormatName(params["component"])
 	settingName := formatting.FormatName(params["name"])
 
-	if verboseOutput {
-		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+	if Config.VerboseOutput {
+		status.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 	}
 
 	settingsLock.Lock()
-	responseVal, ok := Settings[componentName][settingName]
+	responseVal, ok := Data[componentName][settingName]
 	settingsLock.Unlock()
 
 	var response formatting.JSONResponse
@@ -101,17 +104,29 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// GetAll returns all the values of known settings
+func GetAll() map[string]map[string]string {
+	if Config.VerboseOutput {
+		status.Log(logging.OK(), fmt.Sprintf("Responding to request for all settings"))
+	}
+
+	settingsLock.Lock()
+	settingsCopy := Data
+	settingsLock.Unlock()
+	return settingsCopy
+}
+
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
 	componentName = formatting.FormatName(componentName)
 
-	if verboseOutput {
-		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for setting component %s", componentName))
+	if Config.VerboseOutput {
+		status.Log(logging.OK(), fmt.Sprintf("Responding to request for setting component %s", componentName))
 	}
 
 	settingsLock.Lock()
 	defer settingsLock.Unlock()
-	component, ok := Settings[componentName]
+	component, ok := Data[componentName]
 	if ok {
 		setting, ok := component[settingName]
 		if ok {
@@ -131,8 +146,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	settingValue := params["value"]
 
 	// Log if requested
-	if verboseOutput {
-		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
+	if Config.VerboseOutput {
+		status.Log(logging.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
 	}
 
 	// Do the dirty work elsewhere
@@ -146,17 +161,17 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 func Set(componentName string, settingName string, settingValue string) {
 	// Insert componentName into Map if not exists
 	settingsLock.Lock()
-	if _, ok := Settings[componentName]; !ok {
-		Settings[componentName] = make(map[string]string, 0)
+	if _, ok := Data[componentName]; !ok {
+		Data[componentName] = make(map[string]string, 0)
 	}
 
 	// Update setting in inner map
-	Settings[componentName][settingName] = settingValue
+	Data[componentName][settingName] = settingValue
 	settingsLock.Unlock()
 
 	// Log our success
-	settingsStatus.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
+	status.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
-	writeFile(settingsFile)
+	writeFile(Config.SettingsFile)
 }
