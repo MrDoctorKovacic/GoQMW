@@ -80,6 +80,7 @@ func (loc *Location) Set(newdata Fix) string {
 	// Update Loc fixes
 	loc.LastFix = loc.CurrentFix
 	loc.CurrentFix = newdata
+	loc.Mutex.Unlock()
 
 	// Update timezone information with new GPS fix
 	loc.processTimezone()
@@ -114,7 +115,6 @@ func (loc *Location) Set(newdata Fix) string {
 		convFloat, _ := strconv.ParseFloat(newdata.Course, 32)
 		postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
 	}
-	loc.Mutex.Unlock()
 
 	return postingString.String()
 }
@@ -122,8 +122,10 @@ func (loc *Location) Set(newdata Fix) string {
 // Parses GPS coordinates into a time.Location timezone
 // On OpenWRT, this requires the zoneinfo-core and zoneinfo-northamerica (or other relevant locations) packages
 func (loc *Location) processTimezone() {
+	loc.Mutex.Lock()
 	latFloat, err1 := strconv.ParseFloat(loc.CurrentFix.Latitude, 64)
 	longFloat, err2 := strconv.ParseFloat(loc.CurrentFix.Longitude, 64)
+	loc.Mutex.Unlock()
 
 	if err1 != nil {
 		gpsStatus.Log(logging.Error(), fmt.Sprintf("Error converting lat into float64: %s", err1.Error()))
@@ -141,5 +143,7 @@ func (loc *Location) processTimezone() {
 		return
 	}
 
+	loc.Mutex.Lock()
 	loc.Timezone = newTimezone
+	loc.Mutex.Unlock()
 }
