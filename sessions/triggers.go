@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
@@ -192,7 +193,7 @@ func tLightSensorReason(triggerPackage *sessionPackage) {
 	keyPosition, err1 := GetSessionValue("KEY_POSITION")
 	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
 	windowsOpen, err2 := GetSessionValue("WINDOWS_OPEN")
-	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, settings.Config.Location.Timezone)
+	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 
 	if err1 == nil && err2 == nil && err3 == nil {
 		if triggerPackage.Data.Value == "RAIN" &&

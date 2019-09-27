@@ -2,18 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/gorilla/mux"
 )
 
@@ -31,24 +29,6 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 
 	// Echo back message
 	json.NewEncoder(w).Encode(params["message"])
-}
-
-// handleSetGPS posts a new GPS fix
-func handleSetGPS(w http.ResponseWriter, r *http.Request) {
-	var newdata gps.Fix
-	_ = json.NewDecoder(r.Body).Decode(&newdata)
-	postingString := settings.Config.Location.Set(newdata)
-
-	// Insert into database
-	if postingString != "" && settings.Config.DB != nil {
-		online, err := settings.Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
-
-		if err != nil && online {
-			mainStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
-		} else if settings.Config.VerboseOutput {
-			mainStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString))
-		}
-	}
 }
 
 // **
@@ -77,12 +57,10 @@ func startRouter() {
 	//
 	// GPS Routes
 	//
-	router.HandleFunc("/session/gps", settings.Config.Location.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", handleSetGPS).Methods("POST")
+	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
+	router.HandleFunc("/session/gps", gps.HandleSetGPS).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		settings.Config.Location.Mutex.Lock()
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: settings.Config.Location.Timezone.String(), Status: "success", OK: true})
-		settings.Config.Location.Mutex.Unlock()
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: gps.GetTimezone(), Status: "success", OK: true})
 	}).Methods("GET")
 
 	//
