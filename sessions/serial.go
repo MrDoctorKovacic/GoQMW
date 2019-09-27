@@ -12,7 +12,7 @@ import (
 
 // ReadFromSerial reads serial data into the session
 func (session *Session) ReadFromSerial(device *serial.Port) {
-	SessionStatus.Log(logging.OK(), "Starting serial read")
+	status.Log(logging.OK(), "Starting serial read")
 	for connected := true; connected; {
 		session.parseSerialJSON(mserial.ReadSerial(device))
 	}
@@ -21,7 +21,7 @@ func (session *Session) ReadFromSerial(device *serial.Port) {
 func (session *Session) parseSerialJSON(marshalledJSON interface{}) {
 
 	if marshalledJSON == nil {
-		SessionStatus.Log(logging.Error(), " marshalled JSON is nil.")
+		status.Log(logging.Error(), " marshalled JSON is nil.")
 		return
 	}
 
@@ -43,14 +43,14 @@ func (session *Session) parseSerialJSON(marshalledJSON interface{}) {
 			floatValue, _ := value.(float64)
 			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case []interface{}:
-			SessionStatus.Log(logging.Error(), key+" is an array. Data: ")
+			status.Log(logging.Error(), key+" is an array. Data: ")
 			for i, u := range vv {
 				fmt.Println(i, u)
 			}
 		case nil:
 			break
 		default:
-			SessionStatus.Log(logging.Error(), fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
+			status.Log(logging.Error(), fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
 		}
 	}
 }
