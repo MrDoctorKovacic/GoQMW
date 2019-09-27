@@ -20,11 +20,11 @@ var clientConnected bool
 
 // CheckServer will continiously ping a central server for waiting packets,
 // and will open a websocket as a client if so
-func (session *Session) CheckServer(host string, token string) {
+func CheckServer(host string, token string) {
 	var timeToWait time.Duration
 	for {
 		if !clientConnected {
-			lteEnabled, err := session.GetSessionValue("LTE_ON")
+			lteEnabled, err := GetSessionValue("LTE_ON")
 			if err != nil {
 				status.Log(logging.Error(), "Error getting LTE status.")
 				timeToWait = time.Second * 5

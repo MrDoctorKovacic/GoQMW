@@ -11,15 +11,14 @@ import (
 )
 
 // ReadFromSerial reads serial data into the session
-func (session *Session) ReadFromSerial(device *serial.Port) {
+func ReadFromSerial(device *serial.Port) {
 	status.Log(logging.OK(), "Starting serial read")
 	for connected := true; connected; {
-		session.parseSerialJSON(mserial.ReadSerial(device))
+		parseSerialJSON(mserial.ReadSerial(device))
 	}
 }
 
-func (session *Session) parseSerialJSON(marshalledJSON interface{}) {
-
+func parseSerialJSON(marshalledJSON interface{}) {
 	if marshalledJSON == nil {
 		status.Log(logging.Error(), " marshalled JSON is nil.")
 		return
@@ -31,17 +30,17 @@ func (session *Session) parseSerialJSON(marshalledJSON interface{}) {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			session.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+			CreateSessionValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
 		case string:
-			session.CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
+			CreateSessionValue(strings.ToUpper(key), strings.ToUpper(vv))
 		case int:
-			session.CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
+			CreateSessionValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
 			floatValue, _ := value.(float32)
-			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case float64:
 			floatValue, _ := value.(float64)
-			session.CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			CreateSessionValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 		case []interface{}:
 			status.Log(logging.Error(), key+" is an array. Data: ")
 			for i, u := range vv {

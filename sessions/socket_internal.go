@@ -12,7 +12,7 @@ import (
 var upgrader = websocket.Upgrader{} // use default options
 
 // GetSessionSocket returns the entire current session as a webstream
-func (session *Session) GetSessionSocket(w http.ResponseWriter, r *http.Request) {
+func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
 
 	// Log if requested
@@ -37,7 +37,7 @@ func (session *Session) GetSessionSocket(w http.ResponseWriter, r *http.Request)
 		//status.Log(logging.OK(), "Received: "+string(message))
 
 		// Pass through lock first
-		writeSession := session.GetSession()
+		writeSession := GetSession()
 
 		err = c.WriteJSON(writeSession)
 

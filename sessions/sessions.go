@@ -35,11 +35,12 @@ type sessionPackage struct {
 type Session struct {
 	data  map[string]Value
 	Mutex sync.Mutex
-	File  string
+	file  string
 }
 
 var (
-	status logging.ProgramStatus
+	status  logging.ProgramStatus
+	session Session //
 )
 
 func init() {
@@ -48,11 +49,11 @@ func init() {
 }
 
 // CreateSession will init the current session with a file
-func CreateSession(sessionFile string) *Session {
-	var session Session
+func CreateSession(sessionFile string) {
 	session.data = make(map[string]Value)
 
 	if sessionFile != "" {
+		session.file = sessionFile
 		jsonFile, err := os.Open(sessionFile)
 
 		if err != nil {
@@ -64,17 +65,16 @@ func CreateSession(sessionFile string) *Session {
 	} else {
 		status.Log(logging.OK(), "Not saving or recovering from file")
 	}
-	return &session
 }
 
 // HandleGetSession responds to an HTTP request for the entire session
-func (session *Session) HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	response := formatting.JSONResponse{Output: session.GetSession(), Status: "success", OK: true}
+func HandleGetSession(w http.ResponseWriter, r *http.Request) {
+	response := formatting.JSONResponse{Output: GetSession(), Status: "success", OK: true}
 	json.NewEncoder(w).Encode(response)
 }
 
 // GetSession returns the entire current session
-func (session *Session) GetSession() map[string]Value {
+func GetSession() map[string]Value {
 	// Log if requested
 	if settings.Config.VerboseOutput {
 		status.Log(logging.OK(), "Responding to request for full session")
@@ -88,10 +88,10 @@ func (session *Session) GetSession() map[string]Value {
 }
 
 // HandleGetSessionValue returns a specific session value
-func (session *Session) HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
+func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	sessionValue, err := session.GetSessionValue(params["name"])
+	sessionValue, err := GetSessionValue(params["name"])
 	response := formatting.JSONResponse{}
 	if err != nil {
 		response.Status = "fail"
@@ -110,7 +110,7 @@ func (session *Session) HandleGetSessionValue(w http.ResponseWriter, r *http.Req
 }
 
 // GetSessionValue returns the named session, if it exists. Nil otherwise
-func (session *Session) GetSessionValue(name string) (value Value, err error) {
+func GetSessionValue(name string) (value Value, err error) {
 
 	// Log if requested
 	if settings.Config.VerboseOutput {
@@ -129,13 +129,11 @@ func (session *Session) GetSessionValue(name string) (value Value, err error) {
 }
 
 // HandlePostSessionValue updates or posts a new session value to the common session
-func (session *Session) HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
+func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 
 	// Default to NOT OK response
-	response := formatting.JSONResponse{}
-	response.Status = "fail"
-	response.OK = false
+	response := formatting.JSONResponse{Status: "fail", OK: false}
 
 	if err != nil {
 		status.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
@@ -167,7 +165,7 @@ func (session *Session) HandlePostSessionValue(w http.ResponseWriter, r *http.Re
 
 	// Call the setter
 	newPackage := sessionPackage{Name: params["name"], Data: newdata}
-	err = session.SetSessionValue(newPackage, newdata.Quiet)
+	err = SetSessionValue(newPackage, newdata.Quiet)
 
 	if err != nil {
 		response.Output = err.Error()
@@ -185,12 +183,12 @@ func (session *Session) HandlePostSessionValue(w http.ResponseWriter, r *http.Re
 }
 
 // CreateSessionValue prepares a Value structure before passing it to the setter
-func (session *Session) CreateSessionValue(name string, value string) {
-	session.SetSessionValue(sessionPackage{Name: name, Data: Value{Value: value}}, true)
+func CreateSessionValue(name string, value string) {
+	SetSessionValue(sessionPackage{Name: name, Data: Value{Value: value}}, true)
 }
 
 // SetSessionValue does the actual setting of Session Values
-func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) error {
+func SetSessionValue(newPackage sessionPackage, quiet bool) error {
 	// Ensure name is valid
 	if !formatting.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
@@ -217,7 +215,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 	session.Mutex.Unlock()
 
 	// Finish post processing
-	go session.processSessionTriggers(&newPackage)
+	go processSessionTriggers(&newPackage)
 
 	// Insert into database
 	if settings.Config.DB != nil {
