@@ -120,6 +120,7 @@ func (loc *Location) Set(newdata Fix) string {
 }
 
 // Parses GPS coordinates into a time.Location timezone
+// On OpenWRT, this requires the zoneinfo-core and zoneinfo-northamerica (or other relevant locations) packages
 func (loc *Location) processTimezone() {
 	latFloat, err1 := strconv.ParseFloat(loc.CurrentFix.Latitude, 64)
 	longFloat, err2 := strconv.ParseFloat(loc.CurrentFix.Longitude, 64)
