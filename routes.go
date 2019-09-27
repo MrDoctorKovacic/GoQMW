@@ -12,6 +12,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 )
@@ -87,10 +88,10 @@ func startRouter() {
 	//
 	// Session routes
 	//
-	router.HandleFunc("/session", MainSession.HandleGetSession).Methods("GET")
-	router.HandleFunc("/session/socket", MainSession.GetSessionSocket).Methods("GET")
-	router.HandleFunc("/session/{name}", MainSession.HandleGetSessionValue).Methods("GET")
-	router.HandleFunc("/session/{name}", MainSession.HandlePostSessionValue).Methods("POST")
+	router.HandleFunc("/session", sessions.HandleGetSession).Methods("GET")
+	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
+	router.HandleFunc("/session/{name}", sessions.HandleGetSessionValue).Methods("GET")
+	router.HandleFunc("/session/{name}", sessions.HandlePostSessionValue).Methods("POST")
 
 	//
 	// Settings routes
@@ -137,7 +138,7 @@ func startRouter() {
 	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
-	router.HandleFunc("/{device}/{command}", MainSession.ParseCommand).Methods("GET")
+	router.HandleFunc("/{device}/{command}", sessions.ParseCommand).Methods("GET")
 
 	//
 	// Finally, welcome and meta routes

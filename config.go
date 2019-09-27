@@ -19,12 +19,6 @@ import (
 	"github.com/tarm/serial"
 )
 
-// Config defined here, to be saved to below
-//var Config settings.ConfigValues
-
-// MainSession object
-var MainSession *sessions.Session
-
 // Main config parsing
 func parseConfig() {
 
@@ -42,10 +36,7 @@ func parseConfig() {
 	}
 
 	// Init session tracking (with or without Influx)
-	// Fetch and append old session from disk if allowed
-	MainSession = sessions.CreateSession(settings.Config.SettingsFile)
-	//MainSession.Config = &settings.Config
-	MainSession.File = sessionFile
+	sessions.CreateSession(settings.Config.SettingsFile)
 
 	// Parse through config if found in settings file
 	configMap, ok := settings.GetAll()["MDROID"]
@@ -57,19 +48,17 @@ func parseConfig() {
 		setupTokens(&configMap)
 		setupSerial()
 
-		// Set up pybus repeat commands
-		_, usingPybus := configMap["PYBUS_DEVICE"]
-		if usingPybus {
-			go MainSession.RepeatCommand("requestIgnitionStatus", 10)
-			go MainSession.RepeatCommand("requestLampStatus", 20)
-			go MainSession.RepeatCommand("requestVehicleStatus", 30)
-			go MainSession.RepeatCommand("requestOdometer", 45)
-			go MainSession.RepeatCommand("requestTimeStatus", 60)
-			go MainSession.RepeatCommand("requestTemperatureStatus", 120)
-		}
-
-		// Slack URL
 		settings.Config.SlackURL = configMap["SLACK_URL"]
+
+		// Set up pybus repeat commands
+		if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
+			go sessions.RepeatCommand("requestIgnitionStatus", 10)
+			go sessions.RepeatCommand("requestLampStatus", 20)
+			go sessions.RepeatCommand("requestVehicleStatus", 30)
+			go sessions.RepeatCommand("requestOdometer", 45)
+			go sessions.RepeatCommand("requestTimeStatus", 60)
+			go sessions.RepeatCommand("requestTemperatureStatus", 120)
+		}
 
 	} else {
 		mainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
@@ -84,7 +73,7 @@ func setupTokens(configAddr *map[string]string) {
 	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
 
 	if usingTokens && usingCentralHost {
-		go MainSession.CheckServer(serverHost, token)
+		go sessions.CheckServer(serverHost, token)
 	} else {
 		mainStatus.Log(logging.Warning(), "Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
 	}
@@ -201,6 +190,6 @@ func startSerialComms(deviceName string, baudrate int) {
 		}
 
 		// Continiously read from serial port
-		go MainSession.ReadFromSerial(s)
+		go sessions.ReadFromSerial(s)
 	}
 }

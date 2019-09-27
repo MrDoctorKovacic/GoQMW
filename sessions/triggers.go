@@ -16,12 +16,11 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
 // Process session values by combining or otherwise modifying once posted
-func (session *Session) processSessionTriggers(triggerPackage *sessionPackage) {
+func processSessionTriggers(triggerPackage *sessionPackage) {
 	if settings.Config.VerboseOutput {
 		status.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
 	}
@@ -29,38 +28,26 @@ func (session *Session) processSessionTriggers(triggerPackage *sessionPackage) {
 	// Pull trigger function
 	switch triggerPackage.Name {
 	case "MAIN_VOLTAGE_RAW":
-		session.tMainVoltage(triggerPackage)
+		tMainVoltage(triggerPackage)
 	case "AUX_VOLTAGE_RAW":
-		session.tAuxVoltage(triggerPackage)
+		tAuxVoltage(triggerPackage)
 	case "AUX_CURRENT_RAW":
-		session.tAuxCurrent(triggerPackage)
+		tAuxCurrent(triggerPackage)
 	case "ACC_POWER":
-		session.tAccPower(triggerPackage)
+		tAccPower(triggerPackage)
 	case "LIGHT_SENSOR_REASON":
-		session.tLightSensorReason(triggerPackage)
+		tLightSensorReason(triggerPackage)
 	case "SEAT_MEMORY_1":
 		fallthrough
 	case "SEAT_MEMORY_2":
 		fallthrough
 	case "SEAT_MEMORY_3":
-		session.tSeatMemory(triggerPackage)
+		tSeatMemory(triggerPackage)
 	default:
 		if settings.Config.VerboseOutput {
 			status.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
 			return
 		}
-	}
-}
-
-// RepeatCommand endlessly, helps with request functions
-func (session *Session) RepeatCommand(command string, sleepSeconds int) {
-	for {
-		// Only push repeated pybus commands when powered, otherwise the car won't sleep
-		hasPower, err := session.GetSessionValue("ACC_POWER")
-		if err == nil && hasPower.Value == "TRUE" {
-			pybus.PushQueue(command)
-		}
-		time.Sleep(time.Duration(sleepSeconds) * time.Second)
 	}
 }
 
@@ -71,18 +58,18 @@ func (session *Session) RepeatCommand(command string, sleepSeconds int) {
 //
 
 // Convert main raw voltage into an actual number
-func (session *Session) tMainVoltage(triggerPackage *sessionPackage) {
+func tMainVoltage(triggerPackage *sessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 	if err != nil {
 		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
 		return
 	}
 
-	session.CreateSessionValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+	CreateSessionValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
 }
 
 // Resistance values and modifiers to the incoming Voltage sensor value
-func (session *Session) tAuxVoltage(triggerPackage *sessionPackage) {
+func tAuxVoltage(triggerPackage *sessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -100,12 +87,12 @@ func (session *Session) tAuxVoltage(triggerPackage *sessionPackage) {
 	}
 
 	realVoltage := voltageModifier * (((voltageFloat * 3.3) / 4095.0) / 0.2)
-	session.CreateSessionValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
-	session.CreateSessionValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
+	CreateSessionValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
+	CreateSessionValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
 
-	sentPowerWarning, err := session.GetSessionValue("SENT_POWER_WARNING")
+	sentPowerWarning, err := GetSessionValue("SENT_POWER_WARNING")
 	if err != nil {
-		session.CreateSessionValue("SENT_POWER_WARNING", "FALSE")
+		CreateSessionValue("SENT_POWER_WARNING", "FALSE")
 	}
 
 	// SHUTDOWN the system if voltage is below 11.3 to preserve our battery
@@ -113,14 +100,14 @@ func (session *Session) tAuxVoltage(triggerPackage *sessionPackage) {
 	if realVoltage < 11.3 {
 		if err == nil && sentPowerWarning.Value == "FALSE" {
 			logging.SlackAlert(settings.Config.SlackURL, fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
-			session.CreateSessionValue("SENT_POWER_WARNING", "TRUE")
+			CreateSessionValue("SENT_POWER_WARNING", "TRUE")
 		}
 		//exec.Command("poweroff", "now")
 	}
 }
 
 // Modifiers to the incoming Current sensor value
-func (session *Session) tAuxCurrent(triggerPackage *sessionPackage) {
+func tAuxCurrent(triggerPackage *sessionPackage) {
 	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -129,17 +116,17 @@ func (session *Session) tAuxCurrent(triggerPackage *sessionPackage) {
 	}
 
 	realCurrent := math.Abs(1000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185))
-	session.CreateSessionValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
+	CreateSessionValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
 
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
-func (session *Session) tAccPower(triggerPackage *sessionPackage) {
+func tAccPower(triggerPackage *sessionPackage) {
 	// Pull needed values for power logic
-	wirelessPoweredOn, _ := session.GetSessionValue("WIRELESS_POWER")
-	wifiAvailable, _ := session.GetSessionValue("WIFI_CONNECTED")
-	boardPoweredOn, _ := session.GetSessionValue("BOARD_POWER")
-	tabletPoweredOn, _ := session.GetSessionValue("TABLET_POWER")
+	wirelessPoweredOn, _ := GetSessionValue("WIRELESS_POWER")
+	wifiAvailable, _ := GetSessionValue("WIFI_CONNECTED")
+	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
+	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
 	raynorTargetPower, rerr := settings.Get("RAYNOR", "POWER")
 	lucioTargetPower, aerr := settings.Get("LUCIO", "POWER")
 	brightwingTargetPower, berr := settings.Get("BRIGHTWING", "POWER")
@@ -201,10 +188,10 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 }
 
 // Alert me when it's raining and windows are down
-func (session *Session) tLightSensorReason(triggerPackage *sessionPackage) {
-	keyPosition, err1 := session.GetSessionValue("KEY_POSITION")
-	doorsLocked, err2 := session.GetSessionValue("DOORS_LOCKED")
-	windowsOpen, err2 := session.GetSessionValue("WINDOWS_OPEN")
+func tLightSensorReason(triggerPackage *sessionPackage) {
+	keyPosition, err1 := GetSessionValue("KEY_POSITION")
+	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
+	windowsOpen, err2 := GetSessionValue("WINDOWS_OPEN")
 	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, settings.Config.Location.Timezone)
 
 	if err1 == nil && err2 == nil && err3 == nil {
@@ -219,7 +206,7 @@ func (session *Session) tLightSensorReason(triggerPackage *sessionPackage) {
 }
 
 // Restart different machines when seat memory buttons are pressed
-func (session *Session) tSeatMemory(triggerPackage *sessionPackage) {
+func tSeatMemory(triggerPackage *sessionPackage) {
 	switch triggerPackage.Name {
 	case "SEAT_MEMORY_1":
 		mserial.CommandNetworkMachine("LUCIO", "restart")

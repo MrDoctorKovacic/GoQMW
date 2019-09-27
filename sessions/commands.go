@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
@@ -14,10 +15,22 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// RepeatCommand endlessly, helps with request functions
+func RepeatCommand(command string, sleepSeconds int) {
+	for {
+		// Only push repeated pybus commands when powered, otherwise the car won't sleep
+		hasPower, err := GetSessionValue("ACC_POWER")
+		if err == nil && hasPower.Value == "TRUE" {
+			pybus.PushQueue(command)
+		}
+		time.Sleep(time.Duration(sleepSeconds) * time.Second)
+	}
+}
+
 // ParseCommand is a list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
 // and are actually preferred, since we can handle strange cases
-func (session *Session) ParseCommand(w http.ResponseWriter, r *http.Request) {
+func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
@@ -40,7 +53,7 @@ func (session *Session) ParseCommand(w http.ResponseWriter, r *http.Request) {
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
-		deviceStatus, err := session.GetSessionValue("DOORS_LOCKED")
+		deviceStatus, err := GetSessionValue("DOORS_LOCKED")
 
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		if err != nil && !isPositive {
