@@ -23,7 +23,7 @@ import (
 // Process session values by combining or otherwise modifying once posted
 func (session *Session) processSessionTriggers(triggerPackage *sessionPackage) {
 	if session.Config.VerboseOutput {
-		SessionStatus.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
+		status.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
 	}
 
 	// Pull trigger function
@@ -46,7 +46,7 @@ func (session *Session) processSessionTriggers(triggerPackage *sessionPackage) {
 		session.tSeatMemory(triggerPackage)
 	default:
 		if session.Config.VerboseOutput {
-			SessionStatus.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
+			status.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
 			return
 		}
 	}
@@ -74,7 +74,7 @@ func (session *Session) RepeatCommand(command string, sleepSeconds int) {
 func (session *Session) tMainVoltage(triggerPackage *sessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 	if err != nil {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
 		return
 	}
 
@@ -86,7 +86,7 @@ func (session *Session) tAuxVoltage(triggerPackage *sessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
 		return
 	}
 
@@ -124,7 +124,7 @@ func (session *Session) tAuxCurrent(triggerPackage *sessionPackage) {
 	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
 		return
 	}
 
@@ -151,7 +151,7 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 	} else if triggerPackage.Data.Value == "FALSE" {
 		targetAction = "Off"
 	} else {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
 		return
 	}
 
@@ -166,7 +166,7 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 			go mserial.MachineShutdown(session.Config.SerialControlDevice, "brightwing", time.Second*10, "powerOffWireless")
 		}
 	} else {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
 		settings.Set("BRIGHTWING", "POWER", "AUTO")
 	}
 
@@ -181,7 +181,7 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnBoard")
 		}
 	} else {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
 		settings.Set("LUCIO", "POWER", "AUTO")
 	}
 
@@ -195,7 +195,7 @@ func (session *Session) tAccPower(triggerPackage *sessionPackage) {
 			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnTablet")
 		}
 	} else {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
 		settings.Set("RAYNOR", "POWER", "AUTO")
 	}
 }

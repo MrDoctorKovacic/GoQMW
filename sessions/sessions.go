@@ -39,8 +39,14 @@ type Session struct {
 	File   string
 }
 
-// SessionStatus will control logging and reporting of status / warnings / errors
-var SessionStatus = logging.NewStatus("Session")
+var (
+	status logging.ProgramStatus
+)
+
+func init() {
+	// status will control logging and reporting of status / warnings / errors
+	status = logging.NewStatus("Session")
+}
 
 // CreateSession will init the current session with a file
 func CreateSession(sessionFile string) *Session {
@@ -51,13 +57,13 @@ func CreateSession(sessionFile string) *Session {
 		jsonFile, err := os.Open(sessionFile)
 
 		if err != nil {
-			SessionStatus.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
+			status.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
 		} else {
 			byteValue, _ := ioutil.ReadAll(jsonFile)
 			json.Unmarshal(byteValue, &session)
 		}
 	} else {
-		SessionStatus.Log(logging.OK(), "Not saving or recovering from file")
+		status.Log(logging.OK(), "Not saving or recovering from file")
 	}
 	return &session
 }
@@ -72,7 +78,7 @@ func (session *Session) HandleGetSession(w http.ResponseWriter, r *http.Request)
 func (session *Session) GetSession() map[string]Value {
 	// Log if requested
 	if session.Config.VerboseOutput {
-		SessionStatus.Log(logging.OK(), "Responding to request for full session")
+		status.Log(logging.OK(), "Responding to request for full session")
 	}
 
 	session.Mutex.Lock()
@@ -109,7 +115,7 @@ func (session *Session) GetSessionValue(name string) (value Value, err error) {
 
 	// Log if requested
 	if session.Config.VerboseOutput {
-		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session value %s", name))
+		status.Log(logging.OK(), fmt.Sprintf("Responding to request for session value %s", name))
 	}
 
 	session.Mutex.Lock()
@@ -133,7 +139,7 @@ func (session *Session) HandlePostSessionValue(w http.ResponseWriter, r *http.Re
 	response.OK = false
 
 	if err != nil {
-		SessionStatus.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
+		status.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
@@ -152,8 +158,8 @@ func (session *Session) HandlePostSessionValue(w http.ResponseWriter, r *http.Re
 	err = json.NewDecoder(r.Body).Decode(&newdata)
 
 	if err != nil {
-		SessionStatus.Log(logging.Error(), "Error decoding incoming JSON")
-		SessionStatus.Log(logging.Error(), err.Error())
+		status.Log(logging.Error(), "Error decoding incoming JSON")
+		status.Log(logging.Error(), err.Error())
 
 		response.Output = err.Error()
 		json.NewEncoder(w).Encode(response)
@@ -203,7 +209,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 
 	// Log if requested
 	if session.Config.VerboseOutput && !quiet {
-		SessionStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
+		status.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 	}
 
 	// Add / update value in global session after locking access to session
@@ -233,11 +239,11 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
 			// Only spam our log if Influx is online
 			if online {
-				SessionStatus.Log(logging.Error(), errorText)
+				status.Log(logging.Error(), errorText)
 			}
 			return fmt.Errorf(errorText)
 		} else if !quiet {
-			SessionStatus.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
+			status.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
 		}
 	}
 
