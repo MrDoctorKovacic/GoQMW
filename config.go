@@ -20,7 +20,7 @@ import (
 )
 
 // Config defined here, to be saved to below
-var Config settings.ConfigValues
+//var Config settings.ConfigValues
 
 // MainSession object
 var MainSession *sessions.Session
@@ -29,34 +29,32 @@ var MainSession *sessions.Session
 func parseConfig() {
 
 	var sessionFile string
-	flag.StringVar(&Config.SettingsFile, "settings-file", "", "File to recover the persistent settings.")
+	flag.StringVar(&settings.Config.SettingsFile, "settings-file", "", "File to recover the persistent settings.")
 	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
 	flag.Parse()
 
 	// Parse settings file
-	settingsData, VerboseOutput := settings.ReadFile(Config.SettingsFile)
-	Config.VerboseOutput = VerboseOutput
+	settings.ReadFile(settings.Config.SettingsFile)
 
 	// Check settings
-	if _, err := json.Marshal(settingsData); err != nil {
+	if _, err := json.Marshal(settings.Data); err != nil {
 		panic(err)
 	}
 
 	// Init session tracking (with or without Influx)
 	// Fetch and append old session from disk if allowed
-	MainSession = sessions.CreateSession(Config.SettingsFile)
-	MainSession.Config = &Config
+	MainSession = sessions.CreateSession(settings.Config.SettingsFile)
+	//MainSession.Config = &Config
 	MainSession.File = sessionFile
 
 	// Parse through config if found in settings file
-	configMap, ok := settingsData["MDROID"]
+	configMap, ok := settings.GetAll()["MDROID"]
 	if ok {
-
 		setupTimezone(&configMap)
 		setupDatabase(&configMap)
 		setupBluetooth(&configMap)
 		setupTokens(&configMap)
-		setupSerial(&settingsData)
+		setupSerial()
 
 		// Set up pybus repeat commands
 		_, usingPybus := configMap["PYBUS_DEVICE"]
@@ -70,7 +68,7 @@ func parseConfig() {
 		}
 
 		// Slack URL
-		Config.SlackURL = configMap["SLACK_URL"]
+		settings.Config.SlackURL = configMap["SLACK_URL"]
 
 	} else {
 		mainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
@@ -93,19 +91,19 @@ func setupTokens(configAddr *map[string]string) {
 
 func setupTimezone(configAddr *map[string]string) {
 	configMap := *configAddr
-	Config.Location = &gps.Location{}
+	settings.Config.Location = &gps.Location{}
 	timezoneLocation, usingTimezone := configMap["Timezone"]
 	if usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
 		if err == nil {
-			Config.Location.Timezone = loc
+			settings.Config.Location.Timezone = loc
 		} else {
 			// If timezone has errored
-			Config.Location.Timezone, _ = time.LoadLocation("UTC")
+			settings.Config.Location.Timezone, _ = time.LoadLocation("UTC")
 		}
 	} else {
 		// If timezone is not set in config
-		Config.Location.Timezone, _ = time.LoadLocation("UTC")
+		settings.Config.Location.Timezone, _ = time.LoadLocation("UTC")
 	}
 }
 
@@ -114,7 +112,7 @@ func setupDatabase(configAddr *map[string]string) {
 	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if usingDatabase {
-		Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
+		settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
 
 		// Set up ping functionality
 		// Proprietary pinging for component tracking
@@ -125,7 +123,7 @@ func setupDatabase(configAddr *map[string]string) {
 		}
 
 	} else {
-		Config.DB = nil
+		settings.Config.DB = nil
 		mainStatus.Log(logging.OK(), "Not logging to influx db")
 	}
 }
@@ -136,9 +134,9 @@ func setupBluetooth(configAddr *map[string]string) {
 	if usingBluetooth {
 		bluetooth.EnableAutoRefresh()
 		bluetooth.SetAddress(bluetoothAddress)
-		Config.BluetoothAddress = bluetoothAddress
+		settings.Config.BluetoothAddress = bluetoothAddress
 	}
-	Config.BluetoothAddress = ""
+	settings.Config.BluetoothAddress = ""
 }
 
 //
@@ -150,19 +148,18 @@ func setupBluetooth(configAddr *map[string]string) {
 func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if params["command"] != "" {
-		mserial.WriteSerial(Config.SerialControlDevice, params["command"])
+		mserial.WriteSerial(settings.Config.SerialControlDevice, params["command"])
 	}
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
-func setupSerial(configAddr *map[string]map[string]string) {
-	settingsData := *configAddr
-	configMap := settingsData["MDROID"]
+func setupSerial() {
+	configMap := settings.Data["MDROID"]
 	HardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	hardwareSerialBaud, usingHardwareBaud := configMap["HARDWARE_SERIAL_BAUD"]
-	Config.HardwareSerialEnabled = usingHardwareSerial
+	settings.Config.HardwareSerialEnabled = usingHardwareSerial
 
-	if Config.HardwareSerialEnabled {
+	if settings.Config.HardwareSerialEnabled {
 		// Configure default baudrate
 		HardwareSerialBaud := 9600
 		if usingHardwareBaud {
@@ -170,7 +167,7 @@ func setupSerial(configAddr *map[string]map[string]string) {
 			if err != nil {
 				mainStatus.Log(logging.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
 				mainStatus.Log(logging.Warning(), "Disabling hardware serial functionality")
-				Config.HardwareSerialEnabled = false
+				settings.Config.HardwareSerialEnabled = false
 				return
 			}
 
@@ -180,7 +177,7 @@ func setupSerial(configAddr *map[string]map[string]string) {
 		startSerialComms(HardwareSerialPort, HardwareSerialBaud)
 
 		// Setup other devices
-		for device, baudrate := range mserial.ParseSerialDevices(settingsData) {
+		for device, baudrate := range mserial.ParseSerialDevices(settings.Data) {
 			startSerialComms(device, baudrate)
 		}
 	}
@@ -197,8 +194,8 @@ func startSerialComms(deviceName string, baudrate int) {
 		mainStatus.Log(logging.Error(), err.Error())
 	} else {
 		// Use first Serial device as a R/W, all others will only be read from
-		if Config.SerialControlDevice == nil {
-			Config.SerialControlDevice = s
+		if settings.Config.SerialControlDevice == nil {
+			settings.Config.SerialControlDevice = s
 			mainStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
 		}
 

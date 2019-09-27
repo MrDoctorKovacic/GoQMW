@@ -12,72 +12,67 @@ import (
 
 // ReadFile will handle the initialization of settings,
 // either from past mapping or by creating a new one
-func ReadFile(useSettingsFile string) (map[string]map[string]string, bool) {
-	// Default to false
-	verboseOutput = false
+func ReadFile(useSettingsFile string) {
+	if useSettingsFile == "" {
+		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Is it empty?")
+		return
+	}
 
-	if useSettingsFile != "" {
-		settingsFile = useSettingsFile
-		initSettings, err := parseFile(settingsFile)
-		if err == nil && initSettings != nil && len(initSettings) != 0 {
-			Settings = initSettings
+	Config.SettingsFile = useSettingsFile
+	initSettings, err := parseFile(Config.SettingsFile)
+	if err == nil && initSettings != nil && len(initSettings) != 0 {
+		Data = initSettings
 
-			// Check if we're configed to verbose output
-			var verboseOutputInt int
-			useVerboseOutput, ok := Settings["MDROID"]["VERBOSE_OUTPUT"]
-			if !ok {
+		// Check if we're configed to verbose output
+		var verboseOutputInt int
+		useVerboseOutput, ok := Data["MDROID"]["VERBOSE_OUTPUT"]
+		if !ok {
+			verboseOutputInt = 0
+		} else {
+			verboseOutputInt, err = strconv.Atoi(useVerboseOutput)
+			if err != nil {
 				verboseOutputInt = 0
-			} else {
-				verboseOutputInt, err = strconv.Atoi(useVerboseOutput)
-				if err != nil {
-					verboseOutputInt = 0
-				}
 			}
-
-			// Set as bool for return
-			verboseOutput = verboseOutputInt != 0
-
-			// Log settings
-			out, err := json.Marshal(Settings)
-			if err == nil {
-				settingsStatus.Log(logging.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
-				return Settings, verboseOutput
-			}
-
-			// If err is set, re-marshaling the settings failed
-			settingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
-		} else if initSettings == nil {
-			settingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
 		}
+
+		// Set as bool for return
+		Config.VerboseOutput = verboseOutputInt != 0
+
+		// Log settings
+		out, err := json.Marshal(Data)
+		if err == nil {
+			status.Log(logging.OK(), "Successfully loaded settings from file '"+Config.SettingsFile+"': "+string(out))
+			return
+		}
+
+		// If err is set, re-marshaling the settings failed
+		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
+	} else if initSettings == nil {
+		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Is it empty?")
 	}
 
-	// Default to empty map
-	Settings = make(map[string]map[string]string, 0)
-
-	if useSettingsFile != "" {
-		Set("MDROID", "LAST_USED", time.Now().String())
-	}
+	Set("MDROID", "LAST_USED", time.Now().String())
 
 	// Return empty map
-	return Settings, verboseOutput
+	return
 }
 
 // parseFile will open and interpret program settings,
 // as well as return the generic settings from last session
-func parseFile(settingsFile string) (map[string]map[string]string, error) {
+func parseFile(filename string) (map[string]map[string]string, error) {
 	var data map[string]map[string]string
 
 	// Open settings file
-	file, err := os.Open(settingsFile)
+	filep, err := os.Open(filename)
 	if err != nil {
-		settingsStatus.Log(logging.Error(), "Error opening file '"+settingsFile+"': "+err.Error())
+		status.Log(logging.Error(), "Error opening file '"+filename+"': "+err.Error())
 		return nil, err
 	}
-	defer file.Close()
-	decoder := json.NewDecoder(file)
+	defer filep.Close()
+	decoder := json.NewDecoder(filep)
 	err = decoder.Decode(&data)
 	if err != nil {
-		settingsStatus.Log(logging.Error(), "Error parsing json from file '"+settingsFile+"': "+err.Error())
+		status.Log(logging.Error(), "Error parsing json from file '"+filename+"': "+err.Error())
 		return nil, err
 	}
 
@@ -87,21 +82,21 @@ func parseFile(settingsFile string) (map[string]map[string]string, error) {
 // writeFile to given file, TODO: create one if it doesn't exist
 func writeFile(file string) error {
 	settingsLock.Lock()
-	settingsJSON, err := json.Marshal(Settings)
+	settingsJSON, err := json.Marshal(Data)
 	settingsLock.Unlock()
 
 	if err != nil {
-		settingsStatus.Log(logging.Error(), "Failed to marshall Settings")
+		status.Log(logging.Error(), "Failed to marshall Settings")
 		return err
 	}
 
 	err = ioutil.WriteFile(file, settingsJSON, 0644)
 	if err != nil {
-		settingsStatus.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
+		status.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
 		return err
 	}
 
 	// Log success
-	settingsStatus.Log(logging.OK(), "Successfully wrote Settings to "+file)
+	status.Log(logging.OK(), "Successfully wrote Settings to "+file)
 	return nil
 }

@@ -22,8 +22,8 @@ import (
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	if Config.SlackURL != "" {
-		logging.SlackAlert(Config.SlackURL, params["message"])
+	if settings.Config.SlackURL != "" {
+		logging.SlackAlert(settings.Config.SlackURL, params["message"])
 	} else {
 		json.NewEncoder(w).Encode("Slack URL not set in config.")
 	}
@@ -36,15 +36,15 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 func handleSetGPS(w http.ResponseWriter, r *http.Request) {
 	var newdata gps.Fix
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
-	postingString := Config.Location.Set(newdata)
+	postingString := settings.Config.Location.Set(newdata)
 
 	// Insert into database
-	if postingString != "" && Config.DB != nil {
-		online, err := Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
+	if postingString != "" && settings.Config.DB != nil {
+		online, err := settings.Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
 
 		if err != nil && online {
 			mainStatus.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
-		} else if Config.VerboseOutput {
+		} else if settings.Config.VerboseOutput {
 			mainStatus.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString))
 		}
 	}
@@ -54,7 +54,7 @@ func handleSetGPS(w http.ResponseWriter, r *http.Request) {
 // end router functions
 // **
 
-// Configures routes, starts router with optional middleware if configured
+// settings.Configures routes, starts router with optional middleware if configured
 func startRouter() {
 	// Init router
 	router := mux.NewRouter()
@@ -76,12 +76,12 @@ func startRouter() {
 	//
 	// GPS Routes
 	//
-	router.HandleFunc("/session/gps", Config.Location.HandleGet).Methods("GET")
+	router.HandleFunc("/session/gps", settings.Config.Location.HandleGet).Methods("GET")
 	router.HandleFunc("/session/gps", handleSetGPS).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		Config.Location.Mutex.Lock()
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Config.Location.Timezone.String(), Status: "success", OK: true})
-		Config.Location.Mutex.Unlock()
+		settings.Config.Location.Mutex.Lock()
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: settings.Config.Location.Timezone.String(), Status: "success", OK: true})
+		settings.Config.Location.Mutex.Unlock()
 	}).Methods("GET")
 
 	//
@@ -156,7 +156,7 @@ func authMiddleware(next http.Handler) http.Handler {
 
 		reqToken := r.Header.Get("Authorization")
 		splitToken := strings.Split(reqToken, "Bearer")
-		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != Config.AuthToken {
+		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != settings.Config.AuthToken {
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte("403 - Invalid Auth Token!"))
 		}
