@@ -44,7 +44,7 @@ func parseConfig() {
 	// Init session tracking (with or without Influx)
 	// Fetch and append old session from disk if allowed
 	MainSession = sessions.CreateSession(settings.Config.SettingsFile)
-	//MainSession.Config = &Config
+	MainSession.Config = &settings.Config
 	MainSession.File = sessionFile
 
 	// Parse through config if found in settings file
