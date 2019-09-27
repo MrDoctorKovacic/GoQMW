@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
@@ -195,7 +196,7 @@ func SetSessionValue(newPackage sessionPackage, quiet bool) error {
 	}
 
 	// Set last updated time to now
-	var timestamp = time.Now().In(settings.Config.Location.Timezone).Format("2006-01-02 15:04:05.999")
+	var timestamp = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
 	newPackage.Data.LastUpdate = timestamp
 
 	// Correct name

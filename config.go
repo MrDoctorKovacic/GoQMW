@@ -81,19 +81,18 @@ func setupTokens(configAddr *map[string]string) {
 
 func setupTimezone(configAddr *map[string]string) {
 	configMap := *configAddr
-	settings.Config.Location = &gps.Location{}
 	timezoneLocation, usingTimezone := configMap["Timezone"]
 	if usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
 		if err == nil {
-			settings.Config.Location.Timezone = loc
+			gps.Location.Timezone = loc
 		} else {
 			// If timezone has errored
-			settings.Config.Location.Timezone, _ = time.LoadLocation("UTC")
+			gps.Location.Timezone, _ = time.LoadLocation("UTC")
 		}
 	} else {
 		// If timezone is not set in config
-		settings.Config.Location.Timezone, _ = time.LoadLocation("UTC")
+		gps.Location.Timezone, _ = time.LoadLocation("UTC")
 	}
 }
 
