@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 )
 
@@ -52,7 +51,7 @@ func ReadFile(useSettingsFile string) {
 		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Is it empty?")
 	}
 
-	Set("MDROID", "LAST_USED", time.Now().In(gps.GetTimezone()).String())
+	Set("MDROID", "LAST_USED_UTC", time.Now().String())
 
 	// Return empty map
 	return
