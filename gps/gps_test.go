@@ -24,7 +24,7 @@ func TestProcessTimezone(t *testing.T) {
 		Location.CurrentFix.Latitude = table.input.CurrentFix.Latitude
 		Location.CurrentFix.Longitude = table.input.CurrentFix.Longitude
 		processTimezone()
-		if table.input.Timezone.String() != table.output.String() {
+		if Location.Timezone.String() != table.output.String() {
 			t.Errorf("processTimezone() = %s; want %s", table.input.Timezone.String(), table.output.String())
 		}
 	}
