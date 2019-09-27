@@ -38,8 +38,8 @@ var settingsFile = "./settings.json"
 var Settings map[string]map[string]string
 var settingsLock sync.Mutex
 
-// SettingsStatus will control logging and reporting of status / warnings / errors
-var SettingsStatus = logging.NewStatus("Settings")
+// settingsStatus will control logging and reporting of status / warnings / errors
+var settingsStatus = logging.NewStatus("Settings")
 
 // Configure verbose output
 var verboseOutput bool
@@ -47,7 +47,7 @@ var verboseOutput bool
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	if verboseOutput {
-		SettingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
+		settingsStatus.Log(logging.OK(), "Responding to GET request with entire settings map.")
 	}
 	settingsLock.Lock()
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Settings, Status: "success", OK: true})
@@ -60,7 +60,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	componentName := formatting.FormatName(params["component"])
 
 	if verboseOutput {
-		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
+		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 	}
 
 	settingsLock.Lock()
@@ -84,7 +84,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	settingName := formatting.FormatName(params["name"])
 
 	if verboseOutput {
-		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 	}
 
 	settingsLock.Lock()
@@ -106,7 +106,7 @@ func Get(componentName string, settingName string) (string, error) {
 	componentName = formatting.FormatName(componentName)
 
 	if verboseOutput {
-		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for setting component %s", componentName))
+		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to request for setting component %s", componentName))
 	}
 
 	settingsLock.Lock()
@@ -132,7 +132,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	// Log if requested
 	if verboseOutput {
-		SettingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
+		settingsStatus.Log(logging.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
 	}
 
 	// Do the dirty work elsewhere
@@ -155,7 +155,7 @@ func Set(componentName string, settingName string, settingValue string) {
 	settingsLock.Unlock()
 
 	// Log our success
-	SettingsStatus.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
+	settingsStatus.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
 	writeFile(settingsFile)
