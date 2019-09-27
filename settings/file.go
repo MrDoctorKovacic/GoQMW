@@ -40,14 +40,14 @@ func ReadFile(useSettingsFile string) (map[string]map[string]string, bool) {
 			// Log settings
 			out, err := json.Marshal(Settings)
 			if err == nil {
-				SettingsStatus.Log(logging.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
+				settingsStatus.Log(logging.OK(), "Successfully loaded settings from file '"+settingsFile+"': "+string(out))
 				return Settings, verboseOutput
 			}
 
 			// If err is set, re-marshaling the settings failed
-			SettingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
+			settingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
 		} else if initSettings == nil {
-			SettingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
+			settingsStatus.Log(logging.Warning(), "Failed to load settings from file '"+settingsFile+"'. Is it empty?")
 		}
 	}
 
@@ -70,14 +70,14 @@ func parseFile(settingsFile string) (map[string]map[string]string, error) {
 	// Open settings file
 	file, err := os.Open(settingsFile)
 	if err != nil {
-		SettingsStatus.Log(logging.Error(), "Error opening file '"+settingsFile+"': "+err.Error())
+		settingsStatus.Log(logging.Error(), "Error opening file '"+settingsFile+"': "+err.Error())
 		return nil, err
 	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&data)
 	if err != nil {
-		SettingsStatus.Log(logging.Error(), "Error parsing json from file '"+settingsFile+"': "+err.Error())
+		settingsStatus.Log(logging.Error(), "Error parsing json from file '"+settingsFile+"': "+err.Error())
 		return nil, err
 	}
 
@@ -91,17 +91,17 @@ func writeFile(file string) error {
 	settingsLock.Unlock()
 
 	if err != nil {
-		SettingsStatus.Log(logging.Error(), "Failed to marshall Settings")
+		settingsStatus.Log(logging.Error(), "Failed to marshall Settings")
 		return err
 	}
 
 	err = ioutil.WriteFile(file, settingsJSON, 0644)
 	if err != nil {
-		SettingsStatus.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
+		settingsStatus.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
 		return err
 	}
 
 	// Log success
-	SettingsStatus.Log(logging.OK(), "Successfully wrote Settings to "+file)
+	settingsStatus.Log(logging.OK(), "Successfully wrote Settings to "+file)
 	return nil
 }
