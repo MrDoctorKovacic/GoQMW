@@ -47,10 +47,10 @@ func (session *Session) ParseCommand(w http.ResponseWriter, r *http.Request) {
 			pybus.PybusStatus.Log(logging.OK(), "Door status is unknown, but we're locking. Go through the pybus")
 			pybus.PushQueue("lockDoors")
 		} else {
-			if session.Config.HardwareSerialEnabled {
+			if settings.Config.HardwareSerialEnabled {
 				if isPositive && deviceStatus.Value == "FALSE" ||
 					!isPositive && deviceStatus.Value == "TRUE" {
-					mserial.WriteSerial(session.Config.SerialControlDevice, "toggleDoorLocks")
+					mserial.WriteSerial(settings.Config.SerialControlDevice, "toggleDoorLocks")
 				}
 			}
 		}
@@ -124,10 +124,10 @@ func (session *Session) ParseCommand(w http.ResponseWriter, r *http.Request) {
 			return
 		} else if isPositive {
 			settings.Set("LUCIO", "POWER", "ON")
-			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnBoard")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
 		} else {
 			settings.Set("LUCIO", "POWER", "OFF")
-			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOffBoard")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffBoard")
 		}
 	case "LTE":
 		fallthrough
@@ -138,10 +138,10 @@ func (session *Session) ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 		if isPositive {
 			settings.Set("BRIGHTWING", "POWER", "ON")
-			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOnWireless")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
 		} else {
 			settings.Set("BRIGHTWING", "POWER", "OFF")
-			mserial.WriteSerial(session.Config.SerialControlDevice, "powerOffWireless")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffWireless")
 		}
 	default:
 		pybus.PybusStatus.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))

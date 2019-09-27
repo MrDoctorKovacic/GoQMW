@@ -33,10 +33,9 @@ type sessionPackage struct {
 
 // Session is a mapping of sessionPackages, which contain session values
 type Session struct {
-	data   map[string]Value
-	Mutex  sync.Mutex
-	Config *settings.ConfigValues
-	File   string
+	data  map[string]Value
+	Mutex sync.Mutex
+	File  string
 }
 
 var (
@@ -77,7 +76,7 @@ func (session *Session) HandleGetSession(w http.ResponseWriter, r *http.Request)
 // GetSession returns the entire current session
 func (session *Session) GetSession() map[string]Value {
 	// Log if requested
-	if session.Config.VerboseOutput {
+	if settings.Config.VerboseOutput {
 		status.Log(logging.OK(), "Responding to request for full session")
 	}
 
@@ -114,7 +113,7 @@ func (session *Session) HandleGetSessionValue(w http.ResponseWriter, r *http.Req
 func (session *Session) GetSessionValue(name string) (value Value, err error) {
 
 	// Log if requested
-	if session.Config.VerboseOutput {
+	if settings.Config.VerboseOutput {
 		status.Log(logging.OK(), fmt.Sprintf("Responding to request for session value %s", name))
 	}
 
@@ -198,7 +197,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 	}
 
 	// Set last updated time to now
-	var timestamp = time.Now().In(session.Config.Location.Timezone).Format("2006-01-02 15:04:05.999")
+	var timestamp = time.Now().In(settings.Config.Location.Timezone).Format("2006-01-02 15:04:05.999")
 	newPackage.Data.LastUpdate = timestamp
 
 	// Correct name
@@ -208,7 +207,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
 
 	// Log if requested
-	if session.Config.VerboseOutput && !quiet {
+	if settings.Config.VerboseOutput && !quiet {
 		status.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 	}
 
@@ -221,7 +220,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 	go session.processSessionTriggers(&newPackage)
 
 	// Insert into database
-	if session.Config.DB != nil {
+	if settings.Config.DB != nil {
 
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		var valueString string
@@ -233,7 +232,7 @@ func (session *Session) SetSessionValue(newPackage sessionPackage, quiet bool) e
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
-		online, err := session.Config.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
+		online, err := settings.Config.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
