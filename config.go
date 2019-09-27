@@ -50,10 +50,11 @@ func parseConfig() {
 	// Parse through config if found in settings file
 	configMap, ok := settings.GetAll()["MDROID"]
 	if ok {
-		setupTimezone(configMap)
-		setupDatabase(configMap)
-		setupBluetooth(configMap)
-		setupTokens(configMap)
+
+		setupTimezone(&configMap)
+		setupDatabase(&configMap)
+		setupBluetooth(&configMap)
+		setupTokens(&configMap)
 		setupSerial()
 
 		// Set up pybus repeat commands
@@ -75,7 +76,9 @@ func parseConfig() {
 	}
 }
 
-func setupTokens(configMap map[string]string) {
+func setupTokens(configAddr *map[string]string) {
+	configMap := *configAddr
+
 	// Set up Auth tokens
 	token, usingTokens := configMap["AUTH_TOKEN"]
 	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
@@ -87,7 +90,8 @@ func setupTokens(configMap map[string]string) {
 	}
 }
 
-func setupTimezone(configMap map[string]string) {
+func setupTimezone(configAddr *map[string]string) {
+	configMap := *configAddr
 	settings.Config.Location = &gps.Location{}
 	timezoneLocation, usingTimezone := configMap["Timezone"]
 	if usingTimezone {
@@ -105,7 +109,8 @@ func setupTimezone(configMap map[string]string) {
 }
 
 // Set up InfluxDB time series logging
-func setupDatabase(configMap map[string]string) {
+func setupDatabase(configAddr *map[string]string) {
+	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if usingDatabase {
 		settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
@@ -124,7 +129,8 @@ func setupDatabase(configMap map[string]string) {
 	}
 }
 
-func setupBluetooth(configMap map[string]string) {
+func setupBluetooth(configAddr *map[string]string) {
+	configMap := *configAddr
 	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
 	if usingBluetooth {
 		bluetooth.EnableAutoRefresh()
