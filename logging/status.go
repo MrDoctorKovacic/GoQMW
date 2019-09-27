@@ -94,7 +94,7 @@ func (s *Status) Log(messageType MessageType, message string) {
 	formattedMessage := fmt.Sprintf("[%s] %s: %s", messageType.Name, s.Name, message)
 
 	// Set last updated time to now
-	s.LastUpdate = time.Now().Format("2006-01-02 15:04:05.999")
+	s.LastUpdate = time.Now().In(Timezone).Format("2006-01-02 15:04:05.999")
 
 	// Log based on status type
 	s.Mutex.Lock()

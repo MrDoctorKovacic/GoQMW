@@ -147,7 +147,7 @@ func Set(newdata Fix) string {
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}
 	if newdata.Time == "" {
-		newdata.Time = time.Now().Format("2006-01-02 15:04:05.999")
+		newdata.Time = time.Now().In(GetTimezone()).Format("2006-01-02 15:04:05.999")
 	}
 	if newdata.EPV != "" {
 		postingString.WriteString(fmt.Sprintf("EPV=%s,", newdata.EPV))
@@ -186,6 +186,8 @@ func processTimezone() {
 		gpsStatus.Log(logging.Error(), fmt.Sprintf("Error parsing lat long into location: %s", err.Error()))
 		return
 	}
+
+	logging.Timezone = newTimezone
 
 	Location.Mutex.Lock()
 	Location.Timezone = newTimezone

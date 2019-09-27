@@ -11,10 +11,13 @@ import (
 	"time"
 )
 
-var debugLog map[string]map[string]string
-var debugLock sync.Mutex
-var debugFile string
-var timezone *time.Location
+// Timezone will change the timezone logs are written in
+var (
+	Timezone  *time.Location
+	debugFile string
+	debugLock sync.Mutex
+	debugLog  map[string]map[string]string
+)
 
 // writeLog to given file, create one if it doesn't exist
 func writeLog(file string) error {
@@ -35,7 +38,7 @@ func writeLog(file string) error {
 }
 
 // EnableLogging sets up debug files to be written to
-func EnableLogging(debugFilename string, Timezone *time.Location) (bool, error) {
+func EnableLogging(debugFilename string, timezone *time.Location) (bool, error) {
 	file, err := os.Open(debugFilename)
 	defer file.Close()
 	if err != nil {
@@ -45,7 +48,7 @@ func EnableLogging(debugFilename string, Timezone *time.Location) (bool, error) 
 	// Init global variables
 	debugLog = make(map[string]map[string]string)
 	debugFile = debugFilename
-	timezone = Timezone
+	Timezone = timezone
 	return true, nil
 }
 
@@ -53,7 +56,7 @@ func EnableLogging(debugFilename string, Timezone *time.Location) (bool, error) 
 func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		var timestamp = time.Now().In(timezone).Format(time.RFC850)
+		var timestamp = time.Now().In(Timezone).Format(time.RFC850)
 		data, _ := ioutil.ReadAll(r.Body)
 		r.Body.Close()
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
