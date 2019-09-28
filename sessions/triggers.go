@@ -145,11 +145,11 @@ func tAccPower(triggerPackage *sessionPackage) {
 
 	// Handle wireless power control
 	if berr == nil {
-		if (brightwingTargetPower == "AUTO" && wifiAvailable.Value != "TRUE" && wirelessPoweredOn.Value != "TRUE") ||
+		if (brightwingTargetPower == "AUTO" && wifiAvailable.Value == "FALSE" && wirelessPoweredOn.Value == "FALSE") ||
 			(brightwingTargetPower == "ON" && wirelessPoweredOn.Value == "FALSE") {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
 		} else if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value) {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sWireless", targetAction))
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sWireless", targetAction))
 		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
 			go mserial.MachineShutdown(settings.Config.SerialControlDevice, "brightwing", time.Second*10, "powerOffWireless")
 		}
@@ -161,12 +161,12 @@ func tAccPower(triggerPackage *sessionPackage) {
 	// Handle video server power control
 	if aerr == nil {
 		if lucioTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
 		} else if lucioTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
 			mserial.CommandNetworkMachine("etc", "shutdown")
 			go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
 		} else if lucioTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
 		}
 	} else {
 		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
@@ -176,11 +176,11 @@ func tAccPower(triggerPackage *sessionPackage) {
 	// Handle tablet power control
 	if rerr == nil {
 		if raynorTargetPower == "AUTO" && tabletPoweredOn.Value != triggerPackage.Data.Value {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sTablet", targetAction))
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sTablet", targetAction))
 		} else if raynorTargetPower == "OFF" && tabletPoweredOn.Value == "TRUE" {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffTablet")
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffTablet")
 		} else if raynorTargetPower == "ON" && tabletPoweredOn.Value == "FALSE" {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnTablet")
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnTablet")
 		}
 	} else {
 		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
