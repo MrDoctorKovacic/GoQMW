@@ -24,7 +24,7 @@ func CheckServer(host string, token string) {
 	var timeToWait time.Duration
 	for {
 		if !clientConnected {
-			lteEnabled, err := GetSessionValue("LTE_ON")
+			lteEnabled, err := Get("LTE_ON")
 			if err != nil {
 				status.Log(logging.Error(), "Error getting LTE status.")
 				timeToWait = time.Second * 5

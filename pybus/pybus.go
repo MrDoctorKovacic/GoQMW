@@ -5,14 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 )
 
-// PybusStatus will control logging and reporting of status / warnings / errors
-var PybusStatus = logging.NewStatus("Pybus")
+// status will control logging and reporting of status / warnings / errors
+var status logging.ProgramStatus
+
+func init() {
+	status = logging.NewStatus("Pybus")
+}
 
 // PushQueue adds a directive to the pybus queue
 // msg can either be a directive (e.g. 'openTrunk')
@@ -37,12 +46,12 @@ func PushQueue(command string) {
 	// Send request to pybus server
 	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/%s", command))
 	if err != nil {
-		PybusStatus.Log(logging.Error(), fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
 		return
 	}
 	defer resp.Body.Close()
 
-	PybusStatus.Log(logging.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
+	status.Log(logging.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
 }
 
 // StartRoutine handles incoming requests to the pybus program, will add routines to the queue
@@ -63,4 +72,155 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Invalid command", Status: "fail", OK: false})
 	}
+}
+
+// RepeatCommand endlessly, helps with request functions
+func RepeatCommand(command string, sleepSeconds int) {
+	for {
+		// Only push repeated pybus commands when powered, otherwise the car won't sleep
+		hasPower, err := sessions.GetSessionValue("ACC_POWER")
+		if err == nil && hasPower.Value == "TRUE" {
+			PushQueue(command)
+		}
+		time.Sleep(time.Duration(sleepSeconds) * time.Second)
+	}
+}
+
+// ParseCommand is a list of pre-approved routes to PyBus for easier routing
+// These GET requests can be used instead of knowing the implementation function in pybus
+// and are actually preferred, since we can handle strange cases
+func ParseCommand(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	if len(params["device"]) == 0 || len(params["command"]) == 0 {
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error: One or more required params is empty", Status: "fail", OK: false})
+		return
+	}
+
+	// Format similarly to the rest of MDroid suite, removing plurals
+	// Formatting allows for fuzzier requests
+	device := strings.TrimSuffix(formatting.FormatName(params["device"]), "S")
+	command := strings.TrimSuffix(formatting.FormatName(params["command"]), "S")
+
+	// Parse command into a bool, make either "on" or "off" effectively
+	isPositive, _ := formatting.IsPositiveRequest(command)
+
+	// Log if requested
+	status.Log(logging.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
+
+	// All I wanted was a moment or two to
+	// See if you could do that switch-a-roo
+	switch device {
+	case "DOOR":
+		deviceStatus, err := sessions.GetSessionValue("DOORS_LOCKED")
+
+		// Since this toggles, we should only do lock/unlock the doors if there's a known state
+		if err != nil && !isPositive {
+			status.Log(logging.OK(), "Door status is unknown, but we're locking. Go through the pybus")
+			PushQueue("lockDoors")
+		} else {
+			if settings.Config.HardwareSerialEnabled {
+				if isPositive && deviceStatus.Value == "FALSE" ||
+					!isPositive && deviceStatus.Value == "TRUE" {
+					mserial.WriteSerial(settings.Config.SerialControlDevice, "toggleDoorLocks")
+				}
+			}
+		}
+	case "WINDOW":
+		if command == "POPDOWN" {
+			PushQueue("popWindowsDown")
+		} else if command == "POPUP" {
+			PushQueue("popWindowsUp")
+		} else if isPositive {
+			PushQueue("rollWindowsUp")
+		} else {
+			PushQueue("rollWindowsDown")
+		}
+	case "CONVERTIBLE_TOP":
+		fallthrough
+	case "TOP":
+		if isPositive {
+			PushQueue("convertibleTopUp")
+		} else {
+			PushQueue("convertibleTopDown")
+		}
+	case "TRUNK":
+		PushQueue("openTrunk")
+	case "HAZARD":
+		if isPositive {
+			PushQueue("turnOnHazards")
+		} else {
+			PushQueue("turnOffAllExteriorLights")
+		}
+	case "FLASHER":
+		if isPositive {
+			PushQueue("flashAllExteriorLights")
+		} else {
+			PushQueue("turnOffAllExteriorLights")
+		}
+	case "INTERIOR":
+		if isPositive {
+			PushQueue("interiorLightsOff")
+		} else {
+			PushQueue("interiorLightsOn")
+		}
+	case "MODE":
+		PushQueue("pressMode")
+	case "NAV":
+		fallthrough
+	case "STEREO":
+		fallthrough
+	case "RADIO":
+		if command == "AM" {
+			PushQueue("pressAM")
+		} else if command == "FM" {
+			PushQueue("pressFM")
+		} else if command == "NEXT" {
+			PushQueue("pressNext")
+		} else if command == "PREV" {
+			PushQueue("pressPrev")
+		} else if command == "NUM" {
+			PushQueue("pressNumPad")
+		} else if command == "MODE" {
+			PushQueue("pressMode")
+		} else {
+			PushQueue("pressStereoPower")
+		}
+	case "CAMERA":
+		fallthrough
+	case "BOARD":
+		fallthrough
+	case "LUCIO":
+		if formatting.FormatName(command) == "AUTO" {
+			settings.Set("LUCIO", "POWER", "AUTO")
+			return
+		} else if isPositive {
+			settings.Set("LUCIO", "POWER", "ON")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
+		} else {
+			settings.Set("LUCIO", "POWER", "OFF")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffBoard")
+		}
+	case "LTE":
+		fallthrough
+	case "BRIGHTWING":
+		if formatting.FormatName(command) == "AUTO" {
+			settings.Set("LUCIO", "POWER", "AUTO")
+			return
+		}
+		if isPositive {
+			settings.Set("BRIGHTWING", "POWER", "ON")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
+		} else {
+			settings.Set("BRIGHTWING", "POWER", "OFF")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffWireless")
+		}
+	default:
+		status.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), Status: "fail", OK: false})
+		return
+	}
+
+	// Yay
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: device, Status: "success", OK: true})
 }

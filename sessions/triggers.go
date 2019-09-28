@@ -66,7 +66,7 @@ func tMainVoltage(triggerPackage *sessionPackage) {
 		return
 	}
 
-	CreateSessionValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+	SetValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
 }
 
 // Resistance values and modifiers to the incoming Voltage sensor value
@@ -88,12 +88,12 @@ func tAuxVoltage(triggerPackage *sessionPackage) {
 	}
 
 	realVoltage := voltageModifier * (((voltageFloat * 3.3) / 4095.0) / 0.2)
-	CreateSessionValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
-	CreateSessionValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
+	SetValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
+	SetValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
 
-	sentPowerWarning, err := GetSessionValue("SENT_POWER_WARNING")
+	sentPowerWarning, err := Get("SENT_POWER_WARNING")
 	if err != nil {
-		CreateSessionValue("SENT_POWER_WARNING", "FALSE")
+		SetValue("SENT_POWER_WARNING", "FALSE")
 	}
 
 	// SHUTDOWN the system if voltage is below 11.3 to preserve our battery
@@ -101,7 +101,7 @@ func tAuxVoltage(triggerPackage *sessionPackage) {
 	if realVoltage < 11.3 {
 		if err == nil && sentPowerWarning.Value == "FALSE" {
 			logging.SlackAlert(settings.Config.SlackURL, fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
-			CreateSessionValue("SENT_POWER_WARNING", "TRUE")
+			SetValue("SENT_POWER_WARNING", "TRUE")
 		}
 		//exec.Command("poweroff", "now")
 	}
@@ -117,17 +117,17 @@ func tAuxCurrent(triggerPackage *sessionPackage) {
 	}
 
 	realCurrent := math.Abs(1000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185))
-	CreateSessionValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
+	SetValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
 
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *sessionPackage) {
 	// Pull needed values for power logic
-	wirelessPoweredOn, _ := GetSessionValue("WIRELESS_POWER")
-	wifiAvailable, _ := GetSessionValue("WIFI_CONNECTED")
-	boardPoweredOn, _ := GetSessionValue("BOARD_POWER")
-	tabletPoweredOn, _ := GetSessionValue("TABLET_POWER")
+	wirelessPoweredOn, _ := Get("WIRELESS_POWER")
+	wifiAvailable, _ := Get("WIFI_CONNECTED")
+	boardPoweredOn, _ := Get("BOARD_POWER")
+	tabletPoweredOn, _ := Get("TABLET_POWER")
 	raynorTargetPower, rerr := settings.Get("RAYNOR", "POWER")
 	lucioTargetPower, aerr := settings.Get("LUCIO", "POWER")
 	brightwingTargetPower, berr := settings.Get("BRIGHTWING", "POWER")
@@ -190,9 +190,9 @@ func tAccPower(triggerPackage *sessionPackage) {
 
 // Alert me when it's raining and windows are down
 func tLightSensorReason(triggerPackage *sessionPackage) {
-	keyPosition, err1 := GetSessionValue("KEY_POSITION")
-	doorsLocked, err2 := GetSessionValue("DOORS_LOCKED")
-	windowsOpen, err2 := GetSessionValue("WINDOWS_OPEN")
+	keyPosition, err1 := Get("KEY_POSITION")
+	doorsLocked, err2 := Get("DOORS_LOCKED")
+	windowsOpen, err2 := Get("WINDOWS_OPEN")
 	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 
 	if err1 == nil && err2 == nil && err3 == nil {
