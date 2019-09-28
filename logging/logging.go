@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"sync"
@@ -18,6 +19,15 @@ var (
 	debugLock sync.Mutex
 	debugLog  map[string]map[string]string
 )
+
+func init() {
+	timezone, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		log.Println("Could not load default timezone")
+		return
+	}
+	Timezone = timezone
+}
 
 // writeLog to given file, create one if it doesn't exist
 func writeLog(file string) error {
