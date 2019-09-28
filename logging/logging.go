@@ -2,11 +2,9 @@
 package logging
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -63,6 +61,7 @@ func EnableLogging(debugFilename string, timezone *time.Location) (bool, error) 
 }
 
 // LogMiddleware will generate a file for reproducing a live session, for debug purposes
+/*
 func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -85,4 +84,4 @@ func LogMiddleware(next http.Handler) http.Handler {
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
-}
+}*/
