@@ -13,6 +13,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
+	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
@@ -36,7 +37,7 @@ func parseConfig() {
 	}
 
 	// Init session tracking (with or without Influx)
-	sessions.CreateSession(settings.Config.SettingsFile)
+	sessions.Create(settings.Config.SettingsFile)
 
 	// Parse through config if found in settings file
 	configMap, ok := settings.GetAll()["MDROID"]
@@ -52,12 +53,12 @@ func parseConfig() {
 
 		// Set up pybus repeat commands
 		if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
-			go sessions.RepeatCommand("requestIgnitionStatus", 10)
-			go sessions.RepeatCommand("requestLampStatus", 20)
-			go sessions.RepeatCommand("requestVehicleStatus", 30)
-			go sessions.RepeatCommand("requestOdometer", 45)
-			go sessions.RepeatCommand("requestTimeStatus", 60)
-			go sessions.RepeatCommand("requestTemperatureStatus", 120)
+			go pybus.RepeatCommand("requestIgnitionStatus", 10)
+			go pybus.RepeatCommand("requestLampStatus", 20)
+			go pybus.RepeatCommand("requestVehicleStatus", 30)
+			go pybus.RepeatCommand("requestOdometer", 45)
+			go pybus.RepeatCommand("requestTimeStatus", 60)
+			go pybus.RepeatCommand("requestTemperatureStatus", 120)
 		}
 
 	} else {
