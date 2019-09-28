@@ -49,8 +49,8 @@ func init() {
 	status = logging.NewStatus("Session")
 }
 
-// CreateSession will init the current session with a file
-func CreateSession(sessionFile string) {
+// Create will init the current session with a file
+func Create(sessionFile string) {
 	session.data = make(map[string]Value)
 
 	if sessionFile != "" {
@@ -68,14 +68,14 @@ func CreateSession(sessionFile string) {
 	}
 }
 
-// HandleGetSession responds to an HTTP request for the entire session
-func HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	response := formatting.JSONResponse{Output: GetSession(), Status: "success", OK: true}
+// HandleGetAll responds to an HTTP request for the entire session
+func HandleGetAll(w http.ResponseWriter, r *http.Request) {
+	response := formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true}
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetSession returns the entire current session
-func GetSession() map[string]Value {
+// GetAll returns the entire current session
+func GetAll() map[string]Value {
 	// Log if requested
 	if settings.Config.VerboseOutput {
 		status.Log(logging.OK(), "Responding to request for full session")
@@ -88,11 +88,11 @@ func GetSession() map[string]Value {
 	return returnSession
 }
 
-// HandleGetSessionValue returns a specific session value
-func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
+// HandleGet returns a specific session value
+func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	sessionValue, err := GetSessionValue(params["name"])
+	sessionValue, err := Get(params["name"])
 	response := formatting.JSONResponse{}
 	if err != nil {
 		response.Status = "fail"
@@ -110,8 +110,8 @@ func HandleGetSessionValue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetSessionValue returns the named session, if it exists. Nil otherwise
-func GetSessionValue(name string) (value Value, err error) {
+// Get returns the named session, if it exists. Nil otherwise
+func Get(name string) (value Value, err error) {
 
 	// Log if requested
 	if settings.Config.VerboseOutput {
@@ -129,8 +129,8 @@ func GetSessionValue(name string) (value Value, err error) {
 	return sessionValue, nil
 }
 
-// HandlePostSessionValue updates or posts a new session value to the common session
-func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
+// HandlePost updates or posts a new session value to the common session
+func HandlePost(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 
 	// Default to NOT OK response
@@ -166,7 +166,7 @@ func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 
 	// Call the setter
 	newPackage := sessionPackage{Name: params["name"], Data: newdata}
-	err = SetSessionValue(newPackage, newdata.Quiet)
+	err = Set(newPackage, newdata.Quiet)
 
 	if err != nil {
 		response.Output = err.Error()
@@ -183,13 +183,13 @@ func HandlePostSessionValue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// CreateSessionValue prepares a Value structure before passing it to the setter
-func CreateSessionValue(name string, value string) {
-	SetSessionValue(sessionPackage{Name: name, Data: Value{Value: value}}, true)
+// SetValue prepares a Value structure before passing it to the setter
+func SetValue(name string, value string) {
+	Set(sessionPackage{Name: name, Data: Value{Value: value}}, true)
 }
 
-// SetSessionValue does the actual setting of Session Values
-func SetSessionValue(newPackage sessionPackage, quiet bool) error {
+// Set does the actual setting of Session Values
+func Set(newPackage sessionPackage, quiet bool) error {
 	// Ensure name is valid
 	if !formatting.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)

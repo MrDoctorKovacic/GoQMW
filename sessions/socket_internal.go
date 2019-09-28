@@ -37,7 +37,7 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 		//status.Log(logging.OK(), "Received: "+string(message))
 
 		// Pass through lock first
-		writeSession := GetSession()
+		writeSession := GetAll()
 
 		err = c.WriteJSON(writeSession)
 
