@@ -78,7 +78,7 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 func RepeatCommand(command string, sleepSeconds int) {
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
-		hasPower, err := sessions.GetSessionValue("ACC_POWER")
+		hasPower, err := sessions.Get("ACC_POWER")
 		if err == nil && hasPower.Value == "TRUE" {
 			PushQueue(command)
 		}
@@ -112,7 +112,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
-		deviceStatus, err := sessions.GetSessionValue("DOORS_LOCKED")
+		deviceStatus, err := sessions.Get("DOORS_LOCKED")
 
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		if err != nil && !isPositive {
