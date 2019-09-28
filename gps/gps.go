@@ -44,14 +44,7 @@ var (
 
 func init() {
 	gpsStatus = logging.NewStatus("GPS")
-
-	// Default location
-	timezone, err := time.LoadLocation("America/Los_Angeles")
-	if err != nil {
-		gpsStatus.Log(logging.Error(), err.Error())
-	}
-
-	Location = &Loc{Timezone: timezone}
+	Location = &Loc{Timezone: logging.Timezone} // use logging default timezone
 }
 
 //
