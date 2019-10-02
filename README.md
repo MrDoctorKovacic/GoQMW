@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/MrDoctorKovacic/MDroid-Core.svg?branch=master)](https://travis-ci.org/MrDoctorKovacic/MDroid-Core) [![Go Report Card](https://goreportcard.com/badge/github.com/MrDoctorKovacic/MDroid-Core)](https://goreportcard.com/report/github.com/MrDoctorKovacic/MDroid-Core)
 
-![Controls](https://quinncasey.com/wp-content/uploads/2019/10/Arrays-Web.jpg "Screenshot 1")
+![Controls](https://quinncasey.com/wp-content/uploads/2019/10/Arrays-Web-1.jpg "Screenshot 1")
 [Control App](https://github.com/MrDoctorKovacic/MDroid-Control)
 
 ![Watch Intgration](https://quinncasey.com/wp-content/uploads/2019/09/maxresdefault.jpg)
