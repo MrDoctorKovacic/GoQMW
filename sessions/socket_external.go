@@ -26,7 +26,9 @@ func CheckServer(host string, token string) {
 		if !clientConnected {
 			lteEnabled, err := Get("LTE_ON")
 			if err != nil {
-				status.Log(logging.Error(), "Error getting LTE status.")
+				status.Log(logging.Error(), "Error getting LTE status. Defaulting to FALSE")
+				// Set LTE status to something intelligible
+				SetValue("LTE_ON", "FALSE")
 				timeToWait = time.Second * 5
 			} else if lteEnabled.Value == "TRUE" {
 				// Slow frequency of pings while on LTE
