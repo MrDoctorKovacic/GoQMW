@@ -181,7 +181,7 @@ func processTimezone() {
 	}
 
 	// Set logging timezone
-	logging.Timezone = newTimezone
+	logging.SetTimezone(newTimezone)
 
 	Location.Mutex.Lock()
 	Location.Timezone = newTimezone

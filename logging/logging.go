@@ -12,10 +12,11 @@ import (
 
 // Timezone will change the timezone logs are written in
 var (
-	Timezone  *time.Location
-	debugFile string
-	debugLock sync.Mutex
-	debugLog  map[string]map[string]string
+	Timezone     *time.Location
+	timezoneLock sync.Mutex
+	debugFile    string
+	debugLock    sync.Mutex
+	debugLog     map[string]map[string]string
 )
 
 func init() {
@@ -24,7 +25,23 @@ func init() {
 		log.Println("Could not load default timezone")
 		return
 	}
+	SetTimezone(timezone)
+}
+
+// SetTimezone sets timezone properly with mutex
+func SetTimezone(timezone *time.Location) {
+	timezoneLock.Lock()
 	Timezone = timezone
+	timezoneLock.Unlock()
+}
+
+// GetTimezone gets timezone properly with mutex
+func GetTimezone() *time.Location {
+	timezoneLock.Lock()
+	timezone := Timezone
+	timezoneLock.Unlock()
+
+	return timezone
 }
 
 // writeLog to given file, create one if it doesn't exist
@@ -56,7 +73,7 @@ func EnableLogging(debugFilename string, timezone *time.Location) (bool, error) 
 	// Init global variables
 	debugLog = make(map[string]map[string]string)
 	debugFile = debugFilename
-	Timezone = timezone
+	SetTimezone(timezone)
 	return true, nil
 }
 
