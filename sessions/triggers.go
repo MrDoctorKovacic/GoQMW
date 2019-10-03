@@ -21,7 +21,7 @@ import (
 )
 
 // Process session values by combining or otherwise modifying once posted
-func processSessionTriggers(triggerPackage *sessionPackage) {
+func processSessionTriggers(triggerPackage sessionPackage) {
 	if settings.Config.VerboseOutput {
 		status.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
 	}
@@ -29,21 +29,21 @@ func processSessionTriggers(triggerPackage *sessionPackage) {
 	// Pull trigger function
 	switch triggerPackage.Name {
 	case "MAIN_VOLTAGE_RAW":
-		tMainVoltage(triggerPackage)
+		tMainVoltage(&triggerPackage)
 	case "AUX_VOLTAGE_RAW":
-		tAuxVoltage(triggerPackage)
+		tAuxVoltage(&triggerPackage)
 	case "AUX_CURRENT_RAW":
-		tAuxCurrent(triggerPackage)
+		tAuxCurrent(&triggerPackage)
 	case "ACC_POWER":
-		tAccPower(triggerPackage)
+		tAccPower(&triggerPackage)
 	case "LIGHT_SENSOR_REASON":
-		tLightSensorReason(triggerPackage)
+		tLightSensorReason(&triggerPackage)
 	case "SEAT_MEMORY_1":
 		fallthrough
 	case "SEAT_MEMORY_2":
 		fallthrough
 	case "SEAT_MEMORY_3":
-		tSeatMemory(triggerPackage)
+		tSeatMemory(&triggerPackage)
 	default:
 		if settings.Config.VerboseOutput {
 			status.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))

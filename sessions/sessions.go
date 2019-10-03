@@ -70,7 +70,8 @@ func Create(sessionFile string) {
 
 // HandleGetAll responds to an HTTP request for the entire session
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	response := formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true}
+	fullSession := GetAll()
+	response := formatting.JSONResponse{Output: fullSession, Status: "success", OK: true}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -216,7 +217,7 @@ func Set(newPackage sessionPackage, quiet bool) error {
 	session.Mutex.Unlock()
 
 	// Finish post processing
-	go processSessionTriggers(&newPackage)
+	go processSessionTriggers(newPackage)
 
 	// Insert into database
 	if settings.Config.DB != nil {
