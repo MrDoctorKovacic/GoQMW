@@ -36,6 +36,8 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 		tAuxCurrent(&triggerPackage)
 	case "ACC_POWER":
 		tAccPower(&triggerPackage)
+	case "WIRELESS_POWER":
+		tLTEOn(&triggerPackage)
 	case "LIGHT_SENSOR_REASON":
 		tLightSensorReason(&triggerPackage)
 	case "SEAT_MEMORY_1":
@@ -185,6 +187,14 @@ func tAccPower(triggerPackage *sessionPackage) {
 	} else {
 		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
 		settings.Set("RAYNOR", "POWER", "AUTO")
+	}
+}
+
+func tLTEOn(triggerPackage *sessionPackage) {
+	lteOn, _ := Get("WIRELESS_POWER")
+	if triggerPackage.Data.Value == "FALSE" && lteOn.Value == "TRUE" {
+		// When board is turned off but doesn't have time to reflect LTE status
+		SetValue("LTE_ON", "FALSE")
 	}
 }
 
