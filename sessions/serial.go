@@ -14,9 +14,10 @@ import (
 func ReadFromSerial(device *serial.Port) bool {
 	status.Log(logging.OK(), "Starting serial read")
 	for connected := true; connected; {
-		response := mserial.ReadSerial(device)
+		response, err := mserial.ReadSerial(device)
 		// The device is nil, break out of this read loop
-		if response == nil {
+		if err != nil {
+			status.Log(logging.Error(), err.Error())
 			break
 		}
 		parseSerialJSON(response)

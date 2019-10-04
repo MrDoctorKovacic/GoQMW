@@ -40,7 +40,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 }
 
 // ReadSerial will continuously pull data from incoming serial
-func ReadSerial(serialDevice *serial.Port) interface{} {
+func ReadSerial(serialDevice *serial.Port) (interface{}, error) {
 	reader := bufio.NewReader(serialDevice)
 
 	// While connected, try to read from the device
@@ -59,11 +59,11 @@ func ReadSerial(serialDevice *serial.Port) interface{} {
 			var data interface{}
 			json.Unmarshal(msg, &data)
 
-			return data
+			return data, nil
 		}
 	}
 	SerialStatus.Log(logging.Error(), "Disconnected from serial.")
-	return nil
+	return nil, fmt.Errorf("Disconnected from serial")
 }
 
 // WriteSerial pushes out a message to the open serial port
