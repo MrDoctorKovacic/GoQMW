@@ -177,7 +177,7 @@ func setupSerial() {
 // and start the ReadSerial goroutine
 func startSerialComms(deviceName string, baudrate int) {
 	mainStatus.Log(logging.OK(), "Opening serial device "+deviceName)
-	c := &serial.Config{Name: deviceName, Baud: baudrate}
+	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
 	s, err := serial.OpenPort(c)
 	if err != nil {
 		mainStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)

@@ -55,6 +55,7 @@ func ReadSerial(serialDevice *serial.Port) (interface{}, error) {
 			SerialStatus.Log(logging.Error(), "Failed to read from serial port")
 			SerialStatus.Log(logging.Error(), err.Error())
 			connected = false
+			break
 		} else {
 			var data interface{}
 			json.Unmarshal(msg, &data)
