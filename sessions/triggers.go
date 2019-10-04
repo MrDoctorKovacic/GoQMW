@@ -130,9 +130,11 @@ func tAccPower(triggerPackage *sessionPackage) {
 	wifiAvailable, _ := Get("WIFI_CONNECTED")
 	boardPoweredOn, _ := Get("BOARD_POWER")
 	tabletPoweredOn, _ := Get("TABLET_POWER")
+	angelsPoweredOn, _ := Get("ANGEL_EYES_POWER")
 	raynorTargetPower, rerr := settings.Get("RAYNOR", "POWER")
 	lucioTargetPower, aerr := settings.Get("LUCIO", "POWER")
 	brightwingTargetPower, berr := settings.Get("BRIGHTWING", "POWER")
+	angelsTargetPower, verr := settings.Get("VARIAN", "ANGEL_EYES")
 
 	// Read the target action based on current ACC Power value
 	var targetAction string
@@ -143,6 +145,20 @@ func tAccPower(triggerPackage *sessionPackage) {
 	} else {
 		status.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
 		return
+	}
+
+	// Handle angel eyes power control
+	if verr == nil {
+		if angelsTargetPower == "ON" && angelsPoweredOn.Value == "FALSE" {
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnAngels")
+		} else if angelsTargetPower == "AUTO" && (angelsPoweredOn.Value != triggerPackage.Data.Value) {
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sAngels", targetAction))
+		} else if angelsTargetPower == "OFF" && angelsPoweredOn.Value == "TRUE" {
+			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffAngels")
+		}
+	} else {
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Angel Eyes. Resetting to AUTO\n%s,", verr))
+		settings.Set("VARIAN", "ANGEL_EYES", "AUTO")
 	}
 
 	// Handle wireless power control
