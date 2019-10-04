@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
@@ -162,7 +162,12 @@ func startRouter() {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
 	}).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(":5353", router))
+	for {
+		err := http.ListenAndServe(":5353", router)
+		mainStatus.Log(logging.Error(), err.Error())
+		mainStatus.Log(logging.Error(), "Router failed! We messed up really bad to get this far. Restarting the router...")
+		time.Sleep(time.Second * 10)
+	}
 }
 
 // authMiddleware will match http bearer token again the one hardcoded in our config
