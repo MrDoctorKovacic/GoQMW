@@ -162,6 +162,7 @@ func startRouter() {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
 	}).Methods("GET")
 
+	// Start the router in an endless loop
 	for {
 		err := http.ListenAndServe(":5353", router)
 		mainStatus.Log(logging.Error(), err.Error())
