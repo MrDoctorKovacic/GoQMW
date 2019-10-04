@@ -164,7 +164,7 @@ func setupSerial() {
 			HardwareSerialBaud = baudrateString
 		}
 		// Start initial reader / writer
-		startSerialComms(HardwareSerialPort, HardwareSerialBaud)
+		go startSerialComms(HardwareSerialPort, HardwareSerialBaud)
 
 		// Setup other devices
 		for device, baudrate := range mserial.ParseSerialDevices(settings.Data) {
