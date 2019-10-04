@@ -193,6 +193,12 @@ func startSerialComms(deviceName string, baudrate int) {
 		endedSerial := sessions.ReadFromSerial(s)
 		if endedSerial {
 			mainStatus.Log(logging.Error(), "Serial disconnected, closing port and reopening")
+
+			// Replace main serial writer
+			if settings.Config.SerialControlDevice == s {
+				settings.Config.SerialControlDevice = nil
+			}
+
 			s.Close()
 			time.Sleep(time.Second * 10)
 			mainStatus.Log(logging.Error(), "Reopening serial port...")
