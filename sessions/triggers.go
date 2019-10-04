@@ -150,11 +150,11 @@ func tAccPower(triggerPackage *sessionPackage) {
 	// Handle angel eyes power control
 	if verr == nil {
 		if angelsTargetPower == "ON" && angelsPoweredOn.Value == "FALSE" {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnAngel")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnAngel")
 		} else if angelsTargetPower == "AUTO" && (angelsPoweredOn.Value != triggerPackage.Data.Value) {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sAngel", targetAction))
+			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sAngel", targetAction))
 		} else if angelsTargetPower == "OFF" && angelsPoweredOn.Value == "TRUE" {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffAngel")
+			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffAngel")
 		}
 	} else {
 		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Angel Eyes. Resetting to AUTO\n%s,", verr))
