@@ -11,11 +11,17 @@ import (
 )
 
 // ReadFromSerial reads serial data into the session
-func ReadFromSerial(device *serial.Port) {
+func ReadFromSerial(device *serial.Port) bool {
 	status.Log(logging.OK(), "Starting serial read")
 	for connected := true; connected; {
-		parseSerialJSON(mserial.ReadSerial(device))
+		response := mserial.ReadSerial(device)
+		// The device is nil, break out of this read loop
+		if response == nil {
+			break
+		}
+		parseSerialJSON(response)
 	}
+	return true
 }
 
 func parseSerialJSON(marshalledJSON interface{}) {

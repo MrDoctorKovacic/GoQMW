@@ -168,7 +168,7 @@ func setupSerial() {
 
 		// Setup other devices
 		for device, baudrate := range mserial.ParseSerialDevices(settings.Data) {
-			startSerialComms(device, baudrate)
+			go startSerialComms(device, baudrate)
 		}
 	}
 }
@@ -190,6 +190,13 @@ func startSerialComms(deviceName string, baudrate int) {
 		}
 
 		// Continiously read from serial port
-		go sessions.ReadFromSerial(s)
+		endedSerial := sessions.ReadFromSerial(s)
+		if endedSerial {
+			mainStatus.Log(logging.Error(), "Serial disconnected, closing port and reopening")
+			s.Close()
+			time.Sleep(time.Second * 10)
+			mainStatus.Log(logging.Error(), "Reopening serial port...")
+			startSerialComms(deviceName, baudrate)
+		}
 	}
 }
