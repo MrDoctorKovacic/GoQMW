@@ -62,6 +62,7 @@ func ReadSerial(serialDevice *serial.Port) interface{} {
 			return data
 		}
 	}
+	SerialStatus.Log(logging.Error(), "Disconnected from serial.")
 	return nil
 }
 
