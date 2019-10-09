@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
@@ -132,6 +133,20 @@ func Get(componentName string, settingName string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("Could not find component/setting with those values")
+}
+
+// GetBool returns the named session with a boolean value, if it exists. false otherwise
+func GetBool(componentName string, settingName string) (value bool, err error) {
+	v, err := Get(componentName, settingName)
+	if err != nil {
+		return false, err
+	}
+
+	vb, err := strconv.ParseBool(v)
+	if err != nil {
+		return false, err
+	}
+	return vb, nil
 }
 
 // HandleSet is the http wrapper for our setting setter
