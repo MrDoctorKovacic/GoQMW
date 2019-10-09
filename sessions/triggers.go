@@ -29,9 +29,9 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 	// Pull trigger function
 	switch triggerPackage.Name {
 	case "MAIN_VOLTAGE_RAW":
-		tMainVoltage(&triggerPackage)
+		tVoltage(&triggerPackage, "MAIN")
 	case "AUX_VOLTAGE_RAW":
-		tAuxVoltage(&triggerPackage)
+		tVoltage(&triggerPackage, "AUX")
 	case "AUX_CURRENT_RAW":
 		tAuxCurrent(&triggerPackage)
 	case "ACC_POWER":
@@ -61,52 +61,14 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 //
 
 // Convert main raw voltage into an actual number
-func tMainVoltage(triggerPackage *sessionPackage) {
+func tVoltage(triggerPackage *sessionPackage, position string) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 	if err != nil {
 		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
 		return
 	}
 
-	SetValue("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
-}
-
-// Resistance values and modifiers to the incoming Voltage sensor value
-func tAuxVoltage(triggerPackage *sessionPackage) {
-	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
-
-	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
-		return
-	}
-
-	voltageModifier := 1.08
-	if voltageFloat < 2850.0 && voltageFloat > 2700.0 {
-		voltageModifier = 1.12
-	} else if voltageFloat >= 2850.0 {
-		voltageModifier = 1.07
-	} else if voltageFloat <= 2700.0 {
-		voltageModifier = 1.08
-	}
-
-	realVoltage := voltageModifier * (((voltageFloat * 3.3) / 4095.0) / 0.2)
-	SetValue("AUX_VOLTAGE", fmt.Sprintf("%.3f", realVoltage))
-	SetValue("AUX_VOLTAGE_MODIFIER", fmt.Sprintf("%.3f", voltageModifier))
-
-	sentPowerWarning, err := Get("SENT_POWER_WARNING")
-	if err != nil {
-		SetValue("SENT_POWER_WARNING", "FALSE")
-	}
-
-	// SHUTDOWN the system if voltage is below 11.3 to preserve our battery
-	// TODO: right now poweroff doesn't do crap, still drains battery
-	if realVoltage < 11.3 {
-		if err == nil && sentPowerWarning.Value == "FALSE" {
-			logging.SlackAlert(settings.Config.SlackURL, fmt.Sprintf("MDROID SHUTTING DOWN! Voltage is %f (%fV)", voltageFloat, realVoltage))
-			SetValue("SENT_POWER_WARNING", "TRUE")
-		}
-		//exec.Command("poweroff", "now")
-	}
+	SetValue(fmt.Sprintf("%s_VOLTAGE", position), fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
 }
 
 // Modifiers to the incoming Current sensor value
