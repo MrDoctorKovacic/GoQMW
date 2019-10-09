@@ -179,7 +179,12 @@ func tAccPower(triggerPackage *sessionPackage) {
 	// Handle video server power control
 	if aerr == nil {
 		if lucioTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
+			if targetAction == "Off" {
+				mserial.CommandNetworkMachine("etc", "shutdown")
+				go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
+			} else {
+				go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
+			}
 		} else if lucioTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
 			mserial.CommandNetworkMachine("etc", "shutdown")
 			go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
