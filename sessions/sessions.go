@@ -130,6 +130,20 @@ func Get(name string) (value Value, err error) {
 	return sessionValue, nil
 }
 
+// GetBool returns the named session with a boolean value, if it exists. false otherwise
+func GetBool(name string) (value bool, err error) {
+	v, err := Get(name)
+	if err != nil {
+		return false, err
+	}
+
+	vb, err := strconv.ParseBool(v.Value)
+	if err != nil {
+		return false, err
+	}
+	return vb, nil
+}
+
 // HandlePost updates or posts a new session value to the common session
 func HandlePost(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
