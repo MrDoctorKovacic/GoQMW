@@ -103,7 +103,11 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	command := strings.TrimSuffix(formatting.FormatName(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
-	isPositive, _ := formatting.IsPositiveRequest(command)
+	isPositive, err := formatting.IsPositiveRequest(command)
+	if err != nil {
+		status.Log(logging.Error(), err.Error())
+		return
+	}
 
 	// Log if requested
 	status.Log(logging.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))

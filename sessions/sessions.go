@@ -60,7 +60,11 @@ func Create(sessionFile string) {
 		if err != nil {
 			status.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
 		} else {
-			byteValue, _ := ioutil.ReadAll(jsonFile)
+			byteValue, err := ioutil.ReadAll(jsonFile)
+			if err != nil {
+				status.Log(logging.Error(), err.Error())
+				return
+			}
 			json.Unmarshal(byteValue, &session)
 		}
 	} else {

@@ -135,7 +135,11 @@ func GetValue(w http.ResponseWriter, r *http.Request) {
 func Set(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var newdata MessageType
-	_ = json.NewDecoder(r.Body).Decode(&newdata)
+	err := json.NewDecoder(r.Body).Decode(&newdata)
+	if err != nil {
+		status.Log(Error(), err.Error())
+		return
+	}
 
 	// Ensure values exist
 	if newdata.Name == "" {
