@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
@@ -26,6 +25,8 @@ type power struct {
 	powerTarget string
 	errOn       error
 	errTarget   error
+	settingComp string
+	settingName string
 }
 
 // Process session values by combining or otherwise modifying once posted
@@ -92,12 +93,14 @@ func tAccPower(triggerPackage *sessionPackage) {
 	var (
 		targetAction string
 		accOn        bool
-		wireless     = power{}
+		wireless     = power{settingComp: "BRIGHTWING", settingName: "POWER"}
 		wifi         = power{}
-		tablet       = power{}
-		angel        = power{}
-		board        = power{}
+		tablet       = power{settingComp: "RAYNOR", settingName: "POWER"}
+		angel        = power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
+		board        = power{settingComp: "LUCIO", settingName: "POWER"}
 	)
+
+	// Check incoming ACC power value is valid
 	switch triggerPackage.Data.Value {
 	case "TRUE":
 		targetAction = "On"
@@ -112,14 +115,14 @@ func tAccPower(triggerPackage *sessionPackage) {
 
 	// Verbose, but pull all the necessary configuration data
 	wireless.on, wireless.errOn = GetBool("WIRELESS_POWER")
-	wireless.powerTarget, wireless.errTarget = settings.Get("BRIGHTWING", "POWER")
+	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
 	wifi.on, wifi.errOn = GetBool("WIFI_CONNECTED")
 	tablet.on, tablet.errOn = GetBool("TABLET_POWER")
-	tablet.powerTarget, tablet.errTarget = settings.Get("RAYNOR", "POWER")
+	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
 	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
-	angel.powerTarget, angel.errTarget = settings.Get("VARIAN", "ANGEL_EYES")
+	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
 	board.on, board.errOn = GetBool("BOARD_POWER")
-	board.powerTarget, board.errTarget = settings.Get("LUCIO", "POWER")
+	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
 
 	// Trigger wireless, based on wifi status
 	if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
@@ -127,47 +130,25 @@ func tAccPower(triggerPackage *sessionPackage) {
 	}
 
 	// Handle more generic modules
-	modules := map[string]power{"Angel": angel, "Tablet": tablet, "Wireless": wireless}
+	modules := map[string]power{"Board": board, "Angel": angel, "Tablet": tablet, "Wireless": wireless}
 	for name, module := range modules {
-		if module.errOn == nil && module.errTarget == nil {
-			if module.powerTarget == "ON" && !module.on {
-				mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
-			} else if module.powerTarget == "AUTO" && (module.on != accOn) {
-				mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%s%s", targetAction, name))
-			} else if module.powerTarget == "OFF" && module.on {
-				mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOff%s", name))
-			}
-		} else if module.errTarget != nil {
-			status.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO\n%s\n%s,", name, module.errOn.Error(), module.errTarget.Error()))
-			switch name {
-			case "Angel":
-				settings.Set("VARIAN", "ANGEL_EYES", "AUTO")
-			case "Tablet":
-				settings.Set("RAYNOR", "POWER", "AUTO")
-			case "Wireless":
-				settings.Set("BRIGHTWING", "POWER", "AUTO")
-			}
-		}
+		go genericPowerTrigger(accOn, targetAction, name, &module)
 	}
+}
 
-	// Handle video server power control
-	if board.errOn == nil && board.errTarget == nil {
-		if board.powerTarget == "AUTO" && board.on != accOn {
-			if !accOn {
-				mserial.CommandNetworkMachine("etc", "shutdown")
-				go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
-			} else {
-				go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
-			}
-		} else if board.powerTarget == "OFF" && board.on {
-			mserial.CommandNetworkMachine("etc", "shutdown")
-			go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
-		} else if board.powerTarget == "ON" && !board.on {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
+// Error check against module's status fetches, then check if we're powering on or off
+func genericPowerTrigger(accOn bool, targetAction string, name string, module *power) {
+	if module.errOn == nil && module.errTarget == nil {
+		if (module.powerTarget == "AUTO" && !module.on && accOn) || (module.powerTarget == "ON" && !module.on) {
+			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
+		} else if (module.powerTarget == "AUTO" && module.on && !accOn) || (module.powerTarget == "OFF" && module.on) {
+			gracefulShutdown(name)
 		}
-	} else {
-		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s\n%s,", board.errOn.Error(), board.errTarget.Error()))
-		settings.Set("LUCIO", "POWER", "AUTO")
+	} else if module.errTarget != nil || module.errOn != nil {
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO\n%s\n%s,", name, module.errOn.Error(), module.errTarget.Error()))
+		if module.settingComp != "" && module.settingName != "" {
+			settings.Set(module.settingComp, module.settingName, "AUTO")
+		}
 	}
 }
 
