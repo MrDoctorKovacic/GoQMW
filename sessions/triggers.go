@@ -87,7 +87,6 @@ func tAuxCurrent(triggerPackage *sessionPackage) {
 }
 
 // Trigger for booting boards/tablets
-// TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *sessionPackage) {
 	// Read the target action based on current ACC Power value
 	var (
