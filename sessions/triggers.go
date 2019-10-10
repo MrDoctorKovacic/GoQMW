@@ -138,7 +138,7 @@ func tAccPower(triggerPackage *sessionPackage) {
 	}
 
 	for name, module := range modules {
-		go genericPowerTrigger(accOn, name, &module)
+		genericPowerTrigger(accOn, name, &module)
 	}
 }
 
