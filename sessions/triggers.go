@@ -25,6 +25,7 @@ type power struct {
 	powerTarget string
 	errOn       error
 	errTarget   error
+	triggerOn   bool
 	settingComp string
 	settingName string
 }
@@ -43,6 +44,8 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 		tAuxCurrent(&triggerPackage)
 	case "ACC_POWER":
 		tAccPower(&triggerPackage)
+	case "KEY_STATE":
+		tKeyState(&triggerPackage)
 	case "WIRELESS_POWER":
 		tLTEOn(&triggerPackage)
 	case "LIGHT_SENSOR_REASON":
@@ -91,22 +94,19 @@ func tAuxCurrent(triggerPackage *sessionPackage) {
 func tAccPower(triggerPackage *sessionPackage) {
 	// Read the target action based on current ACC Power value
 	var (
-		targetAction string
-		accOn        bool
-		wireless     = power{settingComp: "BRIGHTWING", settingName: "POWER"}
-		wifi         = power{}
-		tablet       = power{settingComp: "RAYNOR", settingName: "POWER"}
-		angel        = power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
-		board        = power{settingComp: "LUCIO", settingName: "POWER"}
+		accOn    bool
+		wireless = power{settingComp: "BRIGHTWING", settingName: "POWER"}
+		wifi     = power{}
+		angel    = power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
+		tablet   = power{settingComp: "RAYNOR", settingName: "POWER"}
+		board    = power{settingComp: "LUCIO", settingName: "POWER"}
 	)
 
 	// Check incoming ACC power value is valid
 	switch triggerPackage.Data.Value {
 	case "TRUE":
-		targetAction = "On"
 		accOn = true
 	case "FALSE":
-		targetAction = "Off"
 		accOn = false
 	default:
 		status.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
@@ -130,14 +130,20 @@ func tAccPower(triggerPackage *sessionPackage) {
 	}
 
 	// Handle more generic modules
-	modules := map[string]power{"Board": board, "Angel": angel, "Tablet": tablet, "Wireless": wireless}
+	modules := map[string]power{"Board": board, "Tablet": tablet, "Wireless": wireless}
+
+	// Add angel eyes, if they're set to be on
+	if angel.powerTarget == "ON" {
+		modules["Angel"] = angel
+	}
+
 	for name, module := range modules {
-		go genericPowerTrigger(accOn, targetAction, name, &module)
+		go genericPowerTrigger(accOn, name, &module)
 	}
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
-func genericPowerTrigger(accOn bool, targetAction string, name string, module *power) {
+func genericPowerTrigger(accOn bool, name string, module *power) {
 	if module.errOn == nil && module.errTarget == nil {
 		if (module.powerTarget == "AUTO" && !module.on && accOn) || (module.powerTarget == "ON" && !module.on) {
 			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
@@ -152,8 +158,24 @@ func genericPowerTrigger(accOn bool, targetAction string, name string, module *p
 	}
 }
 
+func tKeyState(triggerPackage *sessionPackage) {
+	angel := power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
+	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
+	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
+
+	shouldBeTriggered := triggerPackage.Data.Value != "FALSE" && triggerPackage.Data.Value != ""
+
+	// Pass angel module to generic power trigger
+	genericPowerTrigger(shouldBeTriggered, "Angel", &angel)
+}
+
 func tLTEOn(triggerPackage *sessionPackage) {
-	lteOn, _ := Get("WIRELESS_POWER")
+	lteOn, err := Get("WIRELESS_POWER")
+	if err != nil {
+		status.Log(logging.Error(), err.Error())
+		return
+	}
+
 	if triggerPackage.Data.Value == "FALSE" && lteOn.Value == "TRUE" {
 		// When board is turned off but doesn't have time to reflect LTE status
 		SetValue("LTE_ON", "FALSE")
