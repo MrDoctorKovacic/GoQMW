@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
@@ -56,8 +57,18 @@ var (
 )
 
 func init() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	// Default timezone
+	timezone, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		log.Error().Msg("Could not load default timezone")
+		return
+	}
+	SetTimezone(timezone)
+
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().In(Timezone)
+	}
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "Mon Jan 2 15:04:05"})
 	statusMap = make(map[string]ProgramStatus, 0)
 	status = NewStatus("Status")
 }

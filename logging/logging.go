@@ -7,8 +7,6 @@ import (
 	"os"
 	"sync"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 // Timezone will change the timezone logs are written in
@@ -19,15 +17,6 @@ var (
 	debugLock    sync.Mutex
 	debugLog     map[string]map[string]string
 )
-
-func init() {
-	timezone, err := time.LoadLocation("America/Los_Angeles")
-	if err != nil {
-		log.Error().Msg("Could not load default timezone")
-		return
-	}
-	SetTimezone(timezone)
-}
 
 // SetTimezone sets timezone properly with mutex
 func SetTimezone(timezone *time.Location) {
