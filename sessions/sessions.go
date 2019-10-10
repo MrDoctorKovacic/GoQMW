@@ -171,8 +171,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newdata)
 
 	if err != nil {
-		status.Log(logging.Error(), "Error decoding incoming JSON")
-		status.Log(logging.Error(), err.Error())
+		status.Log(logging.Error(), fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
 
 		response.Output = err.Error()
 		json.NewEncoder(w).Encode(response)
