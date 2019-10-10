@@ -144,9 +144,9 @@ func startRouter() {
 	//
 	// Status Routes
 	//
-	router.HandleFunc("/status", logging.GetStatus).Methods("GET")
-	router.HandleFunc("/status/{name}", logging.GetStatusValue).Methods("GET")
-	router.HandleFunc("/status/{name}", logging.SetStatus).Methods("POST")
+	router.HandleFunc("/status", logging.Get).Methods("GET")
+	router.HandleFunc("/status/{name}", logging.GetValue).Methods("GET")
+	router.HandleFunc("/status/{name}", logging.Set).Methods("POST")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 
 	//

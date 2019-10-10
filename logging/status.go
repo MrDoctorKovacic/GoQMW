@@ -14,7 +14,7 @@ import (
 // Status of a particular program
 // Keep some logs in memory
 type Status struct {
-	Name       string // should match the name in the StatusMap
+	Name       string // should match the name in the statusMap
 	Status     string
 	LastUpdate string
 	DebugLog   []string // For OK messages, or general purpose logging
@@ -50,34 +50,34 @@ type ProgramStatus interface {
 	Log(MessageType, string)
 }
 
-// StatusMap is a mapping of program names to their status data
-var StatusMap = make(map[string]ProgramStatus, 0)
+// statusMap is a mapping of program names to their status data
+var (
+	statusMap         map[string]ProgramStatus
+	statusLock        sync.Mutex
+	status            ProgramStatus
+	RemotePingAddress string
+)
 
-// Status Lock
-var statusLock sync.Mutex
-
-// StatusStatus will control logging and reporting of status / warnings / errors
-// Holy meta batman
-var StatusStatus = NewStatus("Status")
-
-// RemotePingAddress to forward pings to
-var RemotePingAddress string
+func init() {
+	statusMap = make(map[string]ProgramStatus, 0)
+	status = NewStatus("Status")
+}
 
 // NewStatus will create and return a new program status
 func NewStatus(name string) ProgramStatus {
 
 	// Check if program status already exists
 	statusLock.Lock()
-	s, ok := StatusMap[name]
+	s, ok := statusMap[name]
 	statusLock.Unlock()
 	if ok {
-		log.Println("[WARNING] Status: " + name + " already exists in the StatusMap")
+		log.Println("[WARNING] Status: " + name + " already exists in the statusMap")
 		return s
 	}
 
 	s = &Status{Name: name}
 	statusLock.Lock()
-	StatusMap[name] = s
+	statusMap[name] = s
 	statusLock.Unlock()
 	return s
 }
@@ -116,46 +116,46 @@ func (s *Status) Log(messageType MessageType, message string) {
 	log.Println(formattedMessage)
 }
 
-// GetStatus returns all known program statuses
-func GetStatus(w http.ResponseWriter, r *http.Request) {
+// Get returns all known program statuses
+func Get(w http.ResponseWriter, r *http.Request) {
 	statusLock.Lock()
-	json.NewEncoder(w).Encode(StatusMap)
+	json.NewEncoder(w).Encode(statusMap)
 	statusLock.Unlock()
 }
 
-// GetStatusValue returns a specific status value
-func GetStatusValue(w http.ResponseWriter, r *http.Request) {
+// GetValue returns a specific status value
+func GetValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	statusLock.Lock()
-	json.NewEncoder(w).Encode(StatusMap[params["name"]])
+	json.NewEncoder(w).Encode(statusMap[params["name"]])
 	statusLock.Unlock()
 }
 
-// SetStatus updates or posts a new status of the named program
-func SetStatus(w http.ResponseWriter, r *http.Request) {
+// Set updates or posts a new status of the named program
+func Set(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var newdata MessageType
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
 
 	// Ensure values exist
 	if newdata.Name == "" {
-		StatusStatus.Log(Warning(), "Ignoring erroneous POST missing type field")
+		status.Log(Warning(), "Ignoring erroneous POST missing type field")
 		json.NewEncoder(w).Encode("type is a required field.")
 		return
 	} else if newdata.Message == "" {
-		StatusStatus.Log(Warning(), "Ignoring erroneous POST missing message field")
+		status.Log(Warning(), "Ignoring erroneous POST missing message field")
 		json.NewEncoder(w).Encode("message is a required field.")
 		return
 	}
 
 	// Add / update value in global session
 	statusLock.Lock()
-	s, ok := StatusMap[params["name"]]
+	s, ok := statusMap[params["name"]]
 	statusLock.Unlock()
 	if !ok {
 		// Status does not exist, we should create one
 		s = NewStatus(params["name"])
-		StatusStatus.Log(OK(), fmt.Sprintf("Created new Status called %s", params["name"]))
+		status.Log(OK(), fmt.Sprintf("Created new Status called %s", params["name"]))
 	}
 
 	switch newdata.Name {
@@ -167,7 +167,7 @@ func SetStatus(w http.ResponseWriter, r *http.Request) {
 		s.Log(OK(), newdata.Message)
 	}
 
-	StatusStatus.Log(OK(), fmt.Sprintf("Logged external %s Status for %s with message %s", newdata.Name, params["name"], newdata.Message))
+	status.Log(OK(), fmt.Sprintf("Logged external %s Status for %s with message %s", newdata.Name, params["name"], newdata.Message))
 
 	// Respond with inserted values
 	json.NewEncoder(w).Encode(s)

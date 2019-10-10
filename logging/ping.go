@@ -21,26 +21,26 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			// Log locally
 			//
 			defer onlineResp.Body.Close()
-			StatusStatus.Log(OK(), fmt.Sprintf("Logging %s to database", params["device"]))
+			status.Log(OK(), fmt.Sprintf("Logging %s to database", params["device"]))
 
 			// Insert into database
 			//err := DB.Write(fmt.Sprintf("ping,device=%s ip=\"%s\"", params["device"], params["ip"]))
 
 			if err != nil {
-				StatusStatus.Log(Error(), fmt.Sprintf("Error when logging %s to database: %s", params["device"], err.Error()))
+				status.Log(Error(), fmt.Sprintf("Error when logging %s to database: %s", params["device"], err.Error()))
 			} else {
-				StatusStatus.Log(OK(), fmt.Sprintf("Logged %s to database", params["device"]))
+				status.Log(OK(), fmt.Sprintf("Logged %s to database", params["device"]))
 			}
 
 		} else {
 			//
 			// FWD request to server since we have internet
 			//
-			StatusStatus.Log(OK(), fmt.Sprintf("Forwarding %s to server", params["device"]))
+			status.Log(OK(), fmt.Sprintf("Forwarding %s to server", params["device"]))
 			pingResp, err := http.Get(fmt.Sprintf("%s?name=%s&local_ip=%s", RemotePingAddress, params["device"], params["ip"]))
 			if err != nil {
 				defer pingResp.Body.Close()
-				StatusStatus.Log(Error(), fmt.Sprintf("Error when forwarding ping: %s", err.Error()))
+				status.Log(Error(), fmt.Sprintf("Error when forwarding ping: %s", err.Error()))
 			}
 		}
 
