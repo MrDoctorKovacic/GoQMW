@@ -20,6 +20,14 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
+// Define temporary holding struct for power values
+type power struct {
+	on          bool
+	powerTarget string
+	errOn       error
+	errTarget   error
+}
+
 // Process session values by combining or otherwise modifying once posted
 func processSessionTriggers(triggerPackage sessionPackage) {
 	if settings.Config.VerboseOutput {
@@ -87,89 +95,86 @@ func tAuxCurrent(triggerPackage *sessionPackage) {
 // Trigger for booting boards/tablets
 // TODO: Smarter shutdown timings? After 10 mins?
 func tAccPower(triggerPackage *sessionPackage) {
-	// Pull needed values for power logic
-	wirelessPoweredOn, _ := Get("WIRELESS_POWER")
-	wifiAvailable, _ := Get("WIFI_CONNECTED")
-	boardPoweredOn, _ := Get("BOARD_POWER")
-	tabletPoweredOn, _ := Get("TABLET_POWER")
-	angelsPoweredOn, _ := Get("ANGEL_EYES_POWER")
-	raynorTargetPower, rerr := settings.Get("RAYNOR", "POWER")
-	lucioTargetPower, aerr := settings.Get("LUCIO", "POWER")
-	brightwingTargetPower, berr := settings.Get("BRIGHTWING", "POWER")
-	angelsTargetPower, verr := settings.Get("VARIAN", "ANGEL_EYES")
-
 	// Read the target action based on current ACC Power value
-	var targetAction string
-	if triggerPackage.Data.Value == "TRUE" {
+	var (
+		targetAction string
+		accOn        bool
+		wireless     = power{}
+		wifi         = power{}
+		tablet       = power{}
+		angel        = power{}
+		board        = power{}
+	)
+	switch triggerPackage.Data.Value {
+	case "TRUE":
 		targetAction = "On"
-	} else if triggerPackage.Data.Value == "FALSE" {
+		accOn = true
+	case "FALSE":
 		targetAction = "Off"
-	} else {
+		accOn = false
+	default:
 		status.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
 		return
 	}
 
-	// Handle angel eyes power control
-	if verr == nil {
-		if angelsTargetPower == "ON" && angelsPoweredOn.Value == "FALSE" {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnAngel")
-		} else if angelsTargetPower == "AUTO" && (angelsPoweredOn.Value != triggerPackage.Data.Value) {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sAngel", targetAction))
-		} else if angelsTargetPower == "OFF" && angelsPoweredOn.Value == "TRUE" {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffAngel")
-		}
-	} else {
-		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Angel Eyes. Resetting to AUTO\n%s,", verr))
-		settings.Set("VARIAN", "ANGEL_EYES", "AUTO")
+	// Verbose, but pull all the necessary configuration data
+	wireless.on, wireless.errOn = GetBool("WIRELESS_POWER")
+	wireless.powerTarget, wireless.errTarget = settings.Get("BRIGHTWING", "POWER")
+	wifi.on, wifi.errOn = GetBool("WIFI_CONNECTED")
+	tablet.on, tablet.errOn = GetBool("TABLET_POWER")
+	tablet.powerTarget, tablet.errTarget = settings.Get("RAYNOR", "POWER")
+	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
+	angel.powerTarget, angel.errTarget = settings.Get("VARIAN", "ANGEL_EYES")
+	board.on, board.errOn = GetBool("BOARD_POWER")
+	board.powerTarget, board.errTarget = settings.Get("LUCIO", "POWER")
+
+	// Trigger wireless, based on wifi status
+	if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
+		wireless.powerTarget = "ON"
 	}
 
-	// Handle wireless power control
-	if berr == nil {
-		if (brightwingTargetPower == "AUTO" && wifiAvailable.Value == "FALSE" && wirelessPoweredOn.Value == "FALSE") ||
-			(brightwingTargetPower == "ON" && wirelessPoweredOn.Value == "FALSE") {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
-		} else if brightwingTargetPower == "AUTO" && (wirelessPoweredOn.Value != triggerPackage.Data.Value) {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sWireless", targetAction))
-		} else if brightwingTargetPower == "OFF" && wirelessPoweredOn.Value == "TRUE" {
-			go mserial.MachineShutdown(settings.Config.SerialControlDevice, "brightwing", time.Second*10, "powerOffWireless")
+	// Handle more generic modules
+	modules := map[string]power{"Angel": angel, "Tablet": tablet, "Wireless": wireless}
+	for name, module := range modules {
+		if module.errOn == nil && module.errTarget == nil {
+			if module.powerTarget == "ON" && !module.on {
+				mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
+			} else if module.powerTarget == "AUTO" && (module.on != accOn) {
+				mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%s%s", targetAction, name))
+			} else if module.powerTarget == "OFF" && module.on {
+				mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOff%s", name))
+			}
+		} else if module.errTarget != nil {
+			status.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO\n%s\n%s,", name, module.errOn.Error(), module.errTarget.Error()))
+			switch name {
+			case "Angel":
+				settings.Set("VARIAN", "ANGEL_EYES", "AUTO")
+			case "Tablet":
+				settings.Set("RAYNOR", "POWER", "AUTO")
+			case "Wireless":
+				settings.Set("BRIGHTWING", "POWER", "AUTO")
+			}
 		}
-	} else {
-		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Brightwing. Resetting to AUTO\n%s,", berr))
-		settings.Set("BRIGHTWING", "POWER", "AUTO")
 	}
 
 	// Handle video server power control
-	if aerr == nil {
-		if lucioTargetPower == "AUTO" && boardPoweredOn.Value != triggerPackage.Data.Value {
-			if targetAction == "Off" {
+	if board.errOn == nil && board.errTarget == nil {
+		if board.powerTarget == "AUTO" && board.on != accOn {
+			if !accOn {
 				mserial.CommandNetworkMachine("etc", "shutdown")
 				go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
 			} else {
 				go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sBoard", targetAction))
 			}
-		} else if lucioTargetPower == "OFF" && boardPoweredOn.Value == "TRUE" {
+		} else if board.powerTarget == "OFF" && board.on {
 			mserial.CommandNetworkMachine("etc", "shutdown")
 			go mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, "powerOffBoard")
-		} else if lucioTargetPower == "ON" && boardPoweredOn.Value == "FALSE" {
+		} else if board.powerTarget == "ON" && !board.on {
 			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
 		}
 	} else {
-		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s,", berr))
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Artanis. Resetting to AUTO\n%s\n%s,", board.errOn.Error(), board.errTarget.Error()))
 		settings.Set("LUCIO", "POWER", "AUTO")
-	}
-
-	// Handle tablet power control
-	if rerr == nil {
-		if raynorTargetPower == "AUTO" && tabletPoweredOn.Value != triggerPackage.Data.Value {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("power%sTablet", targetAction))
-		} else if raynorTargetPower == "OFF" && tabletPoweredOn.Value == "TRUE" {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffTablet")
-		} else if raynorTargetPower == "ON" && tabletPoweredOn.Value == "FALSE" {
-			go mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnTablet")
-		}
-	} else {
-		status.Log(logging.Error(), fmt.Sprintf("Setting read error for Raynor. Resetting to AUTO\n%s,", berr))
-		settings.Set("RAYNOR", "POWER", "AUTO")
 	}
 }
 
@@ -183,12 +188,12 @@ func tLTEOn(triggerPackage *sessionPackage) {
 
 // Alert me when it's raining and windows are down
 func tLightSensorReason(triggerPackage *sessionPackage) {
-	keyPosition, err1 := Get("KEY_POSITION")
-	doorsLocked, err2 := Get("DOORS_LOCKED")
-	windowsOpen, err2 := Get("WINDOWS_OPEN")
-	delta, err3 := formatting.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
+	keyPosition, _ := Get("KEY_POSITION")
+	doorsLocked, _ := Get("DOORS_LOCKED")
+	windowsOpen, _ := Get("WINDOWS_OPEN")
+	delta, err := formatting.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 
-	if err1 == nil && err2 == nil && err3 == nil {
+	if err != nil {
 		if triggerPackage.Data.Value == "RAIN" &&
 			keyPosition.Value == "OFF" &&
 			doorsLocked.Value == "TRUE" &&
