@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
@@ -22,21 +21,6 @@ func ReadFile(useSettingsFile string) {
 	initSettings, err := parseFile(Config.SettingsFile)
 	if err == nil && initSettings != nil && len(initSettings) != 0 {
 		Data = initSettings
-
-		// Check if we're configed to verbose output
-		var verboseOutputInt int
-		useVerboseOutput, ok := Data["MDROID"]["VERBOSE_OUTPUT"]
-		if !ok {
-			verboseOutputInt = 0
-		} else {
-			verboseOutputInt, err = strconv.Atoi(useVerboseOutput)
-			if err != nil {
-				verboseOutputInt = 0
-			}
-		}
-
-		// Set as bool for return
-		Config.VerboseOutput = verboseOutputInt != 0
 
 		// Log settings
 		out, err := json.Marshal(Data)

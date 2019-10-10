@@ -99,8 +99,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil && online {
 			status.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
-		} else if settings.Config.VerboseOutput {
-			status.Log(logging.OK(), fmt.Sprintf("Logged %s to database", postingString))
+		} else {
+			status.Log(logging.Debug(), fmt.Sprintf("Logged %s to database", postingString))
 		}
 	}
 }

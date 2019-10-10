@@ -82,9 +82,7 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 // GetAll returns the entire current session
 func GetAll() map[string]Value {
 	// Log if requested
-	if settings.Config.VerboseOutput {
-		status.Log(logging.OK(), "Responding to request for full session")
-	}
+	status.Log(logging.Debug(), "Responding to request for full session")
 
 	session.Mutex.Lock()
 	returnSession := session.data
@@ -119,9 +117,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 func Get(name string) (value Value, err error) {
 
 	// Log if requested
-	if settings.Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to request for session value %s", name))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session value %s", name))
 
 	session.Mutex.Lock()
 	sessionValue, ok := session.data[name]
@@ -225,8 +221,8 @@ func Set(newPackage sessionPackage, quiet bool) error {
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
 
 	// Log if requested
-	if settings.Config.VerboseOutput && !quiet {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
+	if !quiet {
+		status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 	}
 
 	// Add / update value in global session after locking access to session

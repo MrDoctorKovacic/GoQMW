@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/websocket"
 )
 
@@ -16,9 +15,7 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
 
 	// Log if requested
-	if settings.Config.VerboseOutput {
-		status.Log(logging.OK(), "Responding to request for session websocket")
-	}
+	status.Log(logging.Debug(), "Responding to request for session websocket")
 
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
