@@ -138,12 +138,12 @@ func tAccPower(triggerPackage *sessionPackage) {
 	}
 
 	for name, module := range modules {
-		genericPowerTrigger(accOn, name, &module)
+		genericPowerTrigger(accOn, name, module)
 	}
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
-func genericPowerTrigger(accOn bool, name string, module *power) {
+func genericPowerTrigger(accOn bool, name string, module power) {
 	if module.errOn == nil && module.errTarget == nil {
 		if (module.powerTarget == "AUTO" && !module.on && accOn) || (module.powerTarget == "ON" && !module.on) {
 			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
@@ -166,7 +166,7 @@ func tKeyState(triggerPackage *sessionPackage) {
 	shouldBeTriggered := triggerPackage.Data.Value != "FALSE" && triggerPackage.Data.Value != ""
 
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldBeTriggered, "Angel", &angel)
+	genericPowerTrigger(shouldBeTriggered, "Angel", angel)
 }
 
 func tLTEOn(triggerPackage *sessionPackage) {
