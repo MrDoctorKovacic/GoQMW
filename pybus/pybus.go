@@ -136,9 +136,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		} else {
 			PushQueue("rollWindowsDown")
 		}
-	case "CONVERTIBLE_TOP":
-		fallthrough
-	case "TOP":
+	case "TOP", "CONVERTIBLE_TOP":
 		if isPositive {
 			PushQueue("convertibleTopUp")
 		} else {
@@ -166,11 +164,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	case "MODE":
 		PushQueue("pressMode")
-	case "NAV":
-		fallthrough
-	case "STEREO":
-		fallthrough
-	case "RADIO":
+	case "RADIO", "NAV", "STEREO":
 		if command == "AM" {
 			PushQueue("pressAM")
 		} else if command == "FM" {
@@ -186,11 +180,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		} else {
 			PushQueue("pressStereoPower")
 		}
-	case "CAMERA":
-		fallthrough
-	case "BOARD":
-		fallthrough
-	case "LUCIO":
+	case "LUCIO", "CAMERA", "BOARD":
 		if formatting.FormatName(command) == "AUTO" {
 			settings.Set("LUCIO", "POWER", "AUTO")
 			return
@@ -201,9 +191,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			settings.Set("LUCIO", "POWER", "OFF")
 			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffBoard")
 		}
-	case "LTE":
-		fallthrough
-	case "BRIGHTWING":
+	case "BRIGHTWING", "LTE":
 		if formatting.FormatName(command) == "AUTO" {
 			settings.Set("LUCIO", "POWER", "AUTO")
 			return
