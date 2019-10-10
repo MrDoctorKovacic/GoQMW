@@ -95,7 +95,7 @@ func startRouter() {
 	// GPS Routes
 	//
 	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", gps.HandleSetGPS).Methods("POST")
+	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: gps.GetTimezone(), Status: "success", OK: true})
 	}).Methods("GET")

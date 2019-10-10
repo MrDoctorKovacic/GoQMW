@@ -83,8 +83,8 @@ func GetTimezone() *time.Location {
 	return timezone
 }
 
-// HandleSetGPS posts a new GPS fix
-func HandleSetGPS(w http.ResponseWriter, r *http.Request) {
+// HandleSet posts a new GPS fix
+func HandleSet(w http.ResponseWriter, r *http.Request) {
 	var newdata Fix
 	_ = json.NewDecoder(r.Body).Decode(&newdata)
 	postingString := Set(newdata)
