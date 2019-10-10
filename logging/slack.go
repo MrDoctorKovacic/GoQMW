@@ -11,7 +11,11 @@ import (
 func SlackAlert(channel string, message string) {
 	if channel != "" {
 		var jsonStr = []byte(fmt.Sprintf(`{"text":"%s"}`, message))
-		req, _ := http.NewRequest("POST", channel, bytes.NewBuffer(jsonStr))
+		req, err := http.NewRequest("POST", channel, bytes.NewBuffer(jsonStr))
+		if err != nil {
+			status.Log(Error(), err.Error())
+			return
+		}
 		req.Header.Set("X-Custom-Header", "myvalue")
 		req.Header.Set("Content-Type", "application/json")
 
@@ -22,9 +26,14 @@ func SlackAlert(channel string, message string) {
 		}
 		defer resp.Body.Close()
 
-		fmt.Println("response Status:", resp.Status)
-		fmt.Println("response Headers:", resp.Header)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("response Body:", string(body))
+		status.Log(OK(), fmt.Sprintf("response Status: %s", resp.Status))
+		status.Log(OK(), fmt.Sprintf("response Headers: %s", resp.Header))
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			status.Log(Error(), err.Error())
+			return
+		}
+		status.Log(OK(), fmt.Sprintf("response Body: %s", string(body)))
 	}
 }
