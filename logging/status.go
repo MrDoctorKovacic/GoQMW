@@ -3,12 +3,13 @@ package logging
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"sync"
-	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Status of a particular program
@@ -17,10 +18,6 @@ type Status struct {
 	Name       string // should match the name in the statusMap
 	Status     string
 	LastUpdate string
-	DebugLog   []string // For OK messages, or general purpose logging
-	WarningLog []string
-	ErrorLog   []string
-	Mutex      sync.Mutex
 }
 
 // MessageType for implementing all types of messages listed above
@@ -59,6 +56,8 @@ var (
 )
 
 func init() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	statusMap = make(map[string]ProgramStatus, 0)
 	status = NewStatus("Status")
 }
@@ -71,7 +70,7 @@ func NewStatus(name string) ProgramStatus {
 	s, ok := statusMap[name]
 	statusLock.Unlock()
 	if ok {
-		log.Println("[WARNING] Status: " + name + " already exists in the statusMap")
+		log.Warn().Msg("Status: " + name + " already exists in the statusMap")
 		return s
 	}
 
@@ -91,29 +90,22 @@ func (s *Status) IsOK() bool {
 func (s *Status) Log(messageType MessageType, message string) {
 
 	// Format and log message
-	formattedMessage := fmt.Sprintf("[%s] %s: %s", messageType.Name, s.Name, message)
-
-	// Set last updated time to now
-	s.LastUpdate = time.Now().In(GetTimezone()).Format("2006-01-02 15:04:05.999")
+	formattedMessage := fmt.Sprintf("%s: %s", s.Name, message)
 
 	// Log based on status type
-	s.Mutex.Lock()
 	switch messageType.Name {
 	case "ERROR":
-		s.ErrorLog = append(s.ErrorLog, fmt.Sprintf("%s %s", s.LastUpdate, formattedMessage))
+		log.Error().Msg(formattedMessage)
 		s.Status = "ERROR"
 	case "WARNING":
-		s.WarningLog = append(s.WarningLog, fmt.Sprintf("%s %s", s.LastUpdate, formattedMessage))
+		log.Warn().Msg(formattedMessage)
 		if s.Status != "ERROR" {
 			s.Status = "WARNING"
 		}
 	case "OK":
+		log.Info().Msg(formattedMessage)
 
 	}
-	s.Mutex.Unlock()
-
-	// Always print
-	log.Println(formattedMessage)
 }
 
 // Get returns all known program statuses

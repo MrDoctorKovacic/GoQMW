@@ -4,10 +4,11 @@ package logging
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Timezone will change the timezone logs are written in
@@ -22,7 +23,7 @@ var (
 func init() {
 	timezone, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
-		log.Println("Could not load default timezone")
+		log.Error().Msg("Could not load default timezone")
 		return
 	}
 	SetTimezone(timezone)
