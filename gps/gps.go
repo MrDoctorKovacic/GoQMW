@@ -86,7 +86,11 @@ func GetTimezone() *time.Location {
 // HandleSet posts a new GPS fix
 func HandleSet(w http.ResponseWriter, r *http.Request) {
 	var newdata Fix
-	_ = json.NewDecoder(r.Body).Decode(&newdata)
+	err := json.NewDecoder(r.Body).Decode(&newdata)
+	if err != nil {
+		gpsStatus.Log(logging.Error(), err.Error())
+		return
+	}
 	postingString := Set(newdata)
 
 	// Insert into database
@@ -103,7 +107,6 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 // Set posts a new GPS fix
 func Set(newdata Fix) string {
-	//gpsStatus.Log(logging.Warning(), fmt.Sprintf("Responding to set request. Lat: %s, Long: %s", newdata.Latitude, newdata.Longitude))
 	// Update value for global session if the data is newer
 	if newdata.Latitude == "" && newdata.Longitude == "" {
 		gpsStatus.Log(logging.Warning(), "Not inserting new GPS fix, no new Lat or Long")
@@ -128,16 +131,22 @@ func Set(newdata Fix) string {
 
 	// Append posting strings based on what GPS information was posted
 	if newdata.Altitude != "" {
-		convFloat, _ := strconv.ParseFloat(newdata.Altitude, 32)
-		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
+		convFloat, err := strconv.ParseFloat(newdata.Altitude, 32)
+		if err == nil {
+			postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
+		}
 	}
 	if newdata.Speed != "" {
-		convFloat, _ := strconv.ParseFloat(newdata.Speed, 32)
-		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
+		convFloat, err := strconv.ParseFloat(newdata.Speed, 32)
+		if err == nil {
+			postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
+		}
 	}
 	if newdata.Climb != "" {
-		convFloat, _ := strconv.ParseFloat(newdata.Climb, 32)
-		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
+		convFloat, err := strconv.ParseFloat(newdata.Climb, 32)
+		if err == nil {
+			postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
+		}
 	}
 	if newdata.Time == "" {
 		newdata.Time = time.Now().In(GetTimezone()).Format("2006-01-02 15:04:05.999")
@@ -149,8 +158,10 @@ func Set(newdata Fix) string {
 		postingString.WriteString(fmt.Sprintf("EPT=%s,", newdata.EPT))
 	}
 	if newdata.Course != "" {
-		convFloat, _ := strconv.ParseFloat(newdata.Course, 32)
-		postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
+		convFloat, err := strconv.ParseFloat(newdata.Course, 32)
+		if err == nil {
+			postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
+		}
 	}
 
 	return postingString.String()
