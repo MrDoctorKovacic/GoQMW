@@ -32,26 +32,9 @@ func IsValidName(name string) bool {
 // IsPositiveRequest helps translate UP or LOCK into true or false
 func IsPositiveRequest(request string) (bool, error) {
 	switch request {
-	case "ON":
-		fallthrough
-	case "UP":
-		fallthrough
-	case "LOCK":
-		fallthrough
-	case "OPEN":
-		fallthrough
-	case "TOGGLE":
-		fallthrough
-	case "PUSH":
+	case "ON", "UP", "LOCK", "OPEN", "TOGGLE", "PUSH":
 		return true, nil
-
-	case "OFF":
-		fallthrough
-	case "DOWN":
-		fallthrough
-	case "UNLOCK":
-		fallthrough
-	case "CLOSE":
+	case "OFF", "DOWN", "UNLOCK", "CLOSE":
 		return false, nil
 	}
 

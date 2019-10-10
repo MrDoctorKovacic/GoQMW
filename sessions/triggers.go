@@ -36,10 +36,8 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 
 	// Pull trigger function
 	switch triggerPackage.Name {
-	case "MAIN_VOLTAGE_RAW":
-		tVoltage(&triggerPackage, "MAIN")
-	case "AUX_VOLTAGE_RAW":
-		tVoltage(&triggerPackage, "AUX")
+	case "MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW":
+		tVoltage(&triggerPackage)
 	case "AUX_CURRENT_RAW":
 		tAuxCurrent(&triggerPackage)
 	case "ACC_POWER":
@@ -48,11 +46,7 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 		tLTEOn(&triggerPackage)
 	case "LIGHT_SENSOR_REASON":
 		tLightSensorReason(&triggerPackage)
-	case "SEAT_MEMORY_1":
-		fallthrough
-	case "SEAT_MEMORY_2":
-		fallthrough
-	case "SEAT_MEMORY_3":
+	case "SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3":
 		tSeatMemory(&triggerPackage)
 	default:
 		if settings.Config.VerboseOutput {
@@ -69,14 +63,14 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 //
 
 // Convert main raw voltage into an actual number
-func tVoltage(triggerPackage *sessionPackage, position string) {
+func tVoltage(triggerPackage *sessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 	if err != nil {
 		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
 		return
 	}
 
-	SetValue(fmt.Sprintf("%s_VOLTAGE", position), fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+	SetValue(triggerPackage.Name[0:len(triggerPackage.Name)-4], fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
 }
 
 // Modifiers to the incoming Current sensor value
