@@ -41,7 +41,7 @@ type Session struct {
 
 var (
 	status  logging.ProgramStatus
-	session Session //
+	session Session
 )
 
 func init() {
