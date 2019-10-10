@@ -14,8 +14,12 @@ import (
 	"github.com/tarm/serial"
 )
 
-// SerialStatus will control logging and reporting of status / warnings / errors
-var SerialStatus = logging.NewStatus("Serial")
+// status will control logging and reporting of status / warnings / errors
+var status logging.ProgramStatus
+
+func init() {
+	status = logging.NewStatus("Serial")
+}
 
 // ParseSerialDevices parses through other serial devices, if enabled
 func ParseSerialDevices(settingsData map[string]map[string]string) map[string]int {
@@ -29,7 +33,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 		for deviceName, baudrateString := range serialDevices {
 			deviceBaud, err := strconv.Atoi(baudrateString)
 			if err != nil {
-				SerialStatus.Log(logging.Error(), "Failed to convert given baudrate string to int. Found values: "+deviceName+": "+baudrateString)
+				status.Log(logging.Error(), "Failed to convert given baudrate string to int. Found values: "+deviceName+": "+baudrateString)
 				return nil
 			}
 			devices[deviceName] = deviceBaud
@@ -52,8 +56,8 @@ func ReadSerial(serialDevice *serial.Port) (interface{}, error) {
 
 		// Parse serial data
 		if err != nil {
-			SerialStatus.Log(logging.Error(), "Failed to read from serial port")
-			SerialStatus.Log(logging.Error(), err.Error())
+			status.Log(logging.Error(), "Failed to read from serial port")
+			status.Log(logging.Error(), err.Error())
 			connected = false
 			break
 		} else {
@@ -69,23 +73,23 @@ func ReadSerial(serialDevice *serial.Port) (interface{}, error) {
 // WriteSerial pushes out a message to the open serial port
 func WriteSerial(device *serial.Port, msg string) {
 	if device == nil {
-		SerialStatus.Log(logging.Error(), "Serial port is not set, nothing to write to.")
+		status.Log(logging.Error(), "Serial port is not set, nothing to write to.")
 		return
 	}
 
 	if len(msg) == 0 {
-		SerialStatus.Log(logging.Warning(), "Empty message, not writing to serial")
+		status.Log(logging.Warning(), "Empty message, not writing to serial")
 		return
 	}
 
 	n, err := device.Write([]byte(msg))
 	if err != nil {
-		SerialStatus.Log(logging.Error(), "Failed to write to serial port")
-		SerialStatus.Log(logging.Error(), err.Error())
+		status.Log(logging.Error(), "Failed to write to serial port")
+		status.Log(logging.Error(), err.Error())
 		return
 	}
 
-	SerialStatus.Log(logging.OK(), fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
+	status.Log(logging.OK(), fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
 }
 
 // MachineShutdown shutdowns the named machine safely
@@ -104,7 +108,7 @@ func CommandNetworkMachine(name string, command string) {
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
-		SerialStatus.Log(logging.Error(), fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
 		return
 	}
 	defer resp.Body.Close()
