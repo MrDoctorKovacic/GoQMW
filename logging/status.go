@@ -42,6 +42,11 @@ func OK() MessageType {
 	return MessageType{Name: "OK"}
 }
 
+// Debug for verbose logging
+func Debug() MessageType {
+	return MessageType{Name: "DEBUG"}
+}
+
 // ProgramStatus will log and report various warnings/errors
 type ProgramStatus interface {
 	IsOK() bool
@@ -115,6 +120,8 @@ func (s *Status) Log(messageType MessageType, message string) {
 		}
 	case "OK":
 		log.Info().Msg(formattedMessage)
+	case "DEBUG":
+		log.Debug().Msg(formattedMessage)
 
 	}
 }

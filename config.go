@@ -17,6 +17,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
 	"github.com/tarm/serial"
 )
 
@@ -26,7 +27,13 @@ func parseConfig() {
 	var sessionFile string
 	flag.StringVar(&settings.Config.SettingsFile, "settings-file", "", "File to recover the persistent settings.")
 	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
+	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 
 	// Parse settings file
 	settings.ReadFile(settings.Config.SettingsFile)

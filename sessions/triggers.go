@@ -32,9 +32,7 @@ type power struct {
 
 // Process session values by combining or otherwise modifying once posted
 func processSessionTriggers(triggerPackage sessionPackage) {
-	if settings.Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
 
 	// Pull trigger function
 	switch triggerPackage.Name {
@@ -53,10 +51,7 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 	case "SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3":
 		tSeatMemory(&triggerPackage)
 	default:
-		if settings.Config.VerboseOutput {
-			status.Log(logging.Error(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
-			return
-		}
+		status.Log(logging.Debug(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
 	}
 }
 

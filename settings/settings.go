@@ -26,7 +26,6 @@ type ConfigValues struct {
 	SerialControlDevice   *serial.Port
 	SettingsFile          string
 	SlackURL              string
-	VerboseOutput         bool
 }
 
 // Settings control generic user defined field:value mappings, which will persist each run
@@ -40,7 +39,7 @@ var (
 func init() {
 	status = logging.NewStatus("Settings")
 
-	Config = ConfigValues{SettingsFile: "./settings.json", VerboseOutput: false}
+	Config = ConfigValues{SettingsFile: "./settings.json"}
 
 	// Default to empty map
 	Data = make(map[string]map[string]string, 0)
@@ -48,9 +47,8 @@ func init() {
 
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	if Config.VerboseOutput {
-		status.Log(logging.OK(), "Responding to GET request with entire settings map.")
-	}
+	status.Log(logging.Debug(), "Responding to GET request with entire settings map.")
+
 	settingsLock.Lock()
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Data, Status: "success", OK: true})
 	settingsLock.Unlock()
@@ -61,9 +59,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	componentName := formatting.FormatName(params["component"])
 
-	if Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 
 	settingsLock.Lock()
 	responseVal, ok := Data[componentName]
@@ -85,9 +81,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	componentName := formatting.FormatName(params["component"])
 	settingName := formatting.FormatName(params["name"])
 
-	if Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 
 	settingsLock.Lock()
 	responseVal, ok := Data[componentName][settingName]
@@ -105,9 +99,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 
 // GetAll returns all the values of known settings
 func GetAll() map[string]map[string]string {
-	if Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to request for all settings"))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for all settings"))
 
 	settingsLock.Lock()
 	settingsCopy := Data
@@ -118,10 +110,7 @@ func GetAll() map[string]map[string]string {
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
 	componentName = formatting.FormatName(componentName)
-
-	if Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to request for setting component %s", componentName))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	settingsLock.Lock()
 	defer settingsLock.Unlock()
@@ -159,9 +148,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	settingValue := params["value"]
 
 	// Log if requested
-	if Config.VerboseOutput {
-		status.Log(logging.OK(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
 
 	// Do the dirty work elsewhere
 	Set(componentName, settingName, settingValue)
