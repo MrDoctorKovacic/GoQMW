@@ -138,7 +138,7 @@ func tAccPower(triggerPackage *sessionPackage) {
 	}
 
 	for name, module := range modules {
-		genericPowerTrigger(accOn, name, module)
+		go genericPowerTrigger(accOn, name, module)
 	}
 }
 
@@ -151,7 +151,7 @@ func genericPowerTrigger(accOn bool, name string, module power) {
 			gracefulShutdown(name)
 		}
 	} else if module.errTarget != nil || module.errOn != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO\n%s\n%s,", name, module.errOn.Error(), module.errTarget.Error()))
+		status.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
 		if module.settingComp != "" && module.settingName != "" {
 			settings.Set(module.settingComp, module.settingName, "AUTO")
 		}
