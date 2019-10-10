@@ -96,7 +96,7 @@ func tAccPower(triggerPackage *sessionPackage) {
 	var (
 		accOn    bool
 		wireless = power{settingComp: "BRIGHTWING", settingName: "POWER"}
-		wifi     = power{}
+		wifi     = power{settingComp: "", settingName: ""}
 		angel    = power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
 		tablet   = power{settingComp: "RAYNOR", settingName: "POWER"}
 		board    = power{settingComp: "LUCIO", settingName: "POWER"}
