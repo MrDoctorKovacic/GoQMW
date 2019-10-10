@@ -133,7 +133,7 @@ func tAccPower(triggerPackage *sessionPackage) {
 	modules := map[string]power{"Board": board, "Tablet": tablet, "Wireless": wireless}
 
 	// Add angel eyes, if they're set to be on
-	if angel.powerTarget == "ON" {
+	if angel.powerTarget != "AUTO" || angel.on {
 		modules["Angel"] = angel
 	}
 
