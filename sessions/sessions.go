@@ -85,9 +85,8 @@ func GetAll() map[string]Value {
 	status.Log(logging.Debug(), "Responding to request for full session")
 
 	session.Mutex.Lock()
+	defer session.Mutex.Unlock()
 	returnSession := session.data
-	session.Mutex.Unlock()
-
 	return returnSession
 }
 
@@ -120,8 +119,8 @@ func Get(name string) (value Value, err error) {
 	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session value %s", name))
 
 	session.Mutex.Lock()
+	defer session.Mutex.Unlock()
 	sessionValue, ok := session.data[name]
-	session.Mutex.Unlock()
 
 	if !ok {
 		return sessionValue, fmt.Errorf("%s does not exist in Session", name)
