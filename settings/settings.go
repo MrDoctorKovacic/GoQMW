@@ -174,4 +174,7 @@ func Set(componentName string, settingName string, settingValue string) {
 
 	// Write out all settings to a file
 	writeFile(Config.SettingsFile)
+
+	// Trigger hooks
+	runHooks(componentName, settingName, settingValue)
 }
