@@ -165,8 +165,10 @@ func accPower(hook *sessions.SessionPackage) {
 func genericPowerTrigger(accOn bool, name string, module power) {
 	if module.errOn == nil && module.errTarget == nil {
 		if (module.powerTarget == "AUTO" && !module.on && accOn) || (module.powerTarget == "ON" && !module.on) {
+			hookStatus.Log(logging.OK(), fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
 			mserial.Push(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
 		} else if (module.powerTarget == "AUTO" && module.on && !accOn) || (module.powerTarget == "OFF" && module.on) {
+			hookStatus.Log(logging.OK(), fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
 			gracefulShutdown(name)
 		}
 	} else if module.errTarget != nil {
