@@ -37,19 +37,19 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 	// Pull trigger function
 	switch triggerPackage.Name {
 	case "MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW":
-		tVoltage(&triggerPackage)
+		voltage(&triggerPackage)
 	case "AUX_CURRENT_RAW":
-		tAuxCurrent(&triggerPackage)
+		auxCurrent(&triggerPackage)
 	case "ACC_POWER":
-		tAccPower(&triggerPackage)
+		accPower(&triggerPackage)
 	case "KEY_STATE":
-		tKeyState(&triggerPackage)
+		keyState(&triggerPackage)
 	case "WIRELESS_POWER":
-		tLTEOn(&triggerPackage)
+		lteOn(&triggerPackage)
 	case "LIGHT_SENSOR_REASON":
-		tLightSensorReason(&triggerPackage)
+		lightSensorReason(&triggerPackage)
 	case "SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3":
-		tSeatMemory(&triggerPackage)
+		seatMemory(&triggerPackage)
 	default:
 		status.Log(logging.Debug(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
 	}
@@ -62,7 +62,7 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 //
 
 // Convert main raw voltage into an actual number
-func tVoltage(triggerPackage *sessionPackage) {
+func voltage(triggerPackage *sessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 	if err != nil {
 		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
@@ -73,7 +73,7 @@ func tVoltage(triggerPackage *sessionPackage) {
 }
 
 // Modifiers to the incoming Current sensor value
-func tAuxCurrent(triggerPackage *sessionPackage) {
+func auxCurrent(triggerPackage *sessionPackage) {
 	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
 
 	if err != nil {
@@ -86,7 +86,7 @@ func tAuxCurrent(triggerPackage *sessionPackage) {
 }
 
 // Trigger for booting boards/tablets
-func tAccPower(triggerPackage *sessionPackage) {
+func accPower(triggerPackage *sessionPackage) {
 	// Read the target action based on current ACC Power value
 	var (
 		accOn    bool
@@ -153,7 +153,7 @@ func genericPowerTrigger(accOn bool, name string, module power) {
 	}
 }
 
-func tKeyState(triggerPackage *sessionPackage) {
+func keyState(triggerPackage *sessionPackage) {
 	angel := power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
 	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
 	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
@@ -164,7 +164,7 @@ func tKeyState(triggerPackage *sessionPackage) {
 	genericPowerTrigger(shouldBeTriggered, "Angel", angel)
 }
 
-func tLTEOn(triggerPackage *sessionPackage) {
+func lteOn(triggerPackage *sessionPackage) {
 	lteOn, err := Get("WIRELESS_POWER")
 	if err != nil {
 		status.Log(logging.Error(), err.Error())
@@ -178,7 +178,7 @@ func tLTEOn(triggerPackage *sessionPackage) {
 }
 
 // Alert me when it's raining and windows are down
-func tLightSensorReason(triggerPackage *sessionPackage) {
+func lightSensorReason(triggerPackage *sessionPackage) {
 	keyPosition, _ := Get("KEY_POSITION")
 	doorsLocked, _ := Get("DOORS_LOCKED")
 	windowsOpen, _ := Get("WINDOWS_OPEN")
@@ -196,12 +196,12 @@ func tLightSensorReason(triggerPackage *sessionPackage) {
 }
 
 // Restart different machines when seat memory buttons are pressed
-func tSeatMemory(triggerPackage *sessionPackage) {
+func seatMemory(triggerPackage *sessionPackage) {
 	switch triggerPackage.Name {
 	case "SEAT_MEMORY_1":
-		mserial.CommandNetworkMachine("LUCIO", "restart")
+		mserial.CommandNetworkMachine("BOARD", "restart")
 	case "SEAT_MEMORY_2":
-		mserial.CommandNetworkMachine("BRIGHTWING", "restart")
+		mserial.CommandNetworkMachine("LTE", "restart")
 	case "SEAT_MEMORY_3":
 		mserial.CommandNetworkMachine("MDROID", "restart")
 	}
