@@ -26,13 +26,13 @@ type Value struct {
 	Quiet      bool   `json:"quiet,omitempty"`
 }
 
-// sessionPackage contains both name and data
-type sessionPackage struct {
+// SessionPackage contains both name and data
+type SessionPackage struct {
 	Name string
 	Data Value
 }
 
-// Session is a mapping of sessionPackages, which contain session values
+// Session is a mapping of SessionPackages, which contain session values
 type Session struct {
 	data  map[string]Value
 	Mutex sync.Mutex
@@ -178,7 +178,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call the setter
-	newPackage := sessionPackage{Name: params["name"], Data: newdata}
+	newPackage := SessionPackage{Name: params["name"], Data: newdata}
 	err = Set(newPackage, newdata.Quiet)
 
 	if err != nil {
@@ -198,11 +198,11 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 
 // SetValue prepares a Value structure before passing it to the setter
 func SetValue(name string, value string) {
-	Set(sessionPackage{Name: name, Data: Value{Value: value}}, true)
+	Set(SessionPackage{Name: name, Data: Value{Value: value}}, true)
 }
 
 // Set does the actual setting of Session Values
-func Set(newPackage sessionPackage, quiet bool) error {
+func Set(newPackage SessionPackage, quiet bool) error {
 	// Ensure name is valid
 	if !formatting.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
@@ -229,7 +229,7 @@ func Set(newPackage sessionPackage, quiet bool) error {
 	session.Mutex.Unlock()
 
 	// Finish post processing
-	go processSessionTriggers(newPackage)
+	go runHooks(newPackage)
 
 	// Insert into database
 	if settings.Config.DB != nil {
