@@ -58,19 +58,39 @@ func setupHooks() {
 //
 
 func angelEyesSettings(settingName string, settingValue string) {
-	if settingName == "" || settingValue == "" {
-		mainStatus.Log(logging.Error(), "Fail")
+	// Determine state of angel eyes
+	evalAngelEyes()
+}
+
+func keyState(hook *sessions.SessionPackage) {
+	// Determine state of angel eyes
+	evalAngelEyes()
+}
+
+func lightSensorOn(hook *sessions.SessionPackage) {
+	// Determine state of angel eyes
+	evalAngelEyes()
+}
+
+func evalAngelEyes() {
+	angel := angelDef
+	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
+	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
+
+	keyIsIn, err := sessions.Get("KEY_STATE")
+	if err != nil {
+		keyIsIn.Value = "FALSE"
 	}
 
-	switch settingName {
-	case "POWER":
-		if settingValue == "ON" {
-			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOnAngel"))
-		} else {
-			// Even if is AUTO, turn off and let session handlers deal with it
-			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOffAngel"))
-		}
+	lightSensor, err := sessions.GetBool("LIGHT_SENSOR_ON")
+	if err != nil {
+		lightSensor = false
 	}
+
+	shouldTrigger := !lightSensor && keyIsIn.Value != "FALSE"
+
+	// Pass angel module to generic power trigger
+	genericPowerTrigger(shouldTrigger, "Angel", angel)
 }
 
 // Convert main raw voltage into an actual number
@@ -103,7 +123,6 @@ func accPower(hook *sessions.SessionPackage) {
 	var accOn bool
 	wireless := wirelessDef
 	wifi := wifiDef
-	angel := angelDef
 	tablet := tabletDef
 	board := boardDef
 
@@ -124,8 +143,6 @@ func accPower(hook *sessions.SessionPackage) {
 	wifi.on, wifi.errOn = sessions.GetBool("WIFI_CONNECTED")
 	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
 	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
-	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
-	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
 	board.on, board.errOn = sessions.GetBool("BOARD_POWER")
 	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
 
@@ -158,17 +175,6 @@ func genericPowerTrigger(accOn bool, name string, module power) {
 	}
 }
 
-func keyState(hook *sessions.SessionPackage) {
-	angel := angelDef
-	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
-	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
-
-	keyIsIn := hook.Data.Value != "FALSE" && hook.Data.Value != ""
-
-	// Pass angel module to generic power trigger
-	genericPowerTrigger(keyIsIn, "Angel", angel)
-}
-
 func lteOn(hook *sessions.SessionPackage) {
 	lteOn, err := sessions.Get("WIRELESS_POWER")
 	if err != nil {
@@ -180,16 +186,6 @@ func lteOn(hook *sessions.SessionPackage) {
 		// When board is turned off but doesn't have time to reflect LTE status
 		sessions.SetValue("LTE_ON", "FALSE")
 	}
-}
-
-func lightSensorOn(hook *sessions.SessionPackage) {
-	angel := angelDef
-	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
-	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
-	lightSensorOn := hook.Data.Value == "TRUE"
-
-	// Pass angel module to generic power trigger
-	genericPowerTrigger(lightSensorOn, "Angel", angel)
 }
 
 // Alert me when it's raining and windows are down
