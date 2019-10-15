@@ -133,8 +133,8 @@ func startRouter() {
 	//
 	// Serial routes
 	//
-	router.HandleFunc("/serial/{command}/{checksum}", WriteSerialHandler).Methods("POST")
-	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST")
+	router.HandleFunc("/serial/{command}/{checksum}", mserial.WriteSerialHandler).Methods("POST")
+	router.HandleFunc("/serial/{command}", mserial.WriteSerialHandler).Methods("POST")
 
 	//
 	// Bluetooth routes

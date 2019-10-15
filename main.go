@@ -37,6 +37,6 @@ func gracefulShutdown(name string) {
 	case "Wireless":
 		mserial.MachineShutdown(settings.Config.SerialControlDevice, "lte", time.Second*10, serialCommand)
 	default:
-		mserial.WriteSerial(settings.Config.SerialControlDevice, serialCommand)
+		mserial.Push(settings.Config.SerialControlDevice, serialCommand)
 	}
 }

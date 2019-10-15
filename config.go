@@ -3,12 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
@@ -16,7 +14,6 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"github.com/tarm/serial"
 )
@@ -144,15 +141,6 @@ func setupBluetooth(configAddr *map[string]string) {
 // Configure hardware serials, should not be used outside my own config
 //
 
-// WriteSerialHandler handles messages sent through the server
-func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	if params["command"] != "" {
-		mserial.WriteSerial(settings.Config.SerialControlDevice, params["command"])
-	}
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-}
-
 func setupSerial() {
 	configMap := settings.Data["MDROID"]
 	HardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
@@ -193,14 +181,17 @@ func startSerialComms(deviceName string, baudrate int) {
 		mainStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)
 		mainStatus.Log(logging.Error(), err.Error())
 	} else {
+		var isWriter bool
+
 		// Use first Serial device as a R/W, all others will only be read from
 		if settings.Config.SerialControlDevice == nil {
 			settings.Config.SerialControlDevice = s
+			isWriter = true
 			mainStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
 		}
 
 		// Continiously read from serial port
-		endedSerial := sessions.ReadFromSerial(s)
+		endedSerial := sessions.ReadFromSerial(s, isWriter)
 		if endedSerial {
 			mainStatus.Log(logging.Error(), "Serial disconnected, closing port and reopening")
 

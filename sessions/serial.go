@@ -11,10 +11,10 @@ import (
 )
 
 // ReadFromSerial reads serial data into the session
-func ReadFromSerial(device *serial.Port) bool {
+func ReadFromSerial(device *serial.Port, isWriter bool) bool {
 	status.Log(logging.OK(), "Starting serial read")
 	for connected := true; connected; {
-		response, err := mserial.ReadSerial(device)
+		response, err := mserial.ReadSerial(device, isWriter)
 		// The device is nil, break out of this read loop
 		if err != nil {
 			status.Log(logging.Error(), err.Error())
