@@ -162,12 +162,12 @@ func accPower(hook *sessions.SessionPackage) {
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
-func genericPowerTrigger(accOn bool, name string, module power) {
+func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 	if module.errOn == nil && module.errTarget == nil {
-		if (module.powerTarget == "AUTO" && !module.on && accOn) || (module.powerTarget == "ON" && !module.on) {
+		if (module.powerTarget == "AUTO" && !module.on && shouldBeOn) || (module.powerTarget == "ON" && !module.on) {
 			hookStatus.Log(logging.OK(), fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
 			mserial.Push(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
-		} else if (module.powerTarget == "AUTO" && module.on && !accOn) || (module.powerTarget == "OFF" && module.on) {
+		} else if (module.powerTarget == "AUTO" && module.on && !shouldBeOn) || (module.powerTarget == "OFF" && module.on) {
 			hookStatus.Log(logging.OK(), fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
 			gracefulShutdown(name)
 		}
