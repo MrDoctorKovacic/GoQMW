@@ -66,3 +66,14 @@ func CompareTimeToNow(time1 string, timezone *time.Location) (time.Duration, err
 	}
 	return time.Now().In(timezone).Sub(t), nil
 }
+
+// StringInSlice iterates over a slice, determining if a given string is present
+// https://stackoverflow.com/questions/15323767/does-go-have-if-x-in-construct-similar-to-python
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
