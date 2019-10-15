@@ -74,9 +74,9 @@ func gracefulShutdown(name string) {
 	switch name {
 	case "Board":
 		mserial.CommandNetworkMachine("etc", "shutdown")
-		mserial.MachineShutdown(settings.Config.SerialControlDevice, "lucio", time.Second*10, serialCommand)
+		mserial.MachineShutdown(settings.Config.SerialControlDevice, "board", time.Second*10, serialCommand)
 	case "Wireless":
-		mserial.MachineShutdown(settings.Config.SerialControlDevice, "brightwing", time.Second*10, serialCommand)
+		mserial.MachineShutdown(settings.Config.SerialControlDevice, "lte", time.Second*10, serialCommand)
 	default:
 		mserial.WriteSerial(settings.Config.SerialControlDevice, serialCommand)
 	}
