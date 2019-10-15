@@ -126,7 +126,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			if settings.Config.HardwareSerialEnabled {
 				if isPositive && deviceStatus.Value == "FALSE" ||
 					!isPositive && deviceStatus.Value == "TRUE" {
-					mserial.WriteSerial(settings.Config.SerialControlDevice, "toggleDoorLocks")
+					mserial.Push(settings.Config.SerialControlDevice, "toggleDoorLocks")
 				}
 			}
 		}
@@ -190,10 +190,10 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			return
 		} else if isPositive {
 			settings.Set("BOARD", "POWER", "ON")
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
+			mserial.Push(settings.Config.SerialControlDevice, "powerOnBoard")
 		} else {
 			settings.Set("BOARD", "POWER", "OFF")
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffBoard")
+			mserial.Push(settings.Config.SerialControlDevice, "powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
 		if formatting.FormatName(command) == "AUTO" {
@@ -202,10 +202,10 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 		if isPositive {
 			settings.Set("LTE", "POWER", "ON")
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
+			mserial.Push(settings.Config.SerialControlDevice, "powerOnWireless")
 		} else {
 			settings.Set("LTE", "POWER", "OFF")
-			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffWireless")
+			mserial.Push(settings.Config.SerialControlDevice, "powerOffWireless")
 		}
 	default:
 		status.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))

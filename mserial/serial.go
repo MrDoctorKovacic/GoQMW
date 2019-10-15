@@ -6,19 +6,35 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/gorilla/mux"
 	"github.com/tarm/serial"
 )
 
 // status will control logging and reporting of status / warnings / errors
-var status logging.ProgramStatus
+var (
+	status         logging.ProgramStatus
+	writeQueue     map[*serial.Port][]string
+	writeQueueLock sync.Mutex
+)
 
 func init() {
 	status = logging.NewStatus("Serial")
+	writeQueue = make(map[*serial.Port][]string, 0)
+}
+
+// WriteSerialHandler handles messages sent through the server
+func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if params["command"] != "" {
+		Push(settings.Config.SerialControlDevice, params["command"])
+	}
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }
 
 // ParseSerialDevices parses through other serial devices, if enabled
@@ -44,7 +60,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 }
 
 // ReadSerial will continuously pull data from incoming serial
-func ReadSerial(serialDevice *serial.Port) (interface{}, error) {
+func ReadSerial(serialDevice *serial.Port, isWriter bool) (interface{}, error) {
 	reader := bufio.NewReader(serialDevice)
 
 	// While connected, try to read from the device
@@ -63,15 +79,49 @@ func ReadSerial(serialDevice *serial.Port) (interface{}, error) {
 		} else {
 			var data interface{}
 			json.Unmarshal(msg, &data)
-
+			if isWriter {
+				go Pop(serialDevice)
+			}
 			return data, nil
 		}
 	}
 	return nil, fmt.Errorf("Disconnected from serial")
 }
 
-// WriteSerial pushes out a message to the open serial port
-func WriteSerial(device *serial.Port, msg string) {
+// Push queues a message for writing
+func Push(device *serial.Port, msg string) {
+	writeQueueLock.Lock()
+	defer writeQueueLock.Unlock()
+	_, ok := writeQueue[device]
+	if !ok {
+		writeQueue[device] = []string{}
+	}
+
+	writeQueue[device] = append(writeQueue[device], msg)
+}
+
+// Pop the last message off the queue and write it to the respective serial
+func Pop(device *serial.Port) {
+	if device == nil {
+		status.Log(logging.Error(), "Serial port is not set, nothing to write to.")
+		return
+	}
+
+	writeQueueLock.Lock()
+	defer writeQueueLock.Unlock()
+	queue, ok := writeQueue[device]
+	if !ok || len(queue) == 0 {
+		return
+	}
+
+	var msg string
+	msg, writeQueue[device] = writeQueue[device][len(writeQueue[device])-1], writeQueue[device][:len(writeQueue[device])-1]
+
+	write(device, msg)
+}
+
+// write pushes out a message to the open serial port
+func write(device *serial.Port, msg string) {
 	if device == nil {
 		status.Log(logging.Error(), "Serial port is not set, nothing to write to.")
 		return
@@ -96,7 +146,7 @@ func WriteSerial(device *serial.Port, msg string) {
 func MachineShutdown(serialDevice *serial.Port, machine string, timeToSleep time.Duration, serialMessage string) {
 	CommandNetworkMachine(machine, "shutdown")
 	time.Sleep(timeToSleep)
-	WriteSerial(serialDevice, serialMessage)
+	Push(serialDevice, serialMessage)
 }
 
 // CommandNetworkMachine sends a command to a network machine, using a simple python server to recieve
