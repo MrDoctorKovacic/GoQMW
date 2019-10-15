@@ -21,7 +21,8 @@ func angelEyesSettings(settingName string, settingValue string) {
 	case "POWER":
 		if settingValue == "ON" {
 			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOnAngel"))
-		} else if settingValue == "OFF" {
+		} else {
+			// Even if is AUTO, turn off and let session handlers deal with it
 			mserial.WriteSerial(settings.Config.SerialControlDevice, fmt.Sprintf("powerOffAngel"))
 		}
 	}
