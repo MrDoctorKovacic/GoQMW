@@ -31,27 +31,27 @@ type power struct {
 }
 
 // Process session values by combining or otherwise modifying once posted
-func processSessionTriggers(triggerPackage sessionPackage) {
-	status.Log(logging.Debug(), fmt.Sprintf("Triggered post processing for session name %s", triggerPackage.Name))
+func processSessionTriggers(hook sessionPackage) {
+	status.Log(logging.Debug(), fmt.Sprintf("Triggered post processing for session name %s", hook.Name))
 
 	// Pull trigger function
-	switch triggerPackage.Name {
+	switch hook.Name {
 	case "MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW":
-		voltage(&triggerPackage)
+		voltage(&hook)
 	case "AUX_CURRENT_RAW":
-		auxCurrent(&triggerPackage)
+		auxCurrent(&hook)
 	case "ACC_POWER":
-		accPower(&triggerPackage)
+		accPower(&hook)
 	case "KEY_STATE":
-		keyState(&triggerPackage)
+		keyState(&hook)
 	case "WIRELESS_POWER":
-		lteOn(&triggerPackage)
+		lteOn(&hook)
 	case "LIGHT_SENSOR_REASON":
-		lightSensorReason(&triggerPackage)
+		lightSensorReason(&hook)
 	case "SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3":
-		seatMemory(&triggerPackage)
+		seatMemory(&hook)
 	default:
-		status.Log(logging.Debug(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", triggerPackage.Name))
+		status.Log(logging.Debug(), fmt.Sprintf("Trigger mapping for %s does not exist, skipping", hook.Name))
 	}
 }
 
@@ -62,22 +62,22 @@ func processSessionTriggers(triggerPackage sessionPackage) {
 //
 
 // Convert main raw voltage into an actual number
-func voltage(triggerPackage *sessionPackage) {
-	voltageFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
+func voltage(hook *sessionPackage) {
+	voltageFloat, err := strconv.ParseFloat(hook.Data.Value, 64)
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
 		return
 	}
 
-	SetValue(triggerPackage.Name[0:len(triggerPackage.Name)-4], fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+	SetValue(hook.Name[0:len(hook.Name)-4], fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
 }
 
 // Modifiers to the incoming Current sensor value
-func auxCurrent(triggerPackage *sessionPackage) {
-	currentFloat, err := strconv.ParseFloat(triggerPackage.Data.Value, 64)
+func auxCurrent(hook *sessionPackage) {
+	currentFloat, err := strconv.ParseFloat(hook.Data.Value, 64)
 
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
 		return
 	}
 
@@ -86,7 +86,7 @@ func auxCurrent(triggerPackage *sessionPackage) {
 }
 
 // Trigger for booting boards/tablets
-func accPower(triggerPackage *sessionPackage) {
+func accPower(hook *sessionPackage) {
 	// Read the target action based on current ACC Power value
 	var (
 		accOn    bool
@@ -98,13 +98,13 @@ func accPower(triggerPackage *sessionPackage) {
 	)
 
 	// Check incoming ACC power value is valid
-	switch triggerPackage.Data.Value {
+	switch hook.Data.Value {
 	case "TRUE":
 		accOn = true
 	case "FALSE":
 		accOn = false
 	default:
-		status.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", triggerPackage.Data.Value))
+		status.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", hook.Data.Value))
 		return
 	}
 
@@ -153,39 +153,39 @@ func genericPowerTrigger(accOn bool, name string, module power) {
 	}
 }
 
-func keyState(triggerPackage *sessionPackage) {
+func keyState(hook *sessionPackage) {
 	angel := power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
 	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
 	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
 
-	shouldBeTriggered := triggerPackage.Data.Value != "FALSE" && triggerPackage.Data.Value != ""
+	shouldBeTriggered := hook.Data.Value != "FALSE" && hook.Data.Value != ""
 
 	// Pass angel module to generic power trigger
 	genericPowerTrigger(shouldBeTriggered, "Angel", angel)
 }
 
-func lteOn(triggerPackage *sessionPackage) {
+func lteOn(hook *sessionPackage) {
 	lteOn, err := Get("WIRELESS_POWER")
 	if err != nil {
 		status.Log(logging.Error(), err.Error())
 		return
 	}
 
-	if triggerPackage.Data.Value == "FALSE" && lteOn.Value == "TRUE" {
+	if hook.Data.Value == "FALSE" && lteOn.Value == "TRUE" {
 		// When board is turned off but doesn't have time to reflect LTE status
 		SetValue("LTE_ON", "FALSE")
 	}
 }
 
 // Alert me when it's raining and windows are down
-func lightSensorReason(triggerPackage *sessionPackage) {
+func lightSensorReason(hook *sessionPackage) {
 	keyPosition, _ := Get("KEY_POSITION")
 	doorsLocked, _ := Get("DOORS_LOCKED")
 	windowsOpen, _ := Get("WINDOWS_OPEN")
 	delta, err := formatting.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 
 	if err != nil {
-		if triggerPackage.Data.Value == "RAIN" &&
+		if hook.Data.Value == "RAIN" &&
 			keyPosition.Value == "OFF" &&
 			doorsLocked.Value == "TRUE" &&
 			windowsOpen.Value == "TRUE" &&
@@ -196,8 +196,8 @@ func lightSensorReason(triggerPackage *sessionPackage) {
 }
 
 // Restart different machines when seat memory buttons are pressed
-func seatMemory(triggerPackage *sessionPackage) {
-	switch triggerPackage.Name {
+func seatMemory(hook *sessionPackage) {
+	switch hook.Name {
 	case "SEAT_MEMORY_1":
 		mserial.CommandNetworkMachine("BOARD", "restart")
 	case "SEAT_MEMORY_2":
