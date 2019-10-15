@@ -171,6 +171,9 @@ func startRouter() {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
 	}).Methods("GET")
 
+	// Setup checksum middleware
+	router.Use(checksumMiddleware)
+
 	// Start the router in an endless loop
 	for {
 		err := http.ListenAndServe(":5353", router)
@@ -199,7 +202,6 @@ func authMiddleware(next http.Handler) http.Handler {
 
 func checksumMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		if r.Method == "POST" {
 			params := mux.Vars(r)
 			checksum, ok := params["checksum"]
