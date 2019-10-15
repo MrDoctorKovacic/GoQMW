@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -106,6 +110,7 @@ func startRouter() {
 	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
 	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
+	router.HandleFunc("/session/{name}/{checksum}", sessions.HandlePost).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.HandlePost).Methods("POST")
 
 	//
@@ -114,17 +119,21 @@ func startRouter() {
 	router.HandleFunc("/settings", settings.HandleGetAll).Methods("GET")
 	router.HandleFunc("/settings/{component}", settings.HandleGet).Methods("GET")
 	router.HandleFunc("/settings/{component}/{name}", settings.HandleGetValue).Methods("GET")
+	router.HandleFunc("/settings/{component}/{name}/{value}/{checksum}", settings.HandleSet).Methods("POST")
 	router.HandleFunc("/settings/{component}/{name}/{value}", settings.HandleSet).Methods("POST")
 
 	//
 	// PyBus Routes
 	//
+	router.HandleFunc("/pybus/{src}/{dest}/{data}/{checksum}", pybus.StartRoutine).Methods("POST")
 	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{command}/{checksum}", pybus.StartRoutine).Methods("GET")
 	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
 
 	//
 	// Serial routes
 	//
+	router.HandleFunc("/serial/{command}/{checksum}", WriteSerialHandler).Methods("POST")
 	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST")
 
 	//
@@ -187,3 +196,33 @@ func authMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }*/
+
+func checksumMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method == "POST" {
+			params := mux.Vars(r)
+			checksum, ok := params["checksum"]
+
+			if ok && checksum != "" {
+				body, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close() //  must close
+				if err != nil {
+					mainStatus.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
+					http.Error(w, "can't read body", http.StatusBadRequest)
+					return
+				}
+
+				if md5.Sum(body) != md5.Sum([]byte(checksum)) {
+					mainStatus.Log(logging.Error(), fmt.Sprintf("Invalid checksum %s", checksum))
+					http.Error(w, "Invalid checksum", http.StatusBadRequest)
+					return
+				}
+				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			}
+		}
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
+}
