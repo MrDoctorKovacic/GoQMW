@@ -30,6 +30,15 @@ type power struct {
 	settingName string
 }
 
+// Read the target action based on current ACC Power value
+var (
+	wirelessDef = power{settingComp: "LTE", settingName: "POWER"}
+	wifiDef     = power{settingComp: "", settingName: ""}
+	angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
+	tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
+	boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
+)
+
 // Process session values by combining or otherwise modifying once posted
 func processSessionTriggers(hook sessionPackage) {
 	status.Log(logging.Debug(), fmt.Sprintf("Triggered post processing for session name %s", hook.Name))
@@ -48,6 +57,8 @@ func processSessionTriggers(hook sessionPackage) {
 		lteOn(&hook)
 	case "LIGHT_SENSOR_REASON":
 		lightSensorReason(&hook)
+	case "LIGHT_SENSOR_ON":
+		lightSensorOn(&hook)
 	case "SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3":
 		seatMemory(&hook)
 	default:
@@ -88,14 +99,12 @@ func auxCurrent(hook *sessionPackage) {
 // Trigger for booting boards/tablets
 func accPower(hook *sessionPackage) {
 	// Read the target action based on current ACC Power value
-	var (
-		accOn    bool
-		wireless = power{settingComp: "BRIGHTWING", settingName: "POWER"}
-		wifi     = power{settingComp: "", settingName: ""}
-		angel    = power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
-		tablet   = power{settingComp: "RAYNOR", settingName: "POWER"}
-		board    = power{settingComp: "LUCIO", settingName: "POWER"}
-	)
+	var accOn bool
+	wireless := wirelessDef
+	wifi := wifiDef
+	angel := angelDef
+	tablet := tabletDef
+	board := boardDef
 
 	// Check incoming ACC power value is valid
 	switch hook.Data.Value {
@@ -127,11 +136,6 @@ func accPower(hook *sessionPackage) {
 	// Handle more generic modules
 	modules := map[string]power{"Board": board, "Tablet": tablet, "Wireless": wireless}
 
-	// Add angel eyes, if they're set to be on
-	if angel.powerTarget != "AUTO" || angel.on {
-		modules["Angel"] = angel
-	}
-
 	for name, module := range modules {
 		go genericPowerTrigger(accOn, name, module)
 	}
@@ -154,14 +158,14 @@ func genericPowerTrigger(accOn bool, name string, module power) {
 }
 
 func keyState(hook *sessionPackage) {
-	angel := power{settingComp: "VARIAN", settingName: "ANGEL_EYES"}
+	angel := angelDef
 	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
 	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
 
-	shouldBeTriggered := hook.Data.Value != "FALSE" && hook.Data.Value != ""
+	keyIsIn := hook.Data.Value != "FALSE" && hook.Data.Value != ""
 
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldBeTriggered, "Angel", angel)
+	genericPowerTrigger(keyIsIn, "Angel", angel)
 }
 
 func lteOn(hook *sessionPackage) {
@@ -175,6 +179,16 @@ func lteOn(hook *sessionPackage) {
 		// When board is turned off but doesn't have time to reflect LTE status
 		SetValue("LTE_ON", "FALSE")
 	}
+}
+
+func lightSensorOn(hook *sessionPackage) {
+	angel := angelDef
+	angel.on, angel.errOn = GetBool("ANGEL_EYES_POWER")
+	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
+	lightSensorOn := hook.Data.Value == "TRUE"
+
+	// Pass angel module to generic power trigger
+	genericPowerTrigger(lightSensorOn, "Angel", angel)
 }
 
 // Alert me when it's raining and windows are down

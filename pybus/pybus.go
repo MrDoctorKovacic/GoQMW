@@ -186,25 +186,25 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	case "LUCIO", "CAMERA", "BOARD":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.Set("LUCIO", "POWER", "AUTO")
+			settings.Set("BOARD", "POWER", "AUTO")
 			return
 		} else if isPositive {
-			settings.Set("LUCIO", "POWER", "ON")
+			settings.Set("BOARD", "POWER", "ON")
 			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnBoard")
 		} else {
-			settings.Set("LUCIO", "POWER", "OFF")
+			settings.Set("BOARD", "POWER", "OFF")
 			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.Set("LUCIO", "POWER", "AUTO")
+			settings.Set("LTE", "POWER", "AUTO")
 			return
 		}
 		if isPositive {
-			settings.Set("BRIGHTWING", "POWER", "ON")
+			settings.Set("LTE", "POWER", "ON")
 			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOnWireless")
 		} else {
-			settings.Set("BRIGHTWING", "POWER", "OFF")
+			settings.Set("LTE", "POWER", "OFF")
 			mserial.WriteSerial(settings.Config.SerialControlDevice, "powerOffWireless")
 		}
 	default:
