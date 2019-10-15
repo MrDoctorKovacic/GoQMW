@@ -147,8 +147,10 @@ func accPower(hook *sessions.SessionPackage) {
 	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
 
 	// Trigger wireless, based on wifi status
-	if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
-		wireless.powerTarget = "ON"
+	if wifi.errOn == nil && wireless.errOn == nil && wireless.errTarget == nil {
+		if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
+			wireless.powerTarget = "ON"
+		}
 	}
 
 	// Handle more generic modules
