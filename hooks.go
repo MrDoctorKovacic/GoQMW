@@ -146,17 +146,19 @@ func accPower(hook *sessions.SessionPackage) {
 	board.on, board.errOn = sessions.GetBool("BOARD_POWER")
 	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
 
+	// Handle more generic modules
+	modules := map[string]power{"Board": board, "Tablet": tablet}
+
 	// Trigger wireless, based on wifi status
 	if wifi.errOn == nil && wireless.errOn == nil && wireless.errTarget == nil {
 		if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
 			wireless.powerTarget = "ON"
+			modules["Wireless"] = wireless
 		} else if wireless.powerTarget == "AUTO" && wifi.on && wireless.on {
 			wireless.powerTarget = "OFF"
+			modules["Wireless"] = wireless
 		}
 	}
-
-	// Handle more generic modules
-	modules := map[string]power{"Board": board, "Tablet": tablet, "Wireless": wireless}
 
 	for name, module := range modules {
 		go genericPowerTrigger(accOn, name, module)
