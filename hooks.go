@@ -150,6 +150,8 @@ func accPower(hook *sessions.SessionPackage) {
 	if wifi.errOn == nil && wireless.errOn == nil && wireless.errTarget == nil {
 		if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
 			wireless.powerTarget = "ON"
+		} else if wireless.powerTarget == "AUTO" && wifi.on && wireless.on {
+			wireless.powerTarget = "OFF"
 		}
 	}
 
