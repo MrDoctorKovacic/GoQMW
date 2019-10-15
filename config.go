@@ -35,6 +35,9 @@ func parseConfig() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
+	// Setup hooks for extra settings/session parsing
+	setupHooks()
+
 	// Parse settings file
 	settings.ReadFile(settings.Config.SettingsFile)
 

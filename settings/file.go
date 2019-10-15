@@ -26,6 +26,14 @@ func ReadFile(useSettingsFile string) {
 		out, err := json.Marshal(Data)
 		if err == nil {
 			status.Log(logging.OK(), "Successfully loaded settings from file '"+Config.SettingsFile+"': "+string(out))
+
+			// Run hooks on all new settings
+			for component := range Data {
+				for setting := range Data[component] {
+					runHooks(component, setting, Data[component][setting])
+				}
+			}
+
 			return
 		}
 

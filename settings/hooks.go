@@ -36,6 +36,6 @@ func runHooks(componentName string, settingName string, settingValue string) {
 	}
 
 	for _, h := range allHooks {
-		h(settingName, settingValue)
+		go h(settingName, settingValue)
 	}
 }
