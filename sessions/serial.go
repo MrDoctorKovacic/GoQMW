@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/tarm/serial"
 )
 
@@ -64,20 +62,5 @@ func parseSerialJSON(marshalledJSON interface{}) {
 		default:
 			status.Log(logging.Error(), fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
 		}
-	}
-}
-
-// Some shutdowns are more complicated than others, ensure we shut down safely
-func gracefulShutdown(name string) {
-	serialCommand := fmt.Sprintf("powerOff%s", name)
-
-	switch name {
-	case "Board":
-		mserial.CommandNetworkMachine("etc", "shutdown")
-		mserial.MachineShutdown(settings.Config.SerialControlDevice, "board", time.Second*10, serialCommand)
-	case "Wireless":
-		mserial.MachineShutdown(settings.Config.SerialControlDevice, "lte", time.Second*10, serialCommand)
-	default:
-		mserial.WriteSerial(settings.Config.SerialControlDevice, serialCommand)
 	}
 }
