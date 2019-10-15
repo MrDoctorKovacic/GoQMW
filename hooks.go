@@ -167,11 +167,18 @@ func genericPowerTrigger(accOn bool, name string, module power) {
 		} else if (module.powerTarget == "AUTO" && module.on && !accOn) || (module.powerTarget == "OFF" && module.on) {
 			gracefulShutdown(name)
 		}
-	} else if module.errTarget != nil || module.errOn != nil {
-		hookStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
-		if module.settingComp != "" && module.settingName != "" {
-			settings.Set(module.settingComp, module.settingName, "AUTO")
+	} else {
+		if module.errTarget != nil {
+			hookStatus.Log(logging.Error(), fmt.Sprintf("Setting Error: %s", module.errTarget.Error()))
+			if module.settingComp != "" && module.settingName != "" {
+				hookStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
+				settings.Set(module.settingComp, module.settingName, "AUTO")
+			}
 		}
+		if module.errOn != nil {
+			hookStatus.Log(logging.Error(), fmt.Sprintf("Session Error: %s", module.errOn.Error()))
+		}
+
 	}
 }
 
