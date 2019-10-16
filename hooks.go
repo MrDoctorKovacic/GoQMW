@@ -176,9 +176,9 @@ func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
 			settings.Set(module.settingComp, module.settingName, "AUTO")
 		}
-	} else if module.errOn != nil {
+	} /*else if module.errOn != nil {
 		log.Error().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
-	}
+	}*/
 }
 
 func lteOn(hook *sessions.SessionPackage) {
