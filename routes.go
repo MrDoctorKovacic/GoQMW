@@ -43,7 +43,7 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	mserial.CommandNetworkMachine(machine, "reboot")
+	mserial.CommandNetworkMachine(formatting.FormatName(machine), "reboot")
 }
 
 // Shutdown the current machine
