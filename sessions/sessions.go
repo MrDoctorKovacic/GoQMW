@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,28 +42,8 @@ var (
 	session Session
 )
 
-// Create will init the current session with a file
-func Create(sessionFile string) {
+func init() {
 	session.data = make(map[string]Value)
-
-	if sessionFile == "" {
-		log.Info().Msg("Not saving or recovering from file")
-		return
-	}
-	session.file = sessionFile
-
-	jsonFile, err := os.Open(sessionFile)
-	if err != nil {
-		log.Warn().Msg("Error opening JSON file on disk: " + err.Error())
-		return
-	}
-
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-	json.Unmarshal(byteValue, &session)
 }
 
 // HandleGetAll responds to an HTTP request for the entire session
