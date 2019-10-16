@@ -202,14 +202,9 @@ func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 	}
 }
 
+// When wireless is turned off, we can infer that LTE is also off
 func lteOn(hook *sessions.SessionPackage) {
-	lteOn, err := sessions.Get("WIRELESS_POWER")
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-
-	if hook.Data.Value == "FALSE" && lteOn.Value == "TRUE" {
+	if hook.Data.Value == "FALSE" {
 		// When board is turned off but doesn't have time to reflect LTE status
 		sessions.SetValue("LTE_ON", "FALSE")
 	}
