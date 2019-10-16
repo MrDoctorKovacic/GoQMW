@@ -48,10 +48,7 @@ func init() {
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	status.Log(logging.Debug(), "Responding to GET request with entire settings map.")
-
-	settingsLock.Lock()
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: Data, Status: "success", OK: true})
-	settingsLock.Unlock()
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true})
 }
 
 // HandleGet returns all the values of a specific setting
@@ -101,10 +98,15 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 func GetAll() map[string]map[string]string {
 	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for all settings"))
 
+	newData := map[string]map[string]string{}
+
 	settingsLock.Lock()
-	settingsCopy := Data
+	for index, element := range Data {
+		newData[index] = element
+	}
 	settingsLock.Unlock()
-	return settingsCopy
+
+	return newData
 }
 
 // Get returns all the values of a specific setting
