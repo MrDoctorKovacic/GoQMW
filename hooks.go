@@ -27,8 +27,7 @@ type power struct {
 
 // Read the target action based on current ACC Power value
 var (
-	wirelessDef = power{settingComp: "LTE", settingName: "POWER"}
-	wifiDef     = power{settingComp: "", settingName: ""}
+	wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
 	angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
 	tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
 	boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
@@ -36,6 +35,7 @@ var (
 
 func setupHooks() {
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
+	settings.RegisterHook("WIRELESS", wirelessSettings)
 	sessions.RegisterHookSlice(&[]string{"MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW"}, voltage)
 	sessions.RegisterHook("AUX_CURRENT_RAW", auxCurrent)
 	sessions.RegisterHook("ACC_POWER", accPower)
@@ -74,11 +74,13 @@ func evalAngelEyes() {
 
 	keyIsIn, err := sessions.Get("KEY_STATE")
 	if err != nil {
+		log.Debug().Msg("Key Status could not be determined, defaulting to false")
 		keyIsIn.Value = "FALSE"
 	}
 
 	lightSensor, err := sessions.GetBool("LIGHT_SENSOR_ON")
 	if err != nil {
+		log.Debug().Msg("Light Sensor Status could not be determined, defaulting to false")
 		lightSensor = false
 	}
 
@@ -86,6 +88,38 @@ func evalAngelEyes() {
 
 	// Pass angel module to generic power trigger
 	genericPowerTrigger(shouldTrigger, "Angel", angel)
+}
+
+func wirelessSettings(settingName string, settingValue string) {
+	// Determine state of wireless
+	evalWireless()
+}
+
+func evalWireless() {
+	wireless := wirelessDef
+	wireless.on, wireless.errOn = sessions.GetBool("WIRELESS_POWER")
+	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
+
+	wifiOn, err := sessions.GetBool("WIFI_CONNECTED")
+	if err != nil {
+		log.Debug().Msg("Wifi Status could not be determined, defaulting to false")
+		wifiOn = false
+	}
+
+	accOn, err := sessions.GetBool("ACC_POWER")
+	if err != nil {
+		log.Debug().Msg("ACC Power Status could not be determined, defaulting to false")
+		accOn = false
+	}
+
+	// Wireless is most likely supposed to be on
+	shouldTrigger := true
+	if wireless.powerTarget == "AUTO" && !accOn && wifiOn {
+		shouldTrigger = false
+	}
+
+	// Pass angel module to generic power trigger
+	genericPowerTrigger(shouldTrigger, "Wireless", wireless)
 }
 
 // Convert main raw voltage into an actual number
@@ -116,8 +150,6 @@ func auxCurrent(hook *sessions.SessionPackage) {
 func accPower(hook *sessions.SessionPackage) {
 	// Read the target action based on current ACC Power value
 	var accOn bool
-	wireless := wirelessDef
-	wifi := wifiDef
 	tablet := tabletDef
 	board := boardDef
 
@@ -133,9 +165,6 @@ func accPower(hook *sessions.SessionPackage) {
 	}
 
 	// Verbose, but pull all the necessary configuration data
-	wireless.on, wireless.errOn = sessions.GetBool("WIRELESS_POWER")
-	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
-	wifi.on, wifi.errOn = sessions.GetBool("WIFI_CONNECTED")
 	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
 	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
 	board.on, board.errOn = sessions.GetBool("BOARD_POWER")
@@ -145,15 +174,7 @@ func accPower(hook *sessions.SessionPackage) {
 	modules := map[string]power{"Board": board, "Tablet": tablet}
 
 	// Trigger wireless, based on wifi status
-	if wifi.errOn == nil && wireless.errOn == nil && wireless.errTarget == nil {
-		if wireless.powerTarget == "AUTO" && !wifi.on && !wireless.on {
-			wireless.powerTarget = "ON"
-			modules["Wireless"] = wireless
-		} else if wireless.powerTarget == "AUTO" && wifi.on && wireless.on {
-			wireless.powerTarget = "OFF"
-			modules["Wireless"] = wireless
-		}
-	}
+	go evalWireless()
 
 	for name, module := range modules {
 		go genericPowerTrigger(accOn, name, module)
@@ -176,9 +197,9 @@ func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
 			settings.Set(module.settingComp, module.settingName, "AUTO")
 		}
-	} /*else if module.errOn != nil {
-		log.Error().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
-	}*/
+	} else if module.errOn != nil {
+		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
+	}
 }
 
 func lteOn(hook *sessions.SessionPackage) {
