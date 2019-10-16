@@ -98,7 +98,7 @@ func GetAll() map[string]map[string]string {
 	Settings.mutex.Lock()
 	defer Settings.mutex.Unlock()
 	for index, element := range Settings.Data {
-		Settings.Data[index] = element
+		newData[index] = element
 	}
 
 	return newData
