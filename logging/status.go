@@ -80,9 +80,10 @@ func init() {
 
 // NewStatus will create and return a new program status
 func NewStatus(name string) ProgramStatus {
+	statusLock.Lock()
+	defer statusLock.Unlock()
 
 	// Check if program status already exists
-	statusLock.Lock()
 	s, ok := statusMap[name]
 	statusLock.Unlock()
 	if ok {
@@ -91,9 +92,7 @@ func NewStatus(name string) ProgramStatus {
 	}
 
 	s = &Status{Name: name}
-	statusLock.Lock()
 	statusMap[name] = s
-	statusLock.Unlock()
 	return s
 }
 
@@ -129,36 +128,32 @@ func (s *Status) Log(messageType MessageType, message string) {
 // Get returns all known program statuses
 func Get(w http.ResponseWriter, r *http.Request) {
 	statusLock.Lock()
+	defer statusLock.Unlock()
 	json.NewEncoder(w).Encode(statusMap)
-	statusLock.Unlock()
 }
 
 // GetValue returns a specific status value
 func GetValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	statusLock.Lock()
+	defer statusLock.Unlock()
 	json.NewEncoder(w).Encode(statusMap[params["name"]])
-	statusLock.Unlock()
 }
 
 // Set updates or posts a new status of the named program
 func Set(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var newdata MessageType
-	err := json.NewDecoder(r.Body).Decode(&newdata)
-	if err != nil {
+
+	if err := json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		status.Log(Error(), err.Error())
 		return
 	}
 
 	// Ensure values exist
-	if newdata.Name == "" {
+	if newdata.Name == "" || newdata.Message == "" {
 		status.Log(Warning(), "Ignoring erroneous POST missing type field")
-		json.NewEncoder(w).Encode("type is a required field.")
-		return
-	} else if newdata.Message == "" {
-		status.Log(Warning(), "Ignoring erroneous POST missing message field")
-		json.NewEncoder(w).Encode("message is a required field.")
+		json.NewEncoder(w).Encode("Missing a required field.")
 		return
 	}
 

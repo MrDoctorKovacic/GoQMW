@@ -30,8 +30,7 @@ func (db *Influx) Write(msg string) (bool, error) {
 	// Throw away these requests, since they're being saved in session & will
 	// be outdated by the time Influx wakes up
 	if !db.Started {
-		isOnline, err := db.Ping()
-		if !isOnline {
+		if isOnline, err := db.Ping(); !isOnline {
 			if err != nil {
 				return false, err
 			}

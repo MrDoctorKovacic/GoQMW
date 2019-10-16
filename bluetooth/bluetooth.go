@@ -19,11 +19,30 @@ import (
 // Regex expressions for parsing dbus output
 var (
 	btAddress string
-	status    = logging.NewStatus("Bluetooth")
-	re        = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
-	reFind    = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
-	reClean   = regexp.MustCompile(`(string|uint32|\")+`)
+	status    logging.ProgramStatus
+	re        *regexp.Regexp
+	reFind    *regexp.Regexp
+	reClean   *regexp.Regexp
 )
+
+func init() {
+	status = logging.NewStatus("Bluetooth")
+	re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
+	reFind = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
+	reClean = regexp.MustCompile(`(string|uint32|\")+`)
+}
+
+// Setup bluetooth with address
+func Setup(configAddr *map[string]string) {
+	configMap := *configAddr
+	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
+	if usingBluetooth {
+		EnableAutoRefresh()
+		SetAddress(bluetoothAddress)
+		settings.Config.BluetoothAddress = bluetoothAddress
+	}
+	settings.Config.BluetoothAddress = ""
+}
 
 // Parse the variant output from DBus into map of string
 func cleanDBusOutput(output string) map[string]string {
@@ -33,30 +52,31 @@ func cleanDBusOutput(output string) map[string]string {
 	s := re.ReplaceAllString(output, "")
 	outputArray := reFind.FindAllString(s, -1)
 
-	if outputArray != nil {
-		var key string
-		var invert = 0
-		// The regex should cut things down to an alternating key:value after being trimmed
-		// We add these to the map, and add a "Meta" key when it would normally be empty (as the first in the array)
-		for i, value := range outputArray {
-			newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
-			// Some devices have this meta value as the first entry (iOS mainly)
-			// we should swap key/value pairs if so
-			if i == 0 && (newValue == "Item" || newValue == "playing" || newValue == "paused") {
-				invert = 1
-				key = "Meta"
-			}
+	if outputArray == nil {
+		status.Log(logging.Error(), "Error parsing dbus output")
+	}
 
-			// Define key or insert into map if defined
-			if i%2 == invert {
-				key = newValue
-			} else {
-				outputMap[key] = newValue
-			}
+	var (
+		key    string
+		invert = 0
+	)
+	// The regex should cut things down to an alternating key:value after being trimmed
+	// We add these to the map, and add a "Meta" key when it would normally be empty (as the first in the array)
+	for i, value := range outputArray {
+		newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
+		// Some devices have this meta value as the first entry (iOS mainly)
+		// we should swap key/value pairs if so
+		if i == 0 && (newValue == "Item" || newValue == "playing" || newValue == "paused") {
+			invert = 1
+			key = "Meta"
 		}
 
-	} else {
-		status.Log(logging.Error(), "Error parsing dbus output")
+		// Define key or insert into map if defined
+		if i%2 == invert {
+			key = newValue
+		} else {
+			outputMap[key] = newValue
+		}
 	}
 
 	return outputMap
@@ -117,32 +137,30 @@ func SetAddress(address string) {
 
 // SendDBusCommand used as a general BT control function for these endpoints
 func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
-	if btAddress != "" {
-		// Fill in the meta nonsense
-		args = append([]string{"--system", "--type=method_call", "--dest=org.bluez"}, args...)
-		var stderr bytes.Buffer
-		var out bytes.Buffer
-		cmd := exec.Command("dbus-send", args...)
-		cmd.Stdout = &out
-		cmd.Stderr = &stderr
-		err := cmd.Run()
-
-		if err != nil {
-			status.Log(logging.Error(), err.Error())
-			status.Log(logging.Error(), stderr.String())
-			return stderr.String(), false
-		}
-
-		if !hideOutput {
-			status.Log(logging.OK(), out.String())
-		}
-
-		return out.String(), true
+	if btAddress == "" {
+		status.Log(logging.Warning(), "No valid BT Address to run command")
+		return "No valid BT Address to run command", false
 	}
 
-	status.Log(logging.Warning(), "No valid BT Address to run command")
+	// Fill in the meta nonsense
+	args = append([]string{"--system", "--type=method_call", "--dest=org.bluez"}, args...)
+	var stderr bytes.Buffer
+	var out bytes.Buffer
+	cmd := exec.Command("dbus-send", args...)
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 
-	return "No valid BT Address to run command", false
+	if err := cmd.Run(); err != nil {
+		status.Log(logging.Error(), err.Error())
+		status.Log(logging.Error(), stderr.String())
+		return stderr.String(), false
+	}
+
+	if !hideOutput {
+		status.Log(logging.OK(), out.String())
+	}
+
+	return out.String(), true
 }
 
 // Connect bluetooth device
@@ -154,9 +172,8 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	cmd := exec.Command("/bin/sh", "/home/pi/bluetooth/connect.sh")
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
-	err := cmd.Run()
 
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		status.Log(logging.Error(), err.Error())
 		status.Log(logging.Error(), stderr.String())
 	}
@@ -173,9 +190,8 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 	cmd := exec.Command("/bin/sh", "/home/pi/bluetooth/disconnect.sh")
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
-	err := cmd.Run()
 
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		status.Log(logging.Error(), err.Error())
 		status.Log(logging.Error(), stderr.String())
 	}
@@ -187,42 +203,44 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	status.Log(logging.OK(), "Getting device info...")
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
-	if ok {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: cleanDBusOutput(result), Status: "success", OK: true})
-	} else {
+	if !ok {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting device info", Status: "fail", OK: false})
+		return
 	}
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: cleanDBusOutput(result), Status: "success", OK: true})
 }
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	status.Log(logging.OK(), "Getting device info...")
+
 	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
-	if ok {
-		deviceStatus := cleanDBusOutput(result)
-
-		status.Log(logging.OK(), "Getting media info...")
-		result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
-		if ok {
-			// Append device status to media info
-			cleanResult := cleanDBusOutput(result)
-			cleanResult["Status"] = deviceStatus["Meta"]
-
-			// Append Album / Artwork slug if both exist
-			album, albumOK := cleanResult["Album"]
-			artist, artistOK := cleanResult["Artist"]
-			if albumOK && artistOK {
-				cleanResult["Album_Artwork"] = slug.Make(artist) + "/" + slug.Make(album) + ".jpg"
-			}
-
-			// Echo back all info
-			json.NewEncoder(w).Encode(formatting.JSONResponse{Output: cleanResult, Status: "success", OK: true})
-		} else {
-			json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
-		}
-	} else {
+	if !ok {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		return
 	}
+	deviceStatus := cleanDBusOutput(result)
+
+	status.Log(logging.OK(), "Getting media info...")
+	result, ok = SendDBusCommand([]string{"/org/bluez/hci0/dev_" + btAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
+	if !ok {
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		return
+	}
+
+	// Append device status to media info
+	cleanResult := cleanDBusOutput(result)
+	cleanResult["Status"] = deviceStatus["Meta"]
+
+	// Append Album / Artwork slug if both exist
+	album, albumOK := cleanResult["Album"]
+	artist, artistOK := cleanResult["Artist"]
+	if albumOK && artistOK {
+		cleanResult["Album_Artwork"] = slug.Make(artist) + "/" + slug.Make(album) + ".jpg"
+	}
+
+	// Echo back all info
+	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: cleanResult, Status: "success", OK: true})
 }
 
 // Prev skips to previous track

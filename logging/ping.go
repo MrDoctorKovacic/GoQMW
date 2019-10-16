@@ -33,9 +33,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 			}
 
 		} else {
-			//
-			// FWD request to server since we have internet
-			//
+			// Forward request to server since we have internet
 			status.Log(OK(), fmt.Sprintf("Forwarding %s to server", params["device"]))
 			pingResp, err := http.Get(fmt.Sprintf("%s?name=%s&local_ip=%s", RemotePingAddress, params["device"], params["ip"]))
 			if err != nil {

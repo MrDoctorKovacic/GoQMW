@@ -86,8 +86,7 @@ func GetTimezone() *time.Location {
 // HandleSet posts a new GPS fix
 func HandleSet(w http.ResponseWriter, r *http.Request) {
 	var newdata Fix
-	err := json.NewDecoder(r.Body).Decode(&newdata)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		status.Log(logging.Error(), err.Error())
 		return
 	}
@@ -96,12 +95,11 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	// Insert into database
 	if postingString != "" && settings.Config.DB != nil {
 		online, err := settings.Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
-
 		if err != nil && online {
 			status.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
-		} else {
-			status.Log(logging.Debug(), fmt.Sprintf("Logged %s to database", postingString))
+			return
 		}
+		status.Log(logging.Debug(), fmt.Sprintf("Logged %s to database", postingString))
 	}
 }
 
@@ -131,20 +129,17 @@ func Set(newdata Fix) string {
 
 	// Append posting strings based on what GPS information was posted
 	if newdata.Altitude != "" {
-		convFloat, err := strconv.ParseFloat(newdata.Altitude, 32)
-		if err == nil {
+		if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
 			postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 		}
 	}
 	if newdata.Speed != "" {
-		convFloat, err := strconv.ParseFloat(newdata.Speed, 32)
-		if err == nil {
+		if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
 			postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 		}
 	}
 	if newdata.Climb != "" {
-		convFloat, err := strconv.ParseFloat(newdata.Climb, 32)
-		if err == nil {
+		if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
 			postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 		}
 	}
@@ -158,8 +153,7 @@ func Set(newdata Fix) string {
 		postingString.WriteString(fmt.Sprintf("EPT=%s,", newdata.EPT))
 	}
 	if newdata.Course != "" {
-		convFloat, err := strconv.ParseFloat(newdata.Course, 32)
-		if err == nil {
+		if convFloat, err := strconv.ParseFloat(newdata.Course, 32); err == nil {
 			postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
 		}
 	}
@@ -197,4 +191,23 @@ func processTimezone() {
 	Location.Mutex.Lock()
 	Location.Timezone = newTimezone
 	Location.Mutex.Unlock()
+}
+
+// SetupTimezone loads settings data into timezone
+func SetupTimezone(configAddr *map[string]string) {
+	configMap := *configAddr
+
+	if timezoneLocation, usingTimezone := configMap["Timezone"]; usingTimezone {
+		loc, err := time.LoadLocation(timezoneLocation)
+		if err != nil {
+			Location.Timezone, _ = time.LoadLocation("UTC")
+			return
+		}
+
+		Location.Timezone = loc
+		return
+	}
+
+	// Timezone is not set in config
+	Location.Timezone, _ = time.LoadLocation("UTC")
 }
