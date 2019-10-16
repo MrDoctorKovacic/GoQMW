@@ -26,7 +26,7 @@ func init() {
 	}
 	zerolog.CallerMarshalFunc = func(file string, line int) string {
 		fileparts := strings.Split(file, "/")
-		filename := fileparts[len(fileparts)-1]
+		filename := strings.Replace(fileparts[len(fileparts)-1], ".go", "", -1)
 		return filename + ":" + strconv.Itoa(line)
 	}
 	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "Mon Jan 2 15:04:05"}
