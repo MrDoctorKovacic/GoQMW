@@ -185,12 +185,12 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	case "BRIGHTWING", "LTE":
 		if formatting.FormatName(command) == "AUTO" {
-			settings.Set("LTE", "POWER", "AUTO")
+			settings.Set("WIRELESS", "POWER", "AUTO")
 		} else if isPositive {
-			settings.Set("LTE", "POWER", "ON")
+			settings.Set("WIRELESS", "POWER", "ON")
 			mserial.Push(settings.Config.SerialControlDevice, "powerOnWireless")
 		} else {
-			settings.Set("LTE", "POWER", "OFF")
+			settings.Set("WIRELESS", "POWER", "OFF")
 			mserial.Push(settings.Config.SerialControlDevice, "powerOffWireless")
 		}
 	default:
