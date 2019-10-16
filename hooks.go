@@ -40,7 +40,7 @@ func setupHooks() {
 	sessions.RegisterHook("AUX_CURRENT_RAW", auxCurrent)
 	sessions.RegisterHook("ACC_POWER", accPower)
 	sessions.RegisterHook("KEY_STATE", keyState)
-	sessions.RegisterHook("WIRELESS_POWER", lteOn)
+	sessions.RegisterHook("WIRELESS_POWER", wirelessPower)
 	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
 	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
 	sessions.RegisterHookSlice(&[]string{"SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3"}, voltage)
@@ -203,7 +203,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 }
 
 // When wireless is turned off, we can infer that LTE is also off
-func lteOn(hook *sessions.SessionPackage) {
+func wirelessPower(hook *sessions.SessionPackage) {
 	if hook.Data.Value == "FALSE" {
 		// When board is turned off but doesn't have time to reflect LTE status
 		sessions.SetValue("LTE_ON", "FALSE")
