@@ -6,14 +6,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/rs/zerolog/log"
 )
 
 // ReadFile will handle the initialization of settings,
 // either from past mapping or by creating a new one
 func ReadFile(useSettingsFile string) {
 	if useSettingsFile == "" {
-		status.Log(logging.Warning(), "Failed to load settings from file '"+Settings.File+"'. Is it empty?")
+		log.Warn().Msg("Failed to load settings from file '" + Settings.File + "'. Is it empty?")
 		return
 	}
 
@@ -22,7 +22,7 @@ func ReadFile(useSettingsFile string) {
 	defer Set("MDROID", "LAST_USED_UTC", time.Now().String())
 
 	if err != nil || initSettings == nil || len(initSettings) == 0 {
-		status.Log(logging.Warning(), "Failed to load settings from file '"+Settings.File+"'. Is it empty?")
+		log.Warn().Msg("Failed to load settings from file '" + Settings.File + "'. Is it empty?")
 		return
 	}
 
@@ -31,7 +31,7 @@ func ReadFile(useSettingsFile string) {
 
 	// Run hooks on all new settings
 	if out, err := json.Marshal(Settings.Data); err == nil {
-		status.Log(logging.OK(), "Successfully loaded settings from file '"+Settings.File+"': "+string(out))
+		log.Info().Msg("Successfully loaded settings from file '" + Settings.File + "': " + string(out))
 		for component := range Settings.Data {
 			for setting := range Settings.Data[component] {
 				runHooks(component, setting, Settings.Data[component][setting])
@@ -49,14 +49,14 @@ func parseFile(filename string) (map[string]map[string]string, error) {
 	// Open settings file
 	filep, err := os.Open(filename)
 	if err != nil {
-		status.Log(logging.Error(), "Error opening file '"+filename+"': "+err.Error())
+		log.Error().Msg("Error opening file '" + filename + "': " + err.Error())
 		return nil, err
 	}
 	defer filep.Close()
 	decoder := json.NewDecoder(filep)
 	err = decoder.Decode(&data)
 	if err != nil {
-		status.Log(logging.Error(), "Error parsing json from file '"+filename+"': "+err.Error())
+		log.Error().Msg("Error parsing json from file '" + filename + "': " + err.Error())
 		return nil, err
 	}
 
@@ -70,16 +70,16 @@ func writeFile(file string) error {
 	Settings.mutex.Unlock()
 
 	if err != nil {
-		status.Log(logging.Error(), "Failed to marshall Settings")
+		log.Error().Msg("Failed to marshall Settings")
 		return err
 	}
 
 	if err = ioutil.WriteFile(file, settingsJSON, 0644); err != nil {
-		status.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
+		log.Error().Msg("Failed to write Settings to " + file + ": " + err.Error())
 		return err
 	}
 
 	// Log success
-	status.Log(logging.OK(), "Successfully wrote Settings to "+file)
+	log.Info().Msg("Successfully wrote Settings to " + file)
 	return nil
 }

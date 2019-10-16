@@ -1,27 +1,29 @@
-package logging
+package sessions
 
 import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 // SlackAlert sends a message to a slack channel webhook
 func SlackAlert(channel string, message string) {
 	if channel == "" {
-		status.Log(Warning(), "Empty slack channel")
+		log.Warn().Msg("Empty slack channel")
 		return
 	}
 	if message == "" {
-		status.Log(Warning(), "Empty slack message")
+		log.Warn().Msg("Empty slack message")
 		return
 	}
 
 	jsonStr := []byte(fmt.Sprintf(`{"text":"%s"}`, message))
 	req, err := http.NewRequest("POST", channel, bytes.NewBuffer(jsonStr))
 	if err != nil {
-		status.Log(Error(), err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
 	req.Header.Set("X-Custom-Header", "myvalue")
@@ -34,13 +36,13 @@ func SlackAlert(channel string, message string) {
 	}
 	defer resp.Body.Close()
 
-	status.Log(OK(), fmt.Sprintf("response Status: %s", resp.Status))
-	status.Log(OK(), fmt.Sprintf("response Headers: %s", resp.Header))
+	log.Info().Msg(fmt.Sprintf("response Status: %s", resp.Status))
+	log.Info().Msg(fmt.Sprintf("response Headers: %s", resp.Header))
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		status.Log(Error(), err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
-	status.Log(OK(), fmt.Sprintf("response Body: %s", string(body)))
+	log.Info().Msg(fmt.Sprintf("response Body: %s", string(body)))
 }

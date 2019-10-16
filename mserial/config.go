@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
 
@@ -24,7 +24,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 		for deviceName, baudrateString := range serialDevices {
 			deviceBaud, err := strconv.Atoi(baudrateString)
 			if err != nil {
-				status.Log(logging.Error(), "Failed to convert given baudrate string to int. Found values: "+deviceName+": "+baudrateString)
+				log.Error().Msg("Failed to convert given baudrate string to int. Found values: " + deviceName + ": " + baudrateString)
 				return nil
 			}
 			devices[deviceName] = deviceBaud
@@ -50,7 +50,7 @@ func CommandNetworkMachine(name string, command string) {
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
+		log.Error().Msg(fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
 		return
 	}
 	defer resp.Body.Close()

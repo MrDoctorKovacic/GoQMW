@@ -10,7 +10,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 
 	"github.com/gorilla/mux"
@@ -37,19 +37,16 @@ type settingsWrap struct {
 var (
 	Settings settingsWrap
 	Config   ConfigValues
-	status   logging.ProgramStatus // status will control logging and reporting of status / warnings / errors
 )
 
 func init() {
-	status = logging.NewStatus("Settings")
-
 	Config = ConfigValues{}
 	Settings = settingsWrap{File: "./settings.json", Data: make(map[string]map[string]string, 0)}
 }
 
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	status.Log(logging.Debug(), "Responding to GET request with entire settings map.")
+	log.Debug().Msg("Responding to GET request with entire settings map.")
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true})
 }
 
@@ -58,7 +55,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	componentName := formatting.FormatName(params["component"])
 
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to GET request for setting component %s", componentName))
+	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
 	responseVal, ok := Settings.Data[componentName]
@@ -78,7 +75,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	componentName := formatting.FormatName(params["component"])
 	settingName := formatting.FormatName(params["name"])
 
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 
 	Settings.mutex.Lock()
 	responseVal, ok := Settings.Data[componentName][settingName]
@@ -94,7 +91,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 
 // GetAll returns all the values of known settings
 func GetAll() map[string]map[string]string {
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for all settings"))
+	log.Debug().Msg(fmt.Sprintf("Responding to request for all settings"))
 
 	newData := map[string]map[string]string{}
 
@@ -110,7 +107,7 @@ func GetAll() map[string]map[string]string {
 // GetComponent returns all the values of a specific component
 func GetComponent(componentName string) (map[string]string, error) {
 	componentName = formatting.FormatName(componentName)
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for setting component %s", componentName))
+	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
 	defer Settings.mutex.Unlock()
@@ -124,7 +121,7 @@ func GetComponent(componentName string) (map[string]string, error) {
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
 	componentName = formatting.FormatName(componentName)
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for setting component %s", componentName))
+	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
 	defer Settings.mutex.Unlock()
@@ -162,7 +159,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	settingValue := params["value"]
 
 	// Log if requested
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
+	log.Debug().Msg(fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
 
 	// Do the dirty work elsewhere
 	Set(componentName, settingName, settingValue)
@@ -184,7 +181,7 @@ func Set(componentName string, settingName string, settingValue string) {
 	Settings.mutex.Unlock()
 
 	// Log our success
-	status.Log(logging.OK(), fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
+	log.Info().Msg(fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
 
 	// Write out all settings to a file
 	writeFile(Settings.File)

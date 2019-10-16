@@ -4,18 +4,28 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
+
+func init() {
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().In(gps.GetTimezone())
+	}
+	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "Mon Jan 2 15:04:05"}
+	log.Logger = zerolog.New(output).With().Caller().Timestamp().Logger()
+}
 
 // Main config parsing
 func parseConfig() {
@@ -48,7 +58,7 @@ func parseConfig() {
 	// Parse through config if found in settings file
 	configMap, ok := settings.GetAll()["MDROID"]
 	if !ok {
-		mainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
+		log.Warn().Msg("No config found in settings file, not parsing through config")
 	}
 
 	gps.SetupTimezone(&configMap)
@@ -76,7 +86,7 @@ func setupDatabase(configAddr *map[string]string) {
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
 		settings.Config.DB = nil
-		mainStatus.Log(logging.OK(), "Not logging to influx db")
+		log.Info().Msg("Not logging to influx db")
 		return
 	}
 	settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
@@ -84,10 +94,9 @@ func setupDatabase(configAddr *map[string]string) {
 	// Set up ping functionality
 	// Proprietary pinging for component tracking
 	if configMap["PING_HOST"] == "" {
-		mainStatus.Log(logging.OK(), "Not forwarding pings to host")
+		log.Info().Msg("Not forwarding pings to host")
 		return
 	}
-	logging.RemotePingAddress = configMap["PING_HOST"]
 }
 
 //
@@ -98,7 +107,7 @@ func setupDatabase(configAddr *map[string]string) {
 func setupSerial() {
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
-		mainStatus.Log(logging.Error(), fmt.Sprintf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error()))
+		log.Error().Msg(fmt.Sprintf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error()))
 		return
 	}
 	HardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
@@ -111,8 +120,8 @@ func setupSerial() {
 		if usingHardwareBaud {
 			baudrateString, err := strconv.Atoi(hardwareSerialBaud)
 			if err != nil {
-				mainStatus.Log(logging.Error(), "Failed to convert HardwareSerialBaud to int. Found value: "+hardwareSerialBaud)
-				mainStatus.Log(logging.Warning(), "Disabling hardware serial functionality")
+				log.Error().Msg("Failed to convert HardwareSerialBaud to int. Found value: " + hardwareSerialBaud)
+				log.Warn().Msg("Disabling hardware serial functionality")
 				settings.Config.HardwareSerialEnabled = false
 				return
 			}

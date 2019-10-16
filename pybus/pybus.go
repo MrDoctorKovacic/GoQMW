@@ -9,19 +9,12 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
-
-// status will control logging and reporting of status / warnings / errors
-var status logging.ProgramStatus
-
-func init() {
-	status = logging.NewStatus("Pybus")
-}
 
 // PushQueue adds a directive to the pybus queue
 // msg can either be a directive (e.g. 'openTrunk')
@@ -46,12 +39,12 @@ func PushQueue(command string) {
 	// Send request to pybus server
 	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/%s", command))
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
+		log.Error().Msg(fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
 		return
 	}
 	defer resp.Body.Close()
 
-	status.Log(logging.OK(), fmt.Sprintf("Added %s to the Pybus Queue", command))
+	log.Info().Msg(fmt.Sprintf("Added %s to the Pybus Queue", command))
 }
 
 // StartRoutine handles incoming requests to the pybus program, will add routines to the queue
@@ -104,12 +97,12 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	// Parse command into a bool, make either "on" or "off" effectively
 	isPositive, err := formatting.IsPositiveRequest(command)
 	if err != nil {
-		status.Log(logging.Error(), err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
 
 	// Log if requested
-	status.Log(logging.OK(), fmt.Sprintf("Attempting to send command %s to device %s", command, device))
+	log.Info().Msg(fmt.Sprintf("Attempting to send command %s to device %s", command, device))
 
 	// All I wanted was a moment or two to
 	// See if you could do that switch-a-roo
@@ -119,7 +112,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		if err != nil && !isPositive {
-			status.Log(logging.OK(), "Door status is unknown, but we're locking. Go through the pybus")
+			log.Info().Msg("Door status is unknown, but we're locking. Go through the pybus")
 			PushQueue("lockDoors")
 		} else if settings.Config.HardwareSerialEnabled && isPositive && deviceStatus.Value == "FALSE" ||
 			!isPositive && deviceStatus.Value == "TRUE" {
@@ -201,7 +194,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			mserial.Push(settings.Config.SerialControlDevice, "powerOffWireless")
 		}
 	default:
-		status.Log(logging.Error(), fmt.Sprintf("Invalid device %s", device))
+		log.Error().Msg(fmt.Sprintf("Invalid device %s", device))
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), Status: "fail", OK: false})
 		return
 	}

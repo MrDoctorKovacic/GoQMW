@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 var clientConnected bool
 
+// SetupTokens prepares valid tokens from settings file
 func SetupTokens(configAddr *map[string]string) {
 	configMap := *configAddr
 
@@ -27,7 +28,7 @@ func SetupTokens(configAddr *map[string]string) {
 	if usingTokens && usingCentralHost {
 		go CheckServer(serverHost, token)
 	} else {
-		status.Log(logging.Warning(), "Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
+		log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
 	}
 }
 
@@ -41,7 +42,7 @@ func CheckServer(host string, token string) {
 		if !clientConnected {
 			lteEnabled, err := Get("LTE_ON")
 			if err != nil {
-				status.Log(logging.Warning(), "Error getting LTE status. Defaulting to FALSE")
+				log.Warn().Msg("Error getting LTE status. Defaulting to FALSE")
 				// Set LTE status to something intelligible
 				SetValue("LTE_ON", "FALSE")
 				timeToWait = time.Second * 5
@@ -53,11 +54,11 @@ func CheckServer(host string, token string) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
 			if err != nil {
 				// handle error
-				status.Log(logging.Error(), fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
+				log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
 			} else {
 				resp.Body.Close()
 				if resp.StatusCode == 200 {
-					status.Log(logging.OK(), "Client is waiting on us, connect to server to acquire a websocket")
+					log.Info().Msg("Client is waiting on us, connect to server to acquire a websocket")
 					runServerSocket(host, token)
 				}
 			}
@@ -71,7 +72,7 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 	dataArray := strings.Split(dataString, ";")
 	if len(dataArray) != 3 {
 		const errMsg = "Could not break response into core components. Got response: %s"
-		status.Log(logging.Error(), fmt.Sprintf(errMsg, dataString))
+		log.Error().Msg(fmt.Sprintf(errMsg, dataString))
 		return nil, "", fmt.Errorf(errMsg, dataString)
 	}
 
@@ -89,7 +90,7 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 		jsonStr := []byte(postingString)
 		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353%s", path), bytes.NewBuffer(jsonStr))
 		if err != nil {
-			status.Log(logging.Error(), fmt.Sprintf(errMsg, err.Error()))
+			log.Error().Msg(fmt.Sprintf(errMsg, err.Error()))
 			return nil, "", fmt.Errorf(errMsg, err.Error())
 		}
 		req.Header.Set("Content-Type", "application/json")
@@ -100,7 +101,7 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 	}
 
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf(errMsg, err.Error()))
+		log.Error().Msg(fmt.Sprintf(errMsg, err.Error()))
 		return nil, "", fmt.Errorf(errMsg, err.Error())
 	}
 
@@ -114,11 +115,11 @@ func runServerSocket(host string, token string) {
 	// Use of this source code is governed by a BSD-style
 	// license that can be found in the LICENSE file.
 	u := url.URL{Scheme: "ws", Host: host, Path: fmt.Sprintf("/ws/%s", token)}
-	status.Log(logging.OK(), fmt.Sprintf("connecting to %s", u.String()))
+	log.Info().Msg(fmt.Sprintf("connecting to %s", u.String()))
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		status.Log(logging.Error(), "Error dialing websocket: "+err.Error())
+		log.Error().Msg("Error dialing websocket: " + err.Error())
 		return
 	}
 	defer c.Close()
@@ -130,21 +131,21 @@ func runServerSocket(host string, token string) {
 		defer close(done)
 		err = c.WriteJSON(formatting.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
 		if err != nil {
-			status.Log(logging.Error(), "Error writing to websocket: "+err.Error())
+			log.Error().Msg("Error writing to websocket: " + err.Error())
 			return
 		}
 
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				status.Log(logging.Error(), "Error reading from websocket: "+err.Error())
+				log.Error().Msg("Error reading from websocket: " + err.Error())
 				return
 			}
 			response := formatting.JSONResponse{}
 			err = json.Unmarshal(message, &response)
 
 			if err != nil {
-				status.Log(logging.Error(), "Error marshalling json from websocket: "+err.Error())
+				log.Error().Msg("Error marshalling json from websocket: " + err.Error())
 				return
 			}
 
@@ -154,22 +155,22 @@ func runServerSocket(host string, token string) {
 				//output := fmt.Sprintf("%v", response.Output)
 				output, ok := response.Output.(string)
 				if !ok {
-					status.Log(logging.Error(), "Cannot cast output to string.")
+					log.Error().Msg("Cannot cast output to string.")
 					return
 				}
 
-				status.Log(logging.OK(), fmt.Sprintf("Websocket read output:  %s", output))
+				log.Info().Msg(fmt.Sprintf("Websocket read output:  %s", output))
 				internalResponse, path, err := getAPIResponse(output)
 				if err != nil {
-					status.Log(logging.Error(), "Error from forwarded request websocket: "+err.Error())
+					log.Error().Msg("Error from forwarded request websocket: " + err.Error())
 					return
 				}
 
-				status.Log(logging.OK(), fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
+				log.Info().Msg(fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
 				response := formatting.JSONResponse{}
 				err = json.Unmarshal(internalResponse, &response)
 				if err != nil {
-					status.Log(logging.Error(), "Error marshalling response to websocket: "+err.Error())
+					log.Error().Msg("Error marshalling response to websocket: " + err.Error())
 					return
 				}
 				response.Method = "response"
@@ -177,7 +178,7 @@ func runServerSocket(host string, token string) {
 
 				err = c.WriteJSON(response)
 				if err != nil {
-					status.Log(logging.Error(), "Error writing to websocket: "+err.Error())
+					log.Error().Msg("Error writing to websocket: " + err.Error())
 					return
 				}
 
@@ -189,7 +190,7 @@ func runServerSocket(host string, token string) {
 		select {
 		case <-done:
 			clientConnected = false
-			status.Log(logging.OK(), "Closed websocket connection.")
+			log.Info().Msg("Closed websocket connection.")
 			return
 		}
 	}

@@ -8,8 +8,8 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/rs/zerolog/log"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
@@ -32,12 +32,7 @@ var (
 	angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
 	tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
 	boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
-	hookStatus  logging.ProgramStatus
 )
-
-func init() {
-	hookStatus = logging.NewStatus("Hooks")
-}
 
 func setupHooks() {
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
@@ -97,7 +92,7 @@ func evalAngelEyes() {
 func voltage(hook *sessions.SessionPackage) {
 	voltageFloat, err := strconv.ParseFloat(hook.Data.Value, 64)
 	if err != nil {
-		hookStatus.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
+		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
 		return
 	}
 
@@ -109,7 +104,7 @@ func auxCurrent(hook *sessions.SessionPackage) {
 	currentFloat, err := strconv.ParseFloat(hook.Data.Value, 64)
 
 	if err != nil {
-		hookStatus.Log(logging.Error(), fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
+		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
 		return
 	}
 
@@ -133,7 +128,7 @@ func accPower(hook *sessions.SessionPackage) {
 	case "FALSE":
 		accOn = false
 	default:
-		hookStatus.Log(logging.Error(), fmt.Sprintf("ACC Power Trigger unexpected value: %s", hook.Data.Value))
+		log.Error().Msg(fmt.Sprintf("ACC Power Trigger unexpected value: %s", hook.Data.Value))
 		return
 	}
 
@@ -169,27 +164,27 @@ func accPower(hook *sessions.SessionPackage) {
 func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 	if module.errOn == nil && module.errTarget == nil {
 		if (module.powerTarget == "AUTO" && !module.on && shouldBeOn) || (module.powerTarget == "ON" && !module.on) {
-			hookStatus.Log(logging.OK(), fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
+			log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
 			mserial.Push(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
 		} else if (module.powerTarget == "AUTO" && module.on && !shouldBeOn) || (module.powerTarget == "OFF" && module.on) {
-			hookStatus.Log(logging.OK(), fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
+			log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
 			gracefulShutdown(name)
 		}
 	} else if module.errTarget != nil {
-		hookStatus.Log(logging.Error(), fmt.Sprintf("Setting Error: %s", module.errTarget.Error()))
+		log.Error().Msg(fmt.Sprintf("Setting Error: %s", module.errTarget.Error()))
 		if module.settingComp != "" && module.settingName != "" {
-			hookStatus.Log(logging.Error(), fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
+			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
 			settings.Set(module.settingComp, module.settingName, "AUTO")
 		}
 	} else if module.errOn != nil {
-		hookStatus.Log(logging.Error(), fmt.Sprintf("Session Error: %s", module.errOn.Error()))
+		log.Error().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
 	}
 }
 
 func lteOn(hook *sessions.SessionPackage) {
 	lteOn, err := sessions.Get("WIRELESS_POWER")
 	if err != nil {
-		hookStatus.Log(logging.Error(), err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
 
@@ -212,7 +207,7 @@ func lightSensorReason(hook *sessions.SessionPackage) {
 			doorsLocked.Value == "TRUE" &&
 			windowsOpen.Value == "TRUE" &&
 			delta.Minutes() > 5 {
-			logging.SlackAlert(settings.Config.SlackURL, "Windows are down in the rain, eh?")
+			sessions.SlackAlert(settings.Config.SlackURL, "Windows are down in the rain, eh?")
 		}
 	}
 }

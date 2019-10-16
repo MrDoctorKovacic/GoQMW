@@ -4,17 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
-
-// mainStatus will control logging and reporting of status / warnings / errors
-var mainStatus logging.ProgramStatus
-
-func init() {
-	mainStatus = logging.NewStatus("Main")
-}
 
 // define our router and subsequent routes here
 func main() {
