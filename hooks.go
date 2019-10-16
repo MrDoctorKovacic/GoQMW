@@ -218,7 +218,7 @@ func seatMemory(hook *sessions.SessionPackage) {
 	case "SEAT_MEMORY_1":
 		mserial.CommandNetworkMachine("BOARD", "restart")
 	case "SEAT_MEMORY_2":
-		mserial.CommandNetworkMachine("LTE", "restart")
+		mserial.CommandNetworkMachine("WIRELESS", "restart")
 	case "SEAT_MEMORY_3":
 		mserial.CommandNetworkMachine("MDROID", "restart")
 	}
