@@ -96,13 +96,6 @@ func setupDatabase(configAddr *map[string]string) {
 		return
 	}
 	settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
-
-	// Set up ping functionality
-	// Proprietary pinging for component tracking
-	if configMap["PING_HOST"] == "" {
-		log.Info().Msg("Not forwarding pings to host")
-		return
-	}
 }
 
 //
