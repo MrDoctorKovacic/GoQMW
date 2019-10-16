@@ -74,8 +74,7 @@ func Create(sessionFile string) {
 
 // HandleGetAll responds to an HTTP request for the entire session
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	fullSession := GetAll()
-	response := formatting.JSONResponse{Output: fullSession, Status: "success", OK: true}
+	response := formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -84,10 +83,15 @@ func GetAll() map[string]Value {
 	// Log if requested
 	status.Log(logging.Debug(), "Responding to request for full session")
 
+	newData := map[string]Value{}
+
 	session.Mutex.Lock()
-	defer session.Mutex.Unlock()
-	returnSession := session.data
-	return returnSession
+	for index, element := range session.data {
+		newData[index] = element
+	}
+	session.Mutex.Unlock()
+
+	return newData
 }
 
 // HandleGet returns a specific session value
