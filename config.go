@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
@@ -15,14 +15,13 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/rs/zerolog"
-	"github.com/tarm/serial"
 )
 
 // Main config parsing
 func parseConfig() {
 
 	var sessionFile string
-	flag.StringVar(&settings.Config.SettingsFile, "settings-file", "", "File to recover the persistent settings.")
+	flag.StringVar(&settings.Settings.File, "settings-file", "", "File to recover the persistent settings.")
 	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
 	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
@@ -36,71 +35,38 @@ func parseConfig() {
 	setupHooks()
 
 	// Parse settings file
-	settings.ReadFile(settings.Config.SettingsFile)
+	settings.ReadFile(settings.Settings.File)
 
 	// Check settings
-	if _, err := json.Marshal(settings.Data); err != nil {
+	if _, err := json.Marshal(settings.GetAll()); err != nil {
 		panic(err)
 	}
 
 	// Init session tracking (with or without Influx)
-	sessions.Create(settings.Config.SettingsFile)
+	sessions.Create(settings.Settings.File)
 
 	// Parse through config if found in settings file
 	configMap, ok := settings.GetAll()["MDROID"]
-	if ok {
-
-		setupTimezone(&configMap)
-		setupDatabase(&configMap)
-		setupBluetooth(&configMap)
-		setupTokens(&configMap)
-		setupSerial()
-
-		settings.Config.SlackURL = configMap["SLACK_URL"]
-
-		// Set up pybus repeat commands
-		if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
-			go pybus.RepeatCommand("requestIgnitionStatus", 10)
-			go pybus.RepeatCommand("requestLampStatus", 20)
-			go pybus.RepeatCommand("requestVehicleStatus", 30)
-			go pybus.RepeatCommand("requestOdometer", 45)
-			go pybus.RepeatCommand("requestTimeStatus", 60)
-			go pybus.RepeatCommand("requestTemperatureStatus", 120)
-		}
-
-	} else {
+	if !ok {
 		mainStatus.Log(logging.Warning(), "No config found in settings file, not parsing through config")
 	}
-}
 
-func setupTokens(configAddr *map[string]string) {
-	configMap := *configAddr
+	gps.SetupTimezone(&configMap)
+	setupDatabase(&configMap)
+	bluetooth.Setup(&configMap)
+	sessions.SetupTokens(&configMap)
+	setupSerial()
 
-	// Set up Auth tokens
-	token, usingTokens := configMap["AUTH_TOKEN"]
-	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
+	settings.Config.SlackURL = configMap["SLACK_URL"]
 
-	if usingTokens && usingCentralHost {
-		go sessions.CheckServer(serverHost, token)
-	} else {
-		mainStatus.Log(logging.Warning(), "Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
-	}
-}
-
-func setupTimezone(configAddr *map[string]string) {
-	configMap := *configAddr
-	timezoneLocation, usingTimezone := configMap["Timezone"]
-	if usingTimezone {
-		loc, err := time.LoadLocation(timezoneLocation)
-		if err == nil {
-			gps.Location.Timezone = loc
-		} else {
-			// If timezone has errored
-			gps.Location.Timezone, _ = time.LoadLocation("UTC")
-		}
-	} else {
-		// If timezone is not set in config
-		gps.Location.Timezone, _ = time.LoadLocation("UTC")
+	// Set up pybus repeat commands
+	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
+		go pybus.RepeatCommand("requestIgnitionStatus", 10)
+		go pybus.RepeatCommand("requestLampStatus", 20)
+		go pybus.RepeatCommand("requestVehicleStatus", 30)
+		go pybus.RepeatCommand("requestOdometer", 45)
+		go pybus.RepeatCommand("requestTimeStatus", 60)
+		go pybus.RepeatCommand("requestTemperatureStatus", 120)
 	}
 }
 
@@ -108,32 +74,20 @@ func setupTimezone(configAddr *map[string]string) {
 func setupDatabase(configAddr *map[string]string) {
 	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
-	if usingDatabase {
-		settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
-
-		// Set up ping functionality
-		// Proprietary pinging for component tracking
-		if configMap["PING_HOST"] != "" {
-			logging.RemotePingAddress = configMap["PING_HOST"]
-		} else {
-			mainStatus.Log(logging.OK(), "Not forwarding pings to host")
-		}
-
-	} else {
+	if !usingDatabase {
 		settings.Config.DB = nil
 		mainStatus.Log(logging.OK(), "Not logging to influx db")
+		return
 	}
-}
+	settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
 
-func setupBluetooth(configAddr *map[string]string) {
-	configMap := *configAddr
-	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
-	if usingBluetooth {
-		bluetooth.EnableAutoRefresh()
-		bluetooth.SetAddress(bluetoothAddress)
-		settings.Config.BluetoothAddress = bluetoothAddress
+	// Set up ping functionality
+	// Proprietary pinging for component tracking
+	if configMap["PING_HOST"] == "" {
+		mainStatus.Log(logging.OK(), "Not forwarding pings to host")
+		return
 	}
-	settings.Config.BluetoothAddress = ""
+	logging.RemotePingAddress = configMap["PING_HOST"]
 }
 
 //
@@ -142,7 +96,11 @@ func setupBluetooth(configAddr *map[string]string) {
 //
 
 func setupSerial() {
-	configMap := settings.Data["MDROID"]
+	configMap, err := settings.GetComponent("MDROID")
+	if err != nil {
+		mainStatus.Log(logging.Error(), fmt.Sprintf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error()))
+		return
+	}
 	HardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	hardwareSerialBaud, usingHardwareBaud := configMap["HARDWARE_SERIAL_BAUD"]
 	settings.Config.HardwareSerialEnabled = usingHardwareSerial
@@ -162,48 +120,11 @@ func setupSerial() {
 			HardwareSerialBaud = baudrateString
 		}
 		// Start initial reader / writer
-		go startSerialComms(HardwareSerialPort, HardwareSerialBaud)
+		go sessions.StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
 
 		// Setup other devices
-		for device, baudrate := range mserial.ParseSerialDevices(settings.Data) {
-			go startSerialComms(device, baudrate)
-		}
-	}
-}
-
-// startSerialComms will set up the serial port,
-// and start the ReadSerial goroutine
-func startSerialComms(deviceName string, baudrate int) {
-	mainStatus.Log(logging.OK(), "Opening serial device "+deviceName)
-	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
-	s, err := serial.OpenPort(c)
-	if err != nil {
-		mainStatus.Log(logging.Error(), "Failed to open serial port "+deviceName)
-		mainStatus.Log(logging.Error(), err.Error())
-	} else {
-		var isWriter bool
-
-		// Use first Serial device as a R/W, all others will only be read from
-		if settings.Config.SerialControlDevice == nil {
-			settings.Config.SerialControlDevice = s
-			isWriter = true
-			mainStatus.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
-		}
-
-		// Continiously read from serial port
-		endedSerial := sessions.ReadFromSerial(s, isWriter)
-		if endedSerial {
-			mainStatus.Log(logging.Error(), "Serial disconnected, closing port and reopening")
-
-			// Replace main serial writer
-			if settings.Config.SerialControlDevice == s {
-				settings.Config.SerialControlDevice = nil
-			}
-
-			s.Close()
-			time.Sleep(time.Second * 10)
-			mainStatus.Log(logging.Error(), "Reopening serial port...")
-			startSerialComms(deviceName, baudrate)
+		for device, baudrate := range mserial.ParseSerialDevices(settings.GetAll()) {
+			go sessions.StartSerialComms(device, baudrate)
 		}
 	}
 }

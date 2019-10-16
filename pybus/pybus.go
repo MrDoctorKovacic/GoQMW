@@ -78,8 +78,7 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 func RepeatCommand(command string, sleepSeconds int) {
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
-		hasPower, err := sessions.Get("ACC_POWER")
-		if err == nil && hasPower.Value == "TRUE" {
+		if hasPower, err := sessions.Get("ACC_POWER"); err == nil && hasPower.Value == "TRUE" {
 			PushQueue(command)
 		}
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
@@ -122,13 +121,9 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		if err != nil && !isPositive {
 			status.Log(logging.OK(), "Door status is unknown, but we're locking. Go through the pybus")
 			PushQueue("lockDoors")
-		} else {
-			if settings.Config.HardwareSerialEnabled {
-				if isPositive && deviceStatus.Value == "FALSE" ||
-					!isPositive && deviceStatus.Value == "TRUE" {
-					mserial.Push(settings.Config.SerialControlDevice, "toggleDoorLocks")
-				}
-			}
+		} else if settings.Config.HardwareSerialEnabled && isPositive && deviceStatus.Value == "FALSE" ||
+			!isPositive && deviceStatus.Value == "TRUE" {
+			mserial.Push(settings.Config.SerialControlDevice, "toggleDoorLocks")
 		}
 	case "WINDOW":
 		if command == "POPDOWN" {
@@ -169,25 +164,25 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	case "MODE":
 		PushQueue("pressMode")
 	case "RADIO", "NAV", "STEREO":
-		if command == "AM" {
+		switch command {
+		case "AM":
 			PushQueue("pressAM")
-		} else if command == "FM" {
+		case "FM":
 			PushQueue("pressFM")
-		} else if command == "NEXT" {
+		case "NEXT":
 			PushQueue("pressNext")
-		} else if command == "PREV" {
+		case "PREV":
 			PushQueue("pressPrev")
-		} else if command == "NUM" {
+		case "NUM":
 			PushQueue("pressNumPad")
-		} else if command == "MODE" {
+		case "MODE":
 			PushQueue("pressMode")
-		} else {
+		default:
 			PushQueue("pressStereoPower")
 		}
 	case "LUCIO", "CAMERA", "BOARD":
 		if formatting.FormatName(command) == "AUTO" {
 			settings.Set("BOARD", "POWER", "AUTO")
-			return
 		} else if isPositive {
 			settings.Set("BOARD", "POWER", "ON")
 			mserial.Push(settings.Config.SerialControlDevice, "powerOnBoard")
@@ -198,9 +193,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	case "BRIGHTWING", "LTE":
 		if formatting.FormatName(command) == "AUTO" {
 			settings.Set("LTE", "POWER", "AUTO")
-			return
-		}
-		if isPositive {
+		} else if isPositive {
 			settings.Set("LTE", "POWER", "ON")
 			mserial.Push(settings.Config.SerialControlDevice, "powerOnWireless")
 		} else {

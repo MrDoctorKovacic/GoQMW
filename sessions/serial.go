@@ -4,19 +4,59 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/tarm/serial"
 )
+
+// StartSerialComms will set up the serial port,
+// and start the ReadSerial goroutine
+func StartSerialComms(deviceName string, baudrate int) {
+	status.Log(logging.OK(), "Opening serial device "+deviceName)
+	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		status.Log(logging.Error(), "Failed to open serial port "+deviceName)
+		status.Log(logging.Error(), err.Error())
+		return
+	}
+
+	var isWriter bool
+
+	// Use first Serial device as a R/W, all others will only be read from
+	if settings.Config.SerialControlDevice == nil {
+		settings.Config.SerialControlDevice = s
+		isWriter = true
+		status.Log(logging.OK(), "Using serial device "+deviceName+" as default writer")
+	}
+
+	// Continiously read from serial port
+	endedSerial := ReadFromSerial(s, isWriter)
+	if endedSerial {
+		status.Log(logging.Error(), "Serial disconnected, closing port and reopening")
+
+		// Replace main serial writer
+		if settings.Config.SerialControlDevice == s {
+			settings.Config.SerialControlDevice = nil
+		}
+
+		s.Close()
+		time.Sleep(time.Second * 10)
+		status.Log(logging.Error(), "Reopening serial port...")
+		StartSerialComms(deviceName, baudrate)
+	}
+}
 
 // ReadFromSerial reads serial data into the session
 func ReadFromSerial(device *serial.Port, isWriter bool) bool {
 	status.Log(logging.OK(), "Starting serial read")
 	for connected := true; connected; {
 		response, err := mserial.ReadSerial(device, isWriter)
-		// The device is nil, break out of this read loop
 		if err != nil {
+			// The device is nil, break out of this read loop
 			status.Log(logging.Error(), err.Error())
 			break
 		}

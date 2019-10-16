@@ -24,21 +24,14 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 	for {
-		_, _, err := c.ReadMessage()
-		if err != nil {
+		if _, _, err := c.ReadMessage(); err != nil {
 			status.Log(logging.Error(), "Error reading from webstream: "+err.Error())
 			break
 		}
 
-		// Very verbose
-		//status.Log(logging.OK(), "Received: "+string(message))
-
 		// Pass through lock first
 		writeSession := GetAll()
-
-		err = c.WriteJSON(writeSession)
-
-		if err != nil {
+		if err = c.WriteJSON(writeSession); err != nil {
 			status.Log(logging.Error(), "Error writing to webstream: "+err.Error())
 			break
 		}

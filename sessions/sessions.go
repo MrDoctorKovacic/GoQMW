@@ -53,23 +53,24 @@ func init() {
 func Create(sessionFile string) {
 	session.data = make(map[string]Value)
 
-	if sessionFile != "" {
-		session.file = sessionFile
-		jsonFile, err := os.Open(sessionFile)
-
-		if err != nil {
-			status.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
-		} else {
-			byteValue, err := ioutil.ReadAll(jsonFile)
-			if err != nil {
-				status.Log(logging.Error(), err.Error())
-				return
-			}
-			json.Unmarshal(byteValue, &session)
-		}
-	} else {
+	if sessionFile == "" {
 		status.Log(logging.OK(), "Not saving or recovering from file")
+		return
 	}
+	session.file = sessionFile
+
+	jsonFile, err := os.Open(sessionFile)
+	if err != nil {
+		status.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
+		return
+	}
+
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		status.Log(logging.Error(), err.Error())
+		return
+	}
+	json.Unmarshal(byteValue, &session)
 }
 
 // HandleGetAll responds to an HTTP request for the entire session
@@ -84,12 +85,11 @@ func GetAll() map[string]Value {
 	status.Log(logging.Debug(), "Responding to request for full session")
 
 	newData := map[string]Value{}
-
 	session.Mutex.Lock()
+	defer session.Mutex.Unlock()
 	for index, element := range session.data {
 		newData[index] = element
 	}
-	session.Mutex.Unlock()
 
 	return newData
 }
@@ -99,20 +99,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	sessionValue, err := Get(params["name"])
-	response := formatting.JSONResponse{}
+	response := formatting.JSONResponse{Status: "success", Output: sessionValue, OK: true}
 	if err != nil {
 		response.Status = "fail"
 		response.Output = err.Error()
 		response.OK = false
-		json.NewEncoder(w).Encode(response)
-		return
 	}
-
-	// Craft OK response
-	response.Status = "success"
-	response.Output = sessionValue
-	response.OK = true
-
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -129,7 +121,6 @@ func Get(name string) (value Value, err error) {
 	if !ok {
 		return sessionValue, fmt.Errorf("%s does not exist in Session", name)
 	}
-
 	return sessionValue, nil
 }
 
@@ -167,15 +158,14 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 	if len(body) == 0 {
 		response.Output = "Error: Empty body"
 		json.NewEncoder(w).Encode(response)
+		return
 	}
 
 	params := mux.Vars(r)
 	var newdata Value
-	err = json.NewDecoder(r.Body).Decode(&newdata)
 
-	if err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		status.Log(logging.Error(), fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
-
 		response.Output = err.Error()
 		json.NewEncoder(w).Encode(response)
 		return
@@ -183,9 +173,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 
 	// Call the setter
 	newPackage := SessionPackage{Name: params["name"], Data: newdata}
-	err = Set(newPackage, newdata.Quiet)
-
-	if err != nil {
+	if err = Set(newPackage, newdata.Quiet); err != nil {
 		response.Output = err.Error()
 		json.NewEncoder(w).Encode(response)
 		return
@@ -213,8 +201,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	}
 
 	// Set last updated time to now
-	var timestamp = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
-	newPackage.Data.LastUpdate = timestamp
+	newPackage.Data.LastUpdate = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
 
 	// Correct name
 	newPackage.Name = formatting.FormatName(newPackage.Name)
@@ -223,9 +210,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
 
 	// Log if requested
-	if !quiet {
-		status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
-	}
+	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
@@ -237,19 +222,15 @@ func Set(newPackage SessionPackage, quiet bool) error {
 
 	// Insert into database
 	if settings.Config.DB != nil {
-
 		// Convert to a float if that suits the value, otherwise change field to value_string
-		var valueString string
-		if _, err := strconv.ParseFloat(newPackage.Data.Value, 32); err == nil {
-			valueString = fmt.Sprintf("value=%s", newPackage.Data.Value)
-		} else {
+		valueString := fmt.Sprintf("value=%s", newPackage.Data.Value)
+		if _, err := strconv.ParseFloat(newPackage.Data.Value, 32); err != nil {
 			valueString = fmt.Sprintf("value_string=\"%s\"", newPackage.Data.Value)
 		}
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
 		online, err := settings.Config.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
-
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
 			// Only spam our log if Influx is online
@@ -257,9 +238,8 @@ func Set(newPackage SessionPackage, quiet bool) error {
 				status.Log(logging.Error(), errorText)
 			}
 			return fmt.Errorf(errorText)
-		} else if !quiet {
-			status.Log(logging.OK(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
 		}
+		status.Log(logging.Debug(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
 	}
 
 	return nil

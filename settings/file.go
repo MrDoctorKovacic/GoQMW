@@ -13,39 +13,31 @@ import (
 // either from past mapping or by creating a new one
 func ReadFile(useSettingsFile string) {
 	if useSettingsFile == "" {
-		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Is it empty?")
+		status.Log(logging.Warning(), "Failed to load settings from file '"+Settings.File+"'. Is it empty?")
 		return
 	}
 
-	Config.SettingsFile = useSettingsFile
-	initSettings, err := parseFile(Config.SettingsFile)
-	if err == nil && initSettings != nil && len(initSettings) != 0 {
-		Data = initSettings
+	Settings.File = useSettingsFile
+	initSettings, err := parseFile(Settings.File)
+	defer Set("MDROID", "LAST_USED_UTC", time.Now().String())
 
-		// Log settings
-		out, err := json.Marshal(Data)
-		if err == nil {
-			status.Log(logging.OK(), "Successfully loaded settings from file '"+Config.SettingsFile+"': "+string(out))
-
-			// Run hooks on all new settings
-			for component := range Data {
-				for setting := range Data[component] {
-					runHooks(component, setting, Data[component][setting])
-				}
-			}
-
-			return
-		}
-
-		// If err is set, re-marshaling the settings failed
-		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Defaulting to empty Map. Error: "+err.Error())
-	} else if initSettings == nil {
-		status.Log(logging.Warning(), "Failed to load settings from file '"+Config.SettingsFile+"'. Is it empty?")
+	if err != nil || initSettings == nil || len(initSettings) == 0 {
+		status.Log(logging.Warning(), "Failed to load settings from file '"+Settings.File+"'. Is it empty?")
+		return
 	}
 
-	Set("MDROID", "LAST_USED_UTC", time.Now().String())
+	// Set new settings globally
+	Settings.Data = initSettings
 
-	// Return empty map
+	// Run hooks on all new settings
+	if out, err := json.Marshal(Settings.Data); err == nil {
+		status.Log(logging.OK(), "Successfully loaded settings from file '"+Settings.File+"': "+string(out))
+		for component := range Settings.Data {
+			for setting := range Settings.Data[component] {
+				runHooks(component, setting, Settings.Data[component][setting])
+			}
+		}
+	}
 	return
 }
 
@@ -73,17 +65,16 @@ func parseFile(filename string) (map[string]map[string]string, error) {
 
 // writeFile to given file, TODO: create one if it doesn't exist
 func writeFile(file string) error {
-	settingsLock.Lock()
-	settingsJSON, err := json.Marshal(Data)
-	settingsLock.Unlock()
+	Settings.mutex.Lock()
+	settingsJSON, err := json.Marshal(Settings.Data)
+	Settings.mutex.Unlock()
 
 	if err != nil {
 		status.Log(logging.Error(), "Failed to marshall Settings")
 		return err
 	}
 
-	err = ioutil.WriteFile(file, settingsJSON, 0644)
-	if err != nil {
+	if err = ioutil.WriteFile(file, settingsJSON, 0644); err != nil {
 		status.Log(logging.Error(), "Failed to write Settings to "+file+": "+err.Error())
 		return err
 	}

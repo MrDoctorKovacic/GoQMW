@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,11 +17,27 @@ import (
 
 var clientConnected bool
 
+func SetupTokens(configAddr *map[string]string) {
+	configMap := *configAddr
+
+	// Set up Auth tokens
+	token, usingTokens := configMap["AUTH_TOKEN"]
+	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
+
+	if usingTokens && usingCentralHost {
+		go CheckServer(serverHost, token)
+	} else {
+		status.Log(logging.Warning(), "Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
+	}
+}
+
 // CheckServer will continiously ping a central server for waiting packets,
 // and will open a websocket as a client if so
 func CheckServer(host string, token string) {
-	var timeToWait time.Duration
+
 	for {
+		// Start by assuming we're not on LTE, lower the wait time
+		timeToWait := time.Second * 1
 		if !clientConnected {
 			lteEnabled, err := Get("LTE_ON")
 			if err != nil {
@@ -33,9 +48,6 @@ func CheckServer(host string, token string) {
 			} else if lteEnabled.Value == "TRUE" {
 				// Slow frequency of pings while on LTE
 				timeToWait = time.Second * 5
-			} else {
-				// We can assume we're not on LTE, lower the wait time
-				timeToWait = time.Second * 1
 			}
 
 			resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
@@ -58,8 +70,9 @@ func CheckServer(host string, token string) {
 func getAPIResponse(dataString string) ([]byte, string, error) {
 	dataArray := strings.Split(dataString, ";")
 	if len(dataArray) != 3 {
-		status.Log(logging.Error(), fmt.Sprintf("Could not break response into core components. Got response: %s", dataString))
-		return nil, "", fmt.Errorf("Could not break response into core components. Got response: %s", dataString)
+		const errMsg = "Could not break response into core components. Got response: %s"
+		status.Log(logging.Error(), fmt.Sprintf(errMsg, dataString))
+		return nil, "", fmt.Errorf(errMsg, dataString)
 	}
 
 	method := dataArray[0]
@@ -70,12 +83,14 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 		resp *http.Response
 		err  error
 	)
+	const errMsg = "Could not forward request from websocket. Got error: %s"
+
 	if method == "POST" {
 		jsonStr := []byte(postingString)
 		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353%s", path), bytes.NewBuffer(jsonStr))
 		if err != nil {
-			status.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
-			return nil, "", fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
+			status.Log(logging.Error(), fmt.Sprintf(errMsg, err.Error()))
+			return nil, "", fmt.Errorf(errMsg, err.Error())
 		}
 		req.Header.Set("Content-Type", "application/json")
 		client := &http.Client{}
@@ -85,8 +100,8 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 	}
 
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Could not forward request from websocket. Got error: %s", err.Error()))
-		return nil, "", fmt.Errorf("Could not forward request from websocket. Got error: %s", err.Error())
+		status.Log(logging.Error(), fmt.Sprintf(errMsg, err.Error()))
+		return nil, "", fmt.Errorf(errMsg, err.Error())
 	}
 
 	defer resp.Body.Close()
@@ -99,7 +114,7 @@ func runServerSocket(host string, token string) {
 	// Use of this source code is governed by a BSD-style
 	// license that can be found in the LICENSE file.
 	u := url.URL{Scheme: "ws", Host: host, Path: fmt.Sprintf("/ws/%s", token)}
-	log.Printf("connecting to %s", u.String())
+	status.Log(logging.OK(), fmt.Sprintf("connecting to %s", u.String()))
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
