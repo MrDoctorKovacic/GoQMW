@@ -45,8 +45,8 @@ func CheckServer(host string, token string) {
 		if !clientConnected {
 			lteEnabled, err := Get("LTE_ON")
 			if err != nil {
-				log.Warn().Msg("Error getting LTE status. Defaulting to FALSE")
 				// Set LTE status to something intelligible
+				log.Debug().Msg("Error getting LTE status. Defaulting to FALSE")
 				SetValue("LTE_ON", "FALSE")
 				timeToWait = time.Second * 5
 			} else if lteEnabled.Value == "TRUE" {
