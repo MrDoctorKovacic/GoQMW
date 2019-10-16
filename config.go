@@ -56,8 +56,8 @@ func parseConfig() {
 	sessions.Create(settings.Settings.File)
 
 	// Parse through config if found in settings file
-	configMap, ok := settings.GetAll()["MDROID"]
-	if !ok {
+	configMap, err := settings.GetComponent("MDROID")
+	if err != nil {
 		log.Warn().Msg("No config found in settings file, not parsing through config")
 	}
 
