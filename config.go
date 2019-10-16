@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
@@ -22,6 +23,11 @@ import (
 func init() {
 	zerolog.TimestampFunc = func() time.Time {
 		return time.Now().In(gps.GetTimezone())
+	}
+	zerolog.CallerMarshalFunc = func(file string, line int) string {
+		fileparts := strings.Split(file, "/")
+		filename := fileparts[len(fileparts)-1]
+		return filename + ":" + strconv.Itoa(line)
 	}
 	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "Mon Jan 2 15:04:05"}
 	log.Logger = zerolog.New(output).With().Caller().Timestamp().Logger()
