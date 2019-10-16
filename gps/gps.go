@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/bradfitz/latlong"
+	"github.com/rs/zerolog/log"
 )
 
 // Loc contains GPS meta data and other location information
@@ -38,13 +38,16 @@ type Fix struct {
 
 // status will control logging and reporting of status / warnings / errors
 var (
-	status   logging.ProgramStatus
 	Location *Loc
 )
 
 func init() {
-	status = logging.NewStatus("GPS")
-	Location = &Loc{Timezone: logging.Timezone} // use logging default timezone
+	timezone, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		log.Error().Msg("Could not load default timezone")
+		return
+	}
+	Location = &Loc{Timezone: timezone} // use logging default timezone
 }
 
 //
@@ -54,7 +57,7 @@ func init() {
 // HandleGet returns the latest GPS fix
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
-	//status.Log(logging.Warning(), "Responding to get request.")
+	//log.Warn().Msg("Responding to get request.")
 	data := Get()
 	if data.Latitude == "" && data.Longitude == "" {
 		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
@@ -87,7 +90,7 @@ func GetTimezone() *time.Location {
 func HandleSet(w http.ResponseWriter, r *http.Request) {
 	var newdata Fix
 	if err := json.NewDecoder(r.Body).Decode(&newdata); err != nil {
-		status.Log(logging.Error(), err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
 	postingString := Set(newdata)
@@ -96,10 +99,10 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	if postingString != "" && settings.Config.DB != nil {
 		online, err := settings.Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
 		if err != nil && online {
-			status.Log(logging.Error(), fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
+			log.Error().Msg(fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
 			return
 		}
-		status.Log(logging.Debug(), fmt.Sprintf("Logged %s to database", postingString))
+		log.Debug().Msg(fmt.Sprintf("Logged %s to database", postingString))
 	}
 }
 
@@ -107,7 +110,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 func Set(newdata Fix) string {
 	// Update value for global session if the data is newer
 	if newdata.Latitude == "" && newdata.Longitude == "" {
-		status.Log(logging.Warning(), "Not inserting new GPS fix, no new Lat or Long")
+		log.Warn().Msg("Not inserting new GPS fix, no new Lat or Long")
 		return ""
 	}
 
@@ -170,23 +173,20 @@ func processTimezone() {
 	Location.Mutex.Unlock()
 
 	if err1 != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Error converting lat into float64: %s", err1.Error()))
+		log.Error().Msg(fmt.Sprintf("Error converting lat into float64: %s", err1.Error()))
 		return
 	}
 	if err2 != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Error converting long into float64: %s", err2.Error()))
+		log.Error().Msg(fmt.Sprintf("Error converting long into float64: %s", err2.Error()))
 		return
 	}
 
 	timezoneName := latlong.LookupZoneName(latFloat, longFloat)
 	newTimezone, err := time.LoadLocation(timezoneName)
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Error parsing lat long into location: %s", err.Error()))
+		log.Error().Msg(fmt.Sprintf("Error parsing lat long into location: %s", err.Error()))
 		return
 	}
-
-	// Set logging timezone
-	logging.SetTimezone(newTimezone)
 
 	Location.Mutex.Lock()
 	Location.Timezone = newTimezone

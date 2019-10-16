@@ -14,9 +14,9 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
 
 // Value holds the data and last update info for each session value
@@ -40,34 +40,28 @@ type Session struct {
 }
 
 var (
-	status  logging.ProgramStatus
 	session Session
 )
-
-func init() {
-	// status will control logging and reporting of status / warnings / errors
-	status = logging.NewStatus("Session")
-}
 
 // Create will init the current session with a file
 func Create(sessionFile string) {
 	session.data = make(map[string]Value)
 
 	if sessionFile == "" {
-		status.Log(logging.OK(), "Not saving or recovering from file")
+		log.Info().Msg("Not saving or recovering from file")
 		return
 	}
 	session.file = sessionFile
 
 	jsonFile, err := os.Open(sessionFile)
 	if err != nil {
-		status.Log(logging.Warning(), "Error opening JSON file on disk: "+err.Error())
+		log.Warn().Msg("Error opening JSON file on disk: " + err.Error())
 		return
 	}
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		status.Log(logging.Error(), err.Error())
+		log.Error().Msg(err.Error())
 		return
 	}
 	json.Unmarshal(byteValue, &session)
@@ -82,7 +76,7 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 // GetAll returns the entire current session
 func GetAll() map[string]Value {
 	// Log if requested
-	status.Log(logging.Debug(), "Responding to request for full session")
+	log.Debug().Msg("Responding to request for full session")
 
 	newData := map[string]Value{}
 	session.Mutex.Lock()
@@ -112,7 +106,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 func Get(name string) (value Value, err error) {
 
 	// Log if requested
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session value %s", name))
+	log.Debug().Msg(fmt.Sprintf("Responding to request for session value %s", name))
 
 	session.Mutex.Lock()
 	defer session.Mutex.Unlock()
@@ -146,7 +140,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 	response := formatting.JSONResponse{Status: "fail", OK: false}
 
 	if err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
+		log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
@@ -165,7 +159,7 @@ func HandlePost(w http.ResponseWriter, r *http.Request) {
 	var newdata Value
 
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
-		status.Log(logging.Error(), fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
+		log.Error().Msg(fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
 		response.Output = err.Error()
 		json.NewEncoder(w).Encode(response)
 		return
@@ -210,7 +204,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
 
 	// Log if requested
-	status.Log(logging.Debug(), fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
+	log.Debug().Msg(fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
 
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
@@ -235,11 +229,11 @@ func Set(newPackage SessionPackage, quiet bool) error {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
 			// Only spam our log if Influx is online
 			if online {
-				status.Log(logging.Error(), errorText)
+				log.Error().Msg(errorText)
 			}
 			return fmt.Errorf(errorText)
 		}
-		status.Log(logging.Debug(), fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
+		log.Debug().Msg(fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
 	}
 
 	return nil

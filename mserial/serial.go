@@ -8,21 +8,19 @@ import (
 	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
 
 // status will control logging and reporting of status / warnings / errors
 var (
-	status         logging.ProgramStatus
 	writeQueue     map[*serial.Port][]string
 	writeQueueLock sync.Mutex
 )
 
 func init() {
-	status = logging.NewStatus("Serial")
 	writeQueue = make(map[*serial.Port][]string, 0)
 }
 
@@ -48,8 +46,8 @@ func ReadSerial(serialDevice *serial.Port, isWriter bool) (interface{}, error) {
 
 		// Parse serial data
 		if err != nil {
-			status.Log(logging.Error(), "Failed to read from serial port")
-			status.Log(logging.Error(), err.Error())
+			log.Error().Msg("Failed to read from serial port")
+			log.Error().Msg(err.Error())
 			connected = false
 			break
 		} else {
@@ -81,7 +79,7 @@ func Push(device *serial.Port, msg string) {
 // Pop the last message off the queue and write it to the respective serial
 func Pop(device *serial.Port) {
 	if device == nil {
-		status.Log(logging.Error(), "Serial port is not set, nothing to write to.")
+		log.Error().Msg("Serial port is not set, nothing to write to.")
 		return
 	}
 
@@ -101,21 +99,21 @@ func Pop(device *serial.Port) {
 // write pushes out a message to the open serial port
 func write(device *serial.Port, msg string) {
 	if device == nil {
-		status.Log(logging.Error(), "Serial port is not set, nothing to write to.")
+		log.Error().Msg("Serial port is not set, nothing to write to.")
 		return
 	}
 
 	if len(msg) == 0 {
-		status.Log(logging.Warning(), "Empty message, not writing to serial")
+		log.Warn().Msg("Empty message, not writing to serial")
 		return
 	}
 
 	n, err := device.Write([]byte(msg))
 	if err != nil {
-		status.Log(logging.Error(), "Failed to write to serial port")
-		status.Log(logging.Error(), err.Error())
+		log.Error().Msg("Failed to write to serial port")
+		log.Error().Msg(err.Error())
 		return
 	}
 
-	status.Log(logging.OK(), fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
+	log.Info().Msg(fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
 }

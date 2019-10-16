@@ -13,12 +13,12 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
 
 // **
@@ -27,7 +27,7 @@ import (
 
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
-	mainStatus.Log(logging.OK(), "Stopping MDroid Service as per request")
+	log.Info().Msg("Stopping MDroid Service as per request")
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	os.Exit(0)
 }
@@ -63,7 +63,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if settings.Config.SlackURL != "" {
-		logging.SlackAlert(settings.Config.SlackURL, params["message"])
+		sessions.SlackAlert(settings.Config.SlackURL, params["message"])
 	} else {
 		json.NewEncoder(w).Encode("Slack URL not set in config.")
 	}
@@ -89,11 +89,7 @@ func startRouter() {
 	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
 	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
-
-	//
-	// Ping routes
-	//
-	router.HandleFunc("/ping/{device}", logging.Ping).Methods("POST")
+	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 
 	//
 	// GPS Routes
@@ -151,14 +147,6 @@ func startRouter() {
 	router.HandleFunc("/bluetooth/refresh", bluetooth.ForceRefresh).Methods("GET")
 
 	//
-	// Status Routes
-	//
-	router.HandleFunc("/status", logging.Get).Methods("GET")
-	router.HandleFunc("/status/{name}", logging.GetValue).Methods("GET")
-	router.HandleFunc("/status/{name}", logging.Set).Methods("POST")
-	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
-
-	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
@@ -177,8 +165,8 @@ func startRouter() {
 	// Start the router in an endless loop
 	for {
 		err := http.ListenAndServe(":5353", router)
-		mainStatus.Log(logging.Error(), err.Error())
-		mainStatus.Log(logging.Error(), "Router failed! We messed up really bad to get this far. Restarting the router...")
+		log.Error().Msg(err.Error())
+		log.Error().Msg("Router failed! We messed up really bad to get this far. Restarting the router...")
 		time.Sleep(time.Second * 10)
 	}
 }
@@ -210,13 +198,13 @@ func checksumMiddleware(next http.Handler) http.Handler {
 				body, err := ioutil.ReadAll(r.Body)
 				defer r.Body.Close() //  must close
 				if err != nil {
-					mainStatus.Log(logging.Error(), fmt.Sprintf("Error reading body: %v", err))
+					log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
 					http.Error(w, "can't read body", http.StatusBadRequest)
 					return
 				}
 
 				if md5.Sum(body) != md5.Sum([]byte(checksum)) {
-					mainStatus.Log(logging.Error(), fmt.Sprintf("Invalid checksum %s", checksum))
+					log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
 					http.Error(w, "Invalid checksum", http.StatusBadRequest)
 					return
 				}

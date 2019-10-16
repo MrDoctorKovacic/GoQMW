@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/logging"
+	"github.com/rs/zerolog/log"
 )
 
 type hooks struct {
@@ -21,7 +21,7 @@ func init() {
 
 // RegisterHook adds a new hook into a settings change
 func RegisterHook(componentName string, hook func(settingName string, settingValue string)) {
-	status.Log(logging.OK(), fmt.Sprintf("Adding new hook for %s", componentName))
+	log.Info().Msg(fmt.Sprintf("Adding new hook for %s", componentName))
 	hookList.mutex.Lock()
 	defer hookList.mutex.Unlock()
 	hookList.list[componentName] = append(hookList.list[componentName], hook)
