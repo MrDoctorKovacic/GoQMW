@@ -67,7 +67,7 @@ func ReadFromSerial(device *serial.Port, isWriter bool) bool {
 
 func parseSerialJSON(marshalledJSON interface{}) {
 	if marshalledJSON == nil {
-		log.Error().Msg(" marshalled JSON is nil.")
+		log.Debug().Msg("Marshalled JSON is nil.")
 		return
 	}
 
