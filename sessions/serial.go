@@ -83,13 +83,11 @@ func parseSerialJSON(marshalledJSON interface{}) {
 		case int:
 			SetValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
-			floatValue, ok := value.(float32)
-			if ok {
+			if floatValue, ok := value.(float32); ok {
 				SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
 		case float64:
-			floatValue, ok := value.(float64)
-			if ok {
+			if floatValue, ok := value.(float64); ok {
 				SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
 		case []interface{}:
