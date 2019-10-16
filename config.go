@@ -21,6 +21,7 @@ import (
 )
 
 func init() {
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	zerolog.TimestampFunc = func() time.Time {
 		return time.Now().In(gps.GetTimezone())
 	}
@@ -35,14 +36,10 @@ func init() {
 
 // Main config parsing
 func parseConfig() {
-
-	var sessionFile string
 	flag.StringVar(&settings.Settings.File, "settings-file", "", "File to recover the persistent settings.")
-	flag.StringVar(&sessionFile, "session-file", "", "[DEBUG ONLY] File to save and recover the last-known session.")
 	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
 
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
@@ -57,9 +54,6 @@ func parseConfig() {
 	if _, err := json.Marshal(settings.GetAll()); err != nil {
 		panic(err)
 	}
-
-	// Init session tracking (with or without Influx)
-	sessions.Create(settings.Settings.File)
 
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
