@@ -15,7 +15,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var clientConnected bool
+var (
+	clientConnected bool
+	failedOnce      bool
+)
 
 // SetupTokens prepares valid tokens from settings file
 func SetupTokens(configAddr *map[string]string) {
@@ -54,7 +57,11 @@ func CheckServer(host string, token string) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
 			if err != nil {
 				// handle error
-				log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
+				if !failedOnce {
+					failedOnce = true
+				} else {
+					log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
+				}
 			} else {
 				resp.Body.Close()
 				if resp.StatusCode == 200 {
