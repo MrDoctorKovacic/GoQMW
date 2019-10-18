@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,7 +27,7 @@ import (
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
-	json.NewEncoder(w).Encode(format.JSONResponse{Output: "OK", Status: "success", OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
 }
 
@@ -38,11 +37,11 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
+		format.WriteResponse(&w, format.JSONResponse{Output: "Machine name required", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode(format.JSONResponse{Output: "OK", Status: "success", OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 	sendServiceCommand(format.Name(machine), "reboot")
 }
 
@@ -52,11 +51,11 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
+		format.WriteResponse(&w, format.JSONResponse{Output: "Machine name required", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode(format.JSONResponse{Output: "OK", Status: "success", OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 	sendServiceCommand(machine, "shutdown")
 }
 
@@ -64,13 +63,10 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if settings.SlackURL != "" {
 		sessions.SlackAlert(settings.SlackURL, params["message"])
-		json.NewEncoder(w).Encode(format.JSONResponse{Output: params["message"], Status: "success", OK: true})
+		format.WriteResponse(&w, format.JSONResponse{Output: params["message"], OK: true})
 	} else {
-		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Slack URL not set in config.", Status: "fail", OK: false})
+		format.WriteResponse(&w, format.JSONResponse{Output: "Slack URL not set in config.", OK: false})
 	}
-
-	// Echo back message
-
 }
 
 // **
@@ -91,6 +87,7 @@ func startRouter() {
 	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
+	router.HandleFunc("/stats", format.HandleGetStats).Methods("GET")
 
 	//
 	// GPS Routes
@@ -202,13 +199,13 @@ func checksumMiddleware(next http.Handler) http.Handler {
 				defer r.Body.Close() //  must close
 				if err != nil {
 					log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
-					http.Error(w, "can't read body", http.StatusBadRequest)
+					format.WriteResponse(&w, format.JSONResponse{Output: "Can't read body", OK: false})
 					return
 				}
 
 				if md5.Sum(body) != md5.Sum([]byte(checksum)) {
 					log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
-					http.Error(w, "Invalid checksum", http.StatusBadRequest)
+					format.WriteResponse(&w, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
 					return
 				}
 				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))

@@ -70,3 +70,9 @@ func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
 	// Write out this response
 	json.NewEncoder(writer).Encode(response)
 }
+
+// HandleGetStats exports all known stat requests
+func HandleGetStats(w http.ResponseWriter, r *http.Request) {
+	// Echo back message
+	WriteResponse(&w, JSONResponse{Output: statistics, OK: true})
+}
