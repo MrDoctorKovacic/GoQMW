@@ -154,6 +154,8 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		} else {
 			PushQueue("interiorLightsOn")
 		}
+	case "CLOWN", "NOSE":
+		PushQueue("turnOnClownNose")
 	case "MODE":
 		PushQueue("pressMode")
 	case "RADIO", "NAV", "STEREO":
