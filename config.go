@@ -104,23 +104,17 @@ func setupSerial() {
 		return
 	}
 	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
-	hardwareSerialBaud, usingHardwareBaud := configMap["HARDWARE_SERIAL_BAUD"]
 
-	if usingHardwareSerial && usingHardwareBaud {
-		// Configure default baudrate
-		baudrate, err := strconv.Atoi(hardwareSerialBaud)
-		if err != nil {
-			log.Error().Msg("Failed to convert HardwareSerialBaud to int. Found value: " + hardwareSerialBaud)
-			log.Warn().Msg("Disabling hardware serial functionality")
-			return
-		}
+	if !usingHardwareSerial {
+		log.Error().Msg(fmt.Sprintf("No hardware serial port. Not setting up serial devices.\n%s", err.Error()))
+		return
+	}
 
-		// Start initial reader / writer
-		go sessions.StartSerialComms(hardwareSerialPort, baudrate)
+	// Start initial reader / writer
+	go sessions.StartSerialComms(hardwareSerialPort, 9600)
 
-		// Setup other devices
-		for device, baudrate := range mserial.ParseSerialDevices(settings.GetAll()) {
-			go sessions.StartSerialComms(device, baudrate)
-		}
+	// Setup other devices
+	for device, baudrate := range mserial.ParseSerialDevices(settings.GetAll()) {
+		go sessions.StartSerialComms(device, baudrate)
 	}
 }
