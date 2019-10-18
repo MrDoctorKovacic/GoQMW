@@ -11,7 +11,7 @@ import (
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower(keyIsIn string) {
-	angel := angelDef
+	angel := _angelDef
 	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
 	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
 	lightSensor := sessions.GetBoolDefault("LIGHT_SENSOR_ON", false)
@@ -24,7 +24,7 @@ func evalAngelEyesPower(keyIsIn string) {
 
 // Evaluates if the video boards should be on, and then passes that struct along as generic power module
 func evalVideoPower(keyIsIn string) {
-	board := boardDef
+	board := _boardDef
 	board.on, board.errOn = sessions.GetBool("BOARD_POWER")
 	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
 
@@ -34,7 +34,7 @@ func evalVideoPower(keyIsIn string) {
 
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
 func evalWirelessPower(accOn bool, wifiOn bool) {
-	wireless := wirelessDef
+	wireless := _wirelessDef
 	wireless.on, wireless.errOn = sessions.GetBool("WIRELESS_POWER")
 	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
 
@@ -50,7 +50,7 @@ func evalWirelessPower(accOn bool, wifiOn bool) {
 
 // Evaluates if the sound board should be on, and then passes that struct along as generic power module
 func evalSoundPower(accOn bool, wifiOn bool) {
-	sound := soundDef
+	sound := _soundDef
 	sound.on, sound.errOn = sessions.GetBool("SOUND_POWER")
 	sound.powerTarget, sound.errTarget = settings.Get(sound.settingComp, sound.settingName)
 
