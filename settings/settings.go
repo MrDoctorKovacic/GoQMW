@@ -16,14 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// ConfigValues controls program settings and general persistent settings
-type ConfigValues struct {
-	BluetoothAddress    string
-	DB                  *influx.Influx
-	SerialControlDevice *serial.Port
-	SlackURL            string
-}
-
 type settingsWrap struct {
 	File  string
 	mutex sync.Mutex
@@ -32,12 +24,14 @@ type settingsWrap struct {
 
 // Settings control generic user defined field:value mappings, which will persist each run
 var (
-	Settings settingsWrap
-	Config   ConfigValues
+	Settings            settingsWrap
+	BluetoothAddress    string
+	DB                  *influx.Influx
+	SerialControlDevice *serial.Port
+	SlackURL            string
 )
 
 func init() {
-	Config = ConfigValues{}
 	Settings = settingsWrap{File: "./settings.json", Data: make(map[string]map[string]string, 0)}
 }
 

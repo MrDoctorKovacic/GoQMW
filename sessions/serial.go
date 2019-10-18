@@ -27,8 +27,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 	var isWriter bool
 
 	// Use first Serial device as a R/W, all others will only be read from
-	if settings.Config.SerialControlDevice == nil {
-		settings.Config.SerialControlDevice = s
+	if settings.SerialControlDevice == nil {
+		settings.SerialControlDevice = s
 		isWriter = true
 		log.Info().Msg("Using serial device " + deviceName + " as default writer")
 	}
@@ -39,8 +39,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 		log.Error().Msg("Serial disconnected, closing port and reopening")
 
 		// Replace main serial writer
-		if settings.Config.SerialControlDevice == s {
-			settings.Config.SerialControlDevice = nil
+		if settings.SerialControlDevice == s {
+			settings.SerialControlDevice = nil
 		}
 
 		s.Close()

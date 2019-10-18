@@ -62,8 +62,8 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	if settings.Config.SlackURL != "" {
-		sessions.SlackAlert(settings.Config.SlackURL, params["message"])
+	if settings.SlackURL != "" {
+		sessions.SlackAlert(settings.SlackURL, params["message"])
 	} else {
 		json.NewEncoder(w).Encode("Slack URL not set in config.")
 	}
@@ -178,7 +178,7 @@ func authMiddleware(next http.Handler) http.Handler {
 
 		reqToken := r.Header.Get("Authorization")
 		splitToken := strings.Split(reqToken, "Bearer")
-		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != settings.Config.AuthToken {
+		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != settings.AuthToken {
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte("403 - Invalid Auth Token!"))
 		}

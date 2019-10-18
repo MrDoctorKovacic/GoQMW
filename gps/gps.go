@@ -96,8 +96,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	postingString := Set(newdata)
 
 	// Insert into database
-	if postingString != "" && settings.Config.DB != nil {
-		online, err := settings.Config.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
+	if postingString != "" && settings.DB != nil {
+		online, err := settings.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
 		if err != nil && online {
 			log.Error().Msg(fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
 			return
