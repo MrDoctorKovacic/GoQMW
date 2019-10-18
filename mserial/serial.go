@@ -9,14 +9,14 @@ import (
 	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
 
-// status will control logging and reporting of status / warnings / errors
 var (
+	// Writer is our one main port to default to
+	Writer         *serial.Port
 	writeQueue     map[*serial.Port][]string
 	writeQueueLock sync.Mutex
 )
@@ -51,7 +51,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if params["command"] != "" {
-		Push(settings.SerialWriter, params["command"])
+		Push(Writer, params["command"])
 	}
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 }

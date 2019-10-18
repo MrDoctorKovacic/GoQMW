@@ -10,7 +10,6 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/rs/zerolog/log"
-	"github.com/tarm/serial"
 
 	"github.com/gorilla/mux"
 )
@@ -26,8 +25,7 @@ var Settings settingsWrap
 
 // Misc settings we'd end up looking for
 var (
-	SerialWriter *serial.Port
-	SlackURL     string
+	SlackURL string
 )
 
 func init() {

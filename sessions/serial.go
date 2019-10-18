@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
@@ -27,8 +26,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 	var isWriter bool
 
 	// Use first Serial device as a R/W, all others will only be read from
-	if settings.SerialWriter == nil {
-		settings.SerialWriter = s
+	if mserial.Writer == nil {
+		mserial.Writer = s
 		isWriter = true
 		log.Info().Msg("Using serial device " + deviceName + " as default writer")
 	}
@@ -39,8 +38,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 		log.Error().Msg("Serial disconnected, closing port and reopening")
 
 		// Replace main serial writer
-		if settings.SerialWriter == s {
-			settings.SerialWriter = nil
+		if mserial.Writer == s {
+			mserial.Writer = nil
 		}
 
 		s.Close()
