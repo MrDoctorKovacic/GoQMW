@@ -36,7 +36,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	if len(body) == 0 {
 		response.Output = "Error: Empty body"
-		format.WriteResponse(&w, response)
+		format.WriteResponse(&w, r, response)
 		return
 	}
 
@@ -46,7 +46,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		log.Error().Msg(fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
 		response.Output = err.Error()
-		format.WriteResponse(&w, response)
+		format.WriteResponse(&w, r, response)
 		return
 	}
 
@@ -54,7 +54,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	newPackage := SessionPackage{Name: params["name"], Data: newdata}
 	if err = Set(newPackage, newdata.Quiet); err != nil {
 		response.Output = err.Error()
-		format.WriteResponse(&w, response)
+		format.WriteResponse(&w, r, response)
 		return
 	}
 
@@ -62,7 +62,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	response.OK = true
 	response.Output = newPackage
 
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // SetValue prepares a Value structure before passing it to the setter

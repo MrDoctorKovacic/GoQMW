@@ -176,7 +176,7 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		log.Error().Msg(stderr.String())
 	}
 
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // Disconnect bluetooth device
@@ -194,7 +194,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 		log.Error().Msg(stderr.String())
 	}
 
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // GetDeviceInfo attempts to get metadata about connected device
@@ -245,26 +245,26 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 func Prev(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Going to previous track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false)
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Going to next track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false)
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // Play attempts to play bluetooth media
 func Play(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Attempting to play media...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Play"}, false)
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // Pause attempts to pause bluetooth media
 func Pause(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Attempting to pause media...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Pause"}, false)
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }

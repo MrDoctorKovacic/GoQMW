@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/rs/zerolog/log"
 )
 
@@ -23,7 +24,7 @@ type stat struct {
 	Failures      int           `json:"failures,omitempty"`
 	Successes     int           `json:"successes,omitempty"`
 	Total         int           `json:"total,omitempty"`
-	TotalSize     int           `json:"totalSize,omitempty"`
+	TotalSize     int64         `json:"totalSize,omitempty"`
 	SessionValues int           `json:"sessionValues,omitempty"`
 	TimeStarted   time.Time     `json:"timeStarted,omitempty"`
 	TimeRunning   time.Duration `json:"timeRunning,omitempty"`
@@ -37,7 +38,7 @@ func init() {
 }
 
 // WriteResponse to an http writer, adding extra info and HTTP status as needed
-func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
+func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONResponse) {
 	// Deref writer
 	writer := *w
 
@@ -63,10 +64,31 @@ func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
 	// Update Statistics
 	strResponse, _ := json.Marshal(response)
 	Statistics.Total++
-	Statistics.TotalSize += len(strResponse)
+	// Add the request and response sizes together
+	Statistics.TotalSize += int64(len(strResponse)) + r.ContentLength
+
+	intOK := 0
+	if response.OK {
+		intOK = 1
+	}
+
+	// Log this to our DB
+	if influx.DB != nil {
+		online, err := influx.DB.Write(fmt.Sprintf("requests,method=\"%s\",path=\"%s\" ok=%d", r.Method, r.URL.Path, intOK))
+		if err != nil {
+			errorText := fmt.Sprintf("Error writing method=%s, path=%s to influx DB: %s", r.Method, r.URL.Path, err.Error())
+			// Only spam our log if Influx is online
+			if online {
+				log.Error().Msg(errorText)
+			}
+		}
+		log.Debug().Msg(fmt.Sprintf("Logged request to %s in DB", r.URL.Path))
+	}
 
 	// Log this to debug
 	log.Debug().
+		Str("Path", r.URL.Path).
+		Str("Method", r.Method).
 		Str("Output", fmt.Sprintf("%v", response.Output)).
 		Str("Status", response.Status).
 		Bool("OK", response.OK).
@@ -82,5 +104,5 @@ func HandleGetStats(w http.ResponseWriter, r *http.Request) {
 	Statistics.TimeRunning = time.Since(Statistics.TimeStarted)
 
 	// Echo back message
-	WriteResponse(&w, JSONResponse{Output: Statistics, OK: true})
+	WriteResponse(&w, r, JSONResponse{Output: Statistics, OK: true})
 }
