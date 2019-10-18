@@ -127,10 +127,7 @@ func accPower(hook *sessions.SessionPackage) {
 		return
 	}
 
-	// Pull all the necessary configuration data
-	tablet := _tabletDef
-	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
-	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
+	// Pull the necessary configuration data
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
 	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
@@ -143,8 +140,8 @@ func accPower(hook *sessions.SessionPackage) {
 	// Trigger sound, based on ACC and wifi status
 	go evalSoundPower(keyIsIn, accOn, wifiOn)
 
-	// Trigger tablet, based on ACC status
-	go genericPowerTrigger(accOn, "Tablet", tablet)
+	// Trigger sound, based on ACC and wifi status
+	go evalTabletPower(keyIsIn, accOn, wifiOn)
 }
 
 // When wireless is turned off, we can infer that LTE is also off

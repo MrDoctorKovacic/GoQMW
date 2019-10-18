@@ -34,6 +34,18 @@ func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
 	genericPowerTrigger(shouldTrigger, "Board", board)
 }
 
+// Evaluates if the tablet should be on, and then passes that struct along as generic power module
+func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
+	tablet := _tabletDef
+	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
+	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
+
+	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
+
+	// Pass angel module to generic power trigger
+	genericPowerTrigger(shouldTrigger, "Tablet", tablet)
+}
+
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
 func evalWirelessPower(accOn bool, wifiOn bool) {
 	wireless := _wirelessDef
