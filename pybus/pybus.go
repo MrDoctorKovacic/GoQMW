@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
@@ -60,10 +60,10 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 		// Some commands need special timing functions
 		go PushQueue(params["command"])
 	} else {
-		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "Invalid command", OK: false})
+		format.WriteResponse(&w, format.JSONResponse{Output: "Invalid command", OK: false})
 		return
 	}
-	formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // RepeatCommand endlessly, helps with request functions
@@ -84,17 +84,17 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
-		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
+		format.WriteResponse(&w, format.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
 		return
 	}
 
 	// Format similarly to the rest of MDroid suite, removing plurals
 	// Formatting allows for fuzzier requests
-	device := strings.TrimSuffix(formatting.Name(params["device"]), "S")
-	command := strings.TrimSuffix(formatting.Name(params["command"]), "S")
+	device := strings.TrimSuffix(format.Name(params["device"]), "S")
+	command := strings.TrimSuffix(format.Name(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
-	isPositive, err := formatting.IsPositiveRequest(command)
+	isPositive, err := format.IsPositiveRequest(command)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
@@ -186,7 +186,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			PushQueue("pressStereoPower")
 		}
 	case "LUCIO", "CAMERA", "BOARD":
-		if formatting.Name(command) == "AUTO" {
+		if format.Name(command) == "AUTO" {
 			settings.Set("BOARD", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("BOARD", "POWER", "ON")
@@ -196,7 +196,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			mserial.Push(mserial.Writer, "powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
-		if formatting.Name(command) == "AUTO" {
+		if format.Name(command) == "AUTO" {
 			settings.Set("WIRELESS", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("WIRELESS", "POWER", "ON")
@@ -207,11 +207,11 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		log.Error().Msg(fmt.Sprintf("Invalid device %s", device))
-		response := formatting.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
-		formatting.WriteResponse(&w, response)
+		response := format.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
+		format.WriteResponse(&w, response)
 		return
 	}
 
 	// Yay
-	formatting.WriteResponse(&w, formatting.JSONResponse{Output: device, OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: device, OK: true})
 }

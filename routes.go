@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
@@ -28,7 +28,7 @@ import (
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
+	json.NewEncoder(w).Encode(format.JSONResponse{Output: "OK", Status: "success", OK: true})
 	os.Exit(0)
 }
 
@@ -38,12 +38,12 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
+		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	sendServiceCommand(formatting.Name(machine), "reboot")
+	json.NewEncoder(w).Encode(format.JSONResponse{Output: "OK", Status: "success", OK: true})
+	sendServiceCommand(format.Name(machine), "reboot")
 }
 
 // Shutdown the current machine
@@ -52,11 +52,11 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
+		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Machine name required", Status: "fail", OK: false})
 		return
 	}
 
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
+	json.NewEncoder(w).Encode(format.JSONResponse{Output: "OK", Status: "success", OK: true})
 	sendServiceCommand(machine, "shutdown")
 }
 
@@ -64,9 +64,9 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if settings.SlackURL != "" {
 		sessions.SlackAlert(settings.SlackURL, params["message"])
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: params["message"], Status: "success", OK: true})
+		json.NewEncoder(w).Encode(format.JSONResponse{Output: params["message"], Status: "success", OK: true})
 	} else {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Slack URL not set in config.", Status: "fail", OK: false})
+		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Slack URL not set in config.", Status: "fail", OK: false})
 	}
 
 	// Echo back message
@@ -98,8 +98,8 @@ func startRouter() {
 	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
 	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		response := formatting.JSONResponse{Output: gps.GetTimezone(), OK: true}
-		formatting.WriteResponse(&w, response)
+		response := format.JSONResponse{Output: gps.GetTimezone(), OK: true}
+		format.WriteResponse(&w, response)
 	}).Methods("GET")
 
 	//
@@ -158,8 +158,8 @@ func startRouter() {
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		response := formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
-		formatting.WriteResponse(&w, response)
+		response := format.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
+		format.WriteResponse(&w, response)
 	}).Methods("GET")
 
 	// Setup checksum middleware

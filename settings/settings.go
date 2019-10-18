@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gorilla/mux"
@@ -34,14 +33,14 @@ func init() {
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Responding to GET request with entire settings map.")
-	response := formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true}
-	formatting.WriteResponse(&w, response)
+	response := format.JSONResponse{Output: GetAll(), Status: "success", OK: true}
+	format.WriteResponse(&w, response)
 }
 
 // HandleGet returns all the values of a specific setting
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatting.Name(params["component"])
+	componentName := format.Name(params["component"])
 
 	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 
@@ -49,19 +48,19 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	responseVal, ok := Settings.Data[componentName]
 	Settings.mutex.Unlock()
 
-	response := formatting.JSONResponse{Output: responseVal, OK: true}
+	response := format.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
-		response = formatting.JSONResponse{Output: "Setting not found.", OK: false}
+		response = format.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	formatting.WriteResponse(&w, response)
+	format.WriteResponse(&w, response)
 }
 
 // HandleGetValue returns a specific setting value
 func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatting.Name(params["component"])
-	settingName := formatting.Name(params["name"])
+	componentName := format.Name(params["component"])
+	settingName := format.Name(params["name"])
 
 	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 
@@ -69,12 +68,12 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	responseVal, ok := Settings.Data[componentName][settingName]
 	Settings.mutex.Unlock()
 
-	response := formatting.JSONResponse{Output: responseVal, OK: true}
+	response := format.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
-		response = formatting.JSONResponse{Output: "Setting not found.", OK: false}
+		response = format.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	formatting.WriteResponse(&w, response)
+	format.WriteResponse(&w, response)
 }
 
 // GetAll returns all the values of known settings
@@ -94,7 +93,7 @@ func GetAll() map[string]map[string]string {
 
 // GetComponent returns all the values of a specific component
 func GetComponent(componentName string) (map[string]string, error) {
-	componentName = formatting.Name(componentName)
+	componentName = format.Name(componentName)
 	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
@@ -108,7 +107,7 @@ func GetComponent(componentName string) (map[string]string, error) {
 
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
-	componentName = formatting.Name(componentName)
+	componentName = format.Name(componentName)
 	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
@@ -142,8 +141,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Parse out params
-	componentName := formatting.Name(params["component"])
-	settingName := formatting.Name(params["name"])
+	componentName := format.Name(params["component"])
+	settingName := format.Name(params["name"])
 	settingValue := params["value"]
 
 	// Log if requested
@@ -153,8 +152,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	Set(componentName, settingName, settingValue)
 
 	// Respond with OK
-	response := formatting.JSONResponse{Output: componentName, OK: true}
-	formatting.WriteResponse(&w, response)
+	response := format.JSONResponse{Output: componentName, OK: true}
+	format.WriteResponse(&w, response)
 }
 
 // Set will handle actually updates or posts a new setting value

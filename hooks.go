@@ -5,7 +5,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/rs/zerolog/log"
@@ -157,7 +157,7 @@ func lightSensorReason(hook *sessions.SessionPackage) {
 	keyPosition, _ := sessions.Get("KEY_POSITION")
 	doorsLocked, _ := sessions.Get("DOORS_LOCKED")
 	windowsOpen, _ := sessions.Get("WINDOWS_OPEN")
-	delta, err := formatting.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
+	delta, err := format.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 
 	if err != nil {
 		if hook.Data.Value == "RAIN" &&
