@@ -27,6 +27,7 @@ type power struct {
 
 // Read the target action based on current ACC Power value
 var (
+	soundDef    = power{settingComp: "SOUND", settingName: "POWER"}
 	wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
 	angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
 	tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
@@ -46,14 +47,24 @@ func setupHooks() {
 	sessions.RegisterHookSlice(&[]string{"SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3"}, voltage)
 }
 
-// Helper function to generalize fetching key state
-func getKeyState() string {
-	keyIsIn, err := sessions.Get("KEY_STATE")
+// Helper function to generalize fetching session string
+func getSessionString(name string, def string) string {
+	v, err := sessions.Get(name)
 	if err != nil {
-		log.Debug().Msg("Key Status could not be determined, defaulting to false")
-		keyIsIn.Value = "FALSE"
+		log.Debug().Msg(fmt.Sprintf("%s could not be determined, defaulting to FALSE", name))
+		v.Value = def
 	}
-	return keyIsIn.Value
+	return v.Value
+}
+
+// Helper function to generalize fetching session bool
+func getSessionBool(name string, def bool) bool {
+	v, err := sessions.GetBool(name)
+	if err != nil {
+		log.Debug().Msg(fmt.Sprintf("%s could not be determined, defaulting to false", name))
+		v = def
+	}
+	return v
 }
 
 //
@@ -65,7 +76,7 @@ func getKeyState() string {
 // When angel eyes setting is changed
 func angelEyesSettings(settingName string, settingValue string) {
 	// Determine state of angel eyes
-	evalAngelEyes(getKeyState())
+	evalAngelEyes(getSessionString("KEY_STATE", "FALSE"))
 }
 
 // When key state is changed in session
@@ -80,7 +91,7 @@ func keyState(hook *sessions.SessionPackage) {
 // When light sensor is changed in session
 func lightSensorOn(hook *sessions.SessionPackage) {
 	// Determine state of angel eyes
-	evalAngelEyes(getKeyState())
+	evalAngelEyes(getSessionString("KEY_STATE", "FALSE"))
 }
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
@@ -88,12 +99,7 @@ func evalAngelEyes(keyIsIn string) {
 	angel := angelDef
 	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
 	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
-
-	lightSensor, err := sessions.GetBool("LIGHT_SENSOR_ON")
-	if err != nil {
-		log.Debug().Msg("Light Sensor Status could not be determined, defaulting to false")
-		lightSensor = false
-	}
+	lightSensor := getSessionBool("LIGHT_SENSOR_ON", false)
 
 	shouldTrigger := !lightSensor && keyIsIn != "FALSE"
 
@@ -113,36 +119,40 @@ func evalVideo(keyIsIn string) {
 
 // When wireless setting is changed
 func wirelessSettings(settingName string, settingValue string) {
-	accOn, err := sessions.GetBool("ACC_POWER")
-	if err != nil {
-		log.Debug().Msg("ACC Power Status could not be determined, defaulting to false")
-		accOn = false
-	}
+	accOn := getSessionBool("ACC_POWER", false)
+	wifiOn := getSessionBool("WIFI_CONNECTED", false)
 
 	// Determine state of wireless
-	evalWireless(accOn)
+	evalWireless(accOn, wifiOn)
 }
 
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
-func evalWireless(accOn bool) {
+func evalWireless(accOn bool, wifiOn bool) {
 	wireless := wirelessDef
 	wireless.on, wireless.errOn = sessions.GetBool("WIRELESS_POWER")
 	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
 
-	wifiOn, err := sessions.GetBool("WIFI_CONNECTED")
-	if err != nil {
-		log.Debug().Msg("Wifi Status could not be determined, defaulting to false")
-		wifiOn = false
-	}
-
 	// Wireless is most likely supposed to be on, only one case where it should not be
 	shouldTrigger := true
-	if wireless.powerTarget == "AUTO" && !accOn && wifiOn {
+	if !accOn && wifiOn {
 		shouldTrigger = false
 	}
 
 	// Pass angel module to generic power trigger
 	genericPowerTrigger(shouldTrigger, "Wireless", wireless)
+}
+
+// Evaluates if the sound board should be on, and then passes that struct along as generic power module
+func evalSound(accOn bool, wifiOn bool) {
+	sound := soundDef
+	sound.on, sound.errOn = sessions.GetBool("SOUND_POWER")
+	sound.powerTarget, sound.errTarget = settings.Get(sound.settingComp, sound.settingName)
+
+	keyIsIn := getSessionString("KEY_STATE", "FALSE")
+	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
+
+	// Pass angel module to generic power trigger
+	genericPowerTrigger(shouldTrigger, "Sound", sound)
 }
 
 // Convert main raw voltage into an actual number
@@ -188,9 +198,13 @@ func accPower(hook *sessions.SessionPackage) {
 	tablet := tabletDef
 	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
 	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
+	wifiOn := getSessionBool("WIFI_CONNECTED", false)
 
 	// Trigger wireless, based on ACC and wifi status
-	go evalWireless(accOn)
+	go evalWireless(accOn, wifiOn)
+
+	// Trigger wireless, based on ACC and wifi status
+	go evalSound(accOn, wifiOn)
 
 	// Trigger tablet, based on ACC status
 	go genericPowerTrigger(accOn, "Tablet", tablet)
