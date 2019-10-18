@@ -167,10 +167,22 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			PushQueue("pressNext")
 		case "PREV":
 			PushQueue("pressPrev")
-		case "NUM":
-			PushQueue("pressNumPad")
 		case "MODE":
 			PushQueue("pressMode")
+		case "NUM":
+			PushQueue("pressNumPad")
+		case "1":
+			PushQueue("press1")
+		case "2":
+			PushQueue("press2")
+		case "3":
+			PushQueue("press3")
+		case "4":
+			PushQueue("press4")
+		case "5":
+			PushQueue("press5")
+		case "6":
+			PushQueue("press6")
 		default:
 			PushQueue("pressStereoPower")
 		}
