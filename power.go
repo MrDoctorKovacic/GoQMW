@@ -23,13 +23,15 @@ func evalAngelEyesPower(keyIsIn string) {
 }
 
 // Evaluates if the video boards should be on, and then passes that struct along as generic power module
-func evalVideoPower(keyIsIn string) {
+func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
 	board := _boardDef
 	board.on, board.errOn = sessions.GetBool("BOARD_POWER")
 	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
 
+	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
+
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(keyIsIn != "FALSE", "Board", board)
+	genericPowerTrigger(shouldTrigger, "Board", board)
 }
 
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
@@ -49,12 +51,11 @@ func evalWirelessPower(accOn bool, wifiOn bool) {
 }
 
 // Evaluates if the sound board should be on, and then passes that struct along as generic power module
-func evalSoundPower(accOn bool, wifiOn bool) {
+func evalSoundPower(keyIsIn string, accOn bool, wifiOn bool) {
 	sound := _soundDef
 	sound.on, sound.errOn = sessions.GetBool("SOUND_POWER")
 	sound.powerTarget, sound.errTarget = settings.Get(sound.settingComp, sound.settingName)
 
-	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
 
 	// Pass sound module to generic power trigger
