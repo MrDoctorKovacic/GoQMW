@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
@@ -22,6 +23,28 @@ var (
 
 func init() {
 	writeQueue = make(map[*serial.Port][]string, 0)
+}
+
+// ParseSerialDevices parses through other serial devices, if enabled
+func ParseSerialDevices(settingsData map[string]map[string]string) map[string]int {
+
+	serialDevices, additionalSerialDevices := settingsData["TLV"]
+	var devices map[string]int
+
+	if additionalSerialDevices {
+		// Loop through each READONLY serial device and set up
+		// No room to config baud rate here, use 9600 as default
+		for deviceName, baudrateString := range serialDevices {
+			deviceBaud, err := strconv.Atoi(baudrateString)
+			if err != nil {
+				log.Error().Msg("Failed to convert given baudrate string to int. Found values: " + deviceName + ": " + baudrateString)
+				return nil
+			}
+			devices[deviceName] = deviceBaud
+		}
+	}
+
+	return devices
 }
 
 // WriteSerialHandler handles messages sent through the server

@@ -261,10 +261,10 @@ func lightSensorReason(hook *sessions.SessionPackage) {
 func seatMemory(hook *sessions.SessionPackage) {
 	switch hook.Name {
 	case "SEAT_MEMORY_1":
-		mserial.CommandNetworkMachine("BOARD", "restart")
+		sendServiceCommand("BOARD", "restart")
 	case "SEAT_MEMORY_2":
-		mserial.CommandNetworkMachine("WIRELESS", "restart")
+		sendServiceCommand("WIRELESS", "restart")
 	case "SEAT_MEMORY_3":
-		mserial.CommandNetworkMachine("MDROID", "restart")
+		sendServiceCommand("MDROID", "restart")
 	}
 }

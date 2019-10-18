@@ -43,7 +43,7 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	mserial.CommandNetworkMachine(formatting.FormatName(machine), "reboot")
+	sendServiceCommand(formatting.FormatName(machine), "reboot")
 }
 
 // Shutdown the current machine
@@ -57,7 +57,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	mserial.CommandNetworkMachine(machine, "shutdown")
+	sendServiceCommand(machine, "shutdown")
 }
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
