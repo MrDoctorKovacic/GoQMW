@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -19,16 +20,20 @@ type JSONResponse struct {
 
 // stat for requests, provided they go through our WriteResponse
 type stat struct {
-	failures  int
-	successes int
-	total     int
-	totalSize int
+	Failures      int           `json:"failures,omitempty"`
+	Successes     int           `json:"successes,omitempty"`
+	Total         int           `json:"total,omitempty"`
+	TotalSize     int           `json:"totalSize,omitempty"`
+	SessionValues int           `json:"sessionValues,omitempty"`
+	TimeStarted   time.Time     `json:"timeStarted,omitempty"`
+	TimeRunning   time.Duration `json:"timeRunning,omitempty"`
 }
 
-var statistics stat
+// Statistics counts various program data
+var Statistics stat
 
 func init() {
-	statistics = stat{}
+	Statistics = stat{TimeStarted: time.Now()}
 }
 
 // WriteResponse to an http writer, adding extra info and HTTP status as needed
@@ -42,7 +47,7 @@ func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
 			response.Status = "success"
 		}
 		writer.WriteHeader(http.StatusOK)
-		statistics.successes++
+		Statistics.Successes++
 	} else {
 		if response.Status == "" {
 			response.Status = "fail"
@@ -52,13 +57,13 @@ func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
 		} else {
 			writer.WriteHeader(http.StatusBadRequest)
 		}
-		statistics.failures++
+		Statistics.Failures++
 	}
 
-	// Update statistics
+	// Update Statistics
 	strResponse, _ := json.Marshal(response)
-	statistics.total++
-	statistics.totalSize += len(strResponse)
+	Statistics.Total++
+	Statistics.TotalSize += len(strResponse)
 
 	// Log this to debug
 	log.Debug().
@@ -73,6 +78,9 @@ func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
 
 // HandleGetStats exports all known stat requests
 func HandleGetStats(w http.ResponseWriter, r *http.Request) {
+	// Calculate time running
+	Statistics.TimeRunning = time.Since(Statistics.TimeStarted)
+
 	// Echo back message
-	WriteResponse(&w, JSONResponse{Output: statistics, OK: true})
+	WriteResponse(&w, JSONResponse{Output: Statistics, OK: true})
 }
