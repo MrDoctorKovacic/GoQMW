@@ -27,7 +27,7 @@ import (
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
 }
 
@@ -37,11 +37,11 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		format.WriteResponse(&w, format.JSONResponse{Output: "Machine name required", OK: false})
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Machine name required", OK: false})
 		return
 	}
 
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	sendServiceCommand(format.Name(machine), "reboot")
 }
 
@@ -51,11 +51,11 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		format.WriteResponse(&w, format.JSONResponse{Output: "Machine name required", OK: false})
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Machine name required", OK: false})
 		return
 	}
 
-	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	sendServiceCommand(machine, "shutdown")
 }
 
@@ -63,9 +63,9 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if settings.SlackURL != "" {
 		sessions.SlackAlert(settings.SlackURL, params["message"])
-		format.WriteResponse(&w, format.JSONResponse{Output: params["message"], OK: true})
+		format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
 	} else {
-		format.WriteResponse(&w, format.JSONResponse{Output: "Slack URL not set in config.", OK: false})
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Slack URL not set in config.", OK: false})
 	}
 }
 
@@ -96,7 +96,7 @@ func startRouter() {
 	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
 		response := format.JSONResponse{Output: gps.GetTimezone(), OK: true}
-		format.WriteResponse(&w, response)
+		format.WriteResponse(&w, r, response)
 	}).Methods("GET")
 
 	//
@@ -156,7 +156,7 @@ func startRouter() {
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		response := format.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
-		format.WriteResponse(&w, response)
+		format.WriteResponse(&w, r, response)
 	}).Methods("GET")
 
 	// Setup checksum middleware
@@ -199,13 +199,13 @@ func checksumMiddleware(next http.Handler) http.Handler {
 				defer r.Body.Close() //  must close
 				if err != nil {
 					log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
-					format.WriteResponse(&w, format.JSONResponse{Output: "Can't read body", OK: false})
+					format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
 					return
 				}
 
 				if md5.Sum(body) != md5.Sum([]byte(checksum)) {
 					log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
-					format.WriteResponse(&w, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
+					format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
 					return
 				}
 				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))

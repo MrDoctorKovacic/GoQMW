@@ -35,7 +35,7 @@ func init() {
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Responding to GET request with entire settings map.")
 	response := format.JSONResponse{Output: GetAll(), Status: "success", OK: true}
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // HandleGet returns all the values of a specific setting
@@ -54,7 +54,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 		response = format.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // HandleGetValue returns a specific setting value
@@ -74,7 +74,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 		response = format.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // GetAll returns all the values of known settings
@@ -154,7 +154,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	// Respond with OK
 	response := format.JSONResponse{Output: componentName, OK: true}
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // Set will handle actually updates or posts a new setting value

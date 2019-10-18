@@ -19,7 +19,7 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	} else {
 		response.Output = GetAll()
 	}
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // GetAll returns the entire current session
@@ -62,7 +62,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 		response.Output = err.Error()
 		response.OK = false
 	}
-	format.WriteResponse(&w, response)
+	format.WriteResponse(&w, r, response)
 }
 
 // Get returns the named session, if it exists. Nil otherwise
