@@ -19,15 +19,15 @@ import (
 // Regex expressions for parsing dbus output
 var (
 	BluetoothAddress string
-	re               *regexp.Regexp
-	reFind           *regexp.Regexp
-	reClean          *regexp.Regexp
+	replySerialRegex *regexp.Regexp
+	findStringRegex  *regexp.Regexp
+	cleanRegex       *regexp.Regexp
 )
 
 func init() {
-	re = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
-	reFind = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
-	reClean = regexp.MustCompile(`(string|uint32|\")+`)
+	replySerialRegex = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
+	findStringRegex = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
+	cleanRegex = regexp.MustCompile(`(string|uint32|\")+`)
 }
 
 // Setup bluetooth with address
@@ -47,8 +47,8 @@ func cleanDBusOutput(output string) map[string]string {
 	outputMap := make(map[string]string, 0)
 
 	// Start regex replacing for important values
-	s := re.ReplaceAllString(output, "")
-	outputArray := reFind.FindAllString(s, -1)
+	s := replySerialRegex.ReplaceAllString(output, "")
+	outputArray := findStringRegex.FindAllString(s, -1)
 
 	if outputArray == nil {
 		log.Error().Msg("Error parsing dbus output")
@@ -61,7 +61,7 @@ func cleanDBusOutput(output string) map[string]string {
 	// The regex should cut things down to an alternating key:value after being trimmed
 	// We add these to the map, and add a "Meta" key when it would normally be empty (as the first in the array)
 	for i, value := range outputArray {
-		newValue := strings.TrimSpace(reClean.ReplaceAllString(value, ""))
+		newValue := strings.TrimSpace(cleanRegex.ReplaceAllString(value, ""))
 		// Some devices have this meta value as the first entry (iOS mainly)
 		// we should swap key/value pairs if so
 		if i == 0 && (newValue == "Item" || newValue == "playing" || newValue == "paused") {
