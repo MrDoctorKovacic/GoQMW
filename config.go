@@ -67,7 +67,7 @@ func parseConfig() {
 	sessions.SetupTokens(&configMap)
 	setupSerial()
 
-	settings.Config.SlackURL = configMap["SLACK_URL"]
+	settings.SlackURL = configMap["SLACK_URL"]
 
 	// Set up pybus repeat commands
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
@@ -85,11 +85,11 @@ func setupDatabase(configAddr *map[string]string) {
 	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
-		settings.Config.DB = nil
+		settings.DB = nil
 		log.Info().Msg("Not logging to influx db")
 		return
 	}
-	settings.Config.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
+	settings.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
 }
 
 //

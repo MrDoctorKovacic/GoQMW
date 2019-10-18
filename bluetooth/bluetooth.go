@@ -37,9 +37,9 @@ func Setup(configAddr *map[string]string) {
 	if usingBluetooth {
 		EnableAutoRefresh()
 		SetAddress(bluetoothAddress)
-		settings.Config.BluetoothAddress = bluetoothAddress
+		settings.BluetoothAddress = bluetoothAddress
 	}
-	settings.Config.BluetoothAddress = ""
+	settings.BluetoothAddress = ""
 }
 
 // Parse the variant output from DBus into map of string

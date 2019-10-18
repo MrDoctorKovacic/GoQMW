@@ -29,13 +29,13 @@ func gracefulShutdown(name string) {
 	switch name {
 	case "Board":
 		sendServiceCommand("etc", "shutdown")
-		machineShutdown(settings.Config.SerialControlDevice, "board", time.Second*10, serialCommand)
+		machineShutdown(settings.SerialControlDevice, "board", time.Second*10, serialCommand)
 	case "Wireless":
-		machineShutdown(settings.Config.SerialControlDevice, "lte", time.Second*10, serialCommand)
+		machineShutdown(settings.SerialControlDevice, "lte", time.Second*10, serialCommand)
 	case "Sound":
-		machineShutdown(settings.Config.SerialControlDevice, "sound", time.Second*10, serialCommand)
+		machineShutdown(settings.SerialControlDevice, "sound", time.Second*10, serialCommand)
 	default:
-		mserial.Push(settings.Config.SerialControlDevice, serialCommand)
+		mserial.Push(settings.SerialControlDevice, serialCommand)
 	}
 }
 
