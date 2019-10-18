@@ -69,11 +69,17 @@ func wirelessSettings(settingName string, settingValue string) {
 
 // When key state is changed in session
 func keyState(hook *sessions.SessionPackage) {
+	accOn := sessions.GetBoolDefault("ACC_POWER", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
+
 	// Determine state of angel eyes
 	evalAngelEyesPower(hook.Data.Value)
 
 	// Determine state of the video boards
-	evalVideoPower(hook.Data.Value)
+	evalVideoPower(hook.Data.Value, accOn, wifiOn)
+
+	// Determine state of the sound board
+	evalSoundPower(hook.Data.Value, accOn, wifiOn)
 }
 
 // When light sensor is changed in session
@@ -126,12 +132,16 @@ func accPower(hook *sessions.SessionPackage) {
 	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
 	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
+	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
 	// Trigger wireless, based on ACC and wifi status
 	go evalWirelessPower(accOn, wifiOn)
 
+	// Trigger video, based on ACC and wifi status
+	go evalVideoPower(keyIsIn, accOn, wifiOn)
+
 	// Trigger sound, based on ACC and wifi status
-	go evalSoundPower(accOn, wifiOn)
+	go evalSoundPower(keyIsIn, accOn, wifiOn)
 
 	// Trigger tablet, based on ACC status
 	go genericPowerTrigger(accOn, "Tablet", tablet)
