@@ -108,14 +108,14 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
-		deviceStatus, err := sessions.Get("DOORS_LOCKED")
+		doorStatus, err := sessions.Get("DOORS_LOCKED")
 
 		// Since this toggles, we should only do lock/unlock the doors if there's a known state
 		if err != nil && !isPositive {
 			log.Info().Msg("Door status is unknown, but we're locking. Go through the pybus")
 			PushQueue("lockDoors")
-		} else if settings.Config.HardwareSerialEnabled && isPositive && deviceStatus.Value == "FALSE" ||
-			!isPositive && deviceStatus.Value == "TRUE" {
+		} else if settings.Config.HardwareSerialEnabled && isPositive && doorStatus.Value == "FALSE" ||
+			!isPositive && doorStatus.Value == "TRUE" {
 			mserial.Push(settings.Config.SerialControlDevice, "toggleDoorLocks")
 		}
 	case "WINDOW":
