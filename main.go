@@ -41,7 +41,7 @@ func gracefulShutdown(name string) {
 
 // sendServiceCommand sends a command to a network machine, using a simple python server to recieve
 func sendServiceCommand(name string, command string) {
-	machineServiceAddress, err := settings.Get(formatting.FormatName(name), "ADDRESS")
+	machineServiceAddress, err := settings.Get(formatting.Name(name), "ADDRESS")
 	if machineServiceAddress == "" {
 		return
 	}
