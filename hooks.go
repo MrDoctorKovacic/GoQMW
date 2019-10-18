@@ -10,7 +10,6 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/rs/zerolog/log"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
@@ -47,26 +46,6 @@ func setupHooks() {
 	sessions.RegisterHookSlice(&[]string{"SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3"}, voltage)
 }
 
-// Helper function to generalize fetching session string
-func getSessionString(name string, def string) string {
-	v, err := sessions.Get(name)
-	if err != nil {
-		log.Debug().Msg(fmt.Sprintf("%s could not be determined, defaulting to FALSE", name))
-		v.Value = def
-	}
-	return v.Value
-}
-
-// Helper function to generalize fetching session bool
-func getSessionBool(name string, def bool) bool {
-	v, err := sessions.GetBool(name)
-	if err != nil {
-		log.Debug().Msg(fmt.Sprintf("%s could not be determined, defaulting to false", name))
-		v = def
-	}
-	return v
-}
-
 //
 // From here on out are the hook functions.
 // We're taking actions based on the values or a combination of values
@@ -76,83 +55,31 @@ func getSessionBool(name string, def bool) bool {
 // When angel eyes setting is changed
 func angelEyesSettings(settingName string, settingValue string) {
 	// Determine state of angel eyes
-	evalAngelEyes(getSessionString("KEY_STATE", "FALSE"))
+	evalAngelEyesPower(sessions.GetStringDefault("KEY_STATE", "FALSE"))
+}
+
+// When wireless setting is changed
+func wirelessSettings(settingName string, settingValue string) {
+	accOn := sessions.GetBoolDefault("ACC_POWER", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
+
+	// Determine state of wireless
+	evalWirelessPower(accOn, wifiOn)
 }
 
 // When key state is changed in session
 func keyState(hook *sessions.SessionPackage) {
 	// Determine state of angel eyes
-	evalAngelEyes(hook.Data.Value)
+	evalAngelEyesPower(hook.Data.Value)
 
 	// Determine state of the video boards
-	evalVideo(hook.Data.Value)
+	evalVideoPower(hook.Data.Value)
 }
 
 // When light sensor is changed in session
 func lightSensorOn(hook *sessions.SessionPackage) {
 	// Determine state of angel eyes
-	evalAngelEyes(getSessionString("KEY_STATE", "FALSE"))
-}
-
-// Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
-func evalAngelEyes(keyIsIn string) {
-	angel := angelDef
-	angel.on, angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
-	angel.powerTarget, angel.errTarget = settings.Get(angel.settingComp, angel.settingName)
-	lightSensor := getSessionBool("LIGHT_SENSOR_ON", false)
-
-	shouldTrigger := !lightSensor && keyIsIn != "FALSE"
-
-	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Angel", angel)
-}
-
-// Evaluates if the video boards should be on, and then passes that struct along as generic power module
-func evalVideo(keyIsIn string) {
-	board := boardDef
-	board.on, board.errOn = sessions.GetBool("BOARD_POWER")
-	board.powerTarget, board.errTarget = settings.Get(board.settingComp, board.settingName)
-
-	// Pass angel module to generic power trigger
-	genericPowerTrigger(keyIsIn != "FALSE", "Board", board)
-}
-
-// When wireless setting is changed
-func wirelessSettings(settingName string, settingValue string) {
-	accOn := getSessionBool("ACC_POWER", false)
-	wifiOn := getSessionBool("WIFI_CONNECTED", false)
-
-	// Determine state of wireless
-	evalWireless(accOn, wifiOn)
-}
-
-// Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
-func evalWireless(accOn bool, wifiOn bool) {
-	wireless := wirelessDef
-	wireless.on, wireless.errOn = sessions.GetBool("WIRELESS_POWER")
-	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
-
-	// Wireless is most likely supposed to be on, only one case where it should not be
-	shouldTrigger := true
-	if !accOn && wifiOn {
-		shouldTrigger = false
-	}
-
-	// Pass wireless module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Wireless", wireless)
-}
-
-// Evaluates if the sound board should be on, and then passes that struct along as generic power module
-func evalSound(accOn bool, wifiOn bool) {
-	sound := soundDef
-	sound.on, sound.errOn = sessions.GetBool("SOUND_POWER")
-	sound.powerTarget, sound.errTarget = settings.Get(sound.settingComp, sound.settingName)
-
-	keyIsIn := getSessionString("KEY_STATE", "FALSE")
-	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
-
-	// Pass sound module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Sound", sound)
+	evalAngelEyesPower(sessions.GetStringDefault("KEY_STATE", "FALSE"))
 }
 
 // Convert main raw voltage into an actual number
@@ -198,37 +125,16 @@ func accPower(hook *sessions.SessionPackage) {
 	tablet := tabletDef
 	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
 	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
-	wifiOn := getSessionBool("WIFI_CONNECTED", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
 
 	// Trigger wireless, based on ACC and wifi status
-	go evalWireless(accOn, wifiOn)
+	go evalWirelessPower(accOn, wifiOn)
 
 	// Trigger sound, based on ACC and wifi status
-	go evalSound(accOn, wifiOn)
+	go evalSoundPower(accOn, wifiOn)
 
 	// Trigger tablet, based on ACC status
 	go genericPowerTrigger(accOn, "Tablet", tablet)
-}
-
-// Error check against module's status fetches, then check if we're powering on or off
-func genericPowerTrigger(shouldBeOn bool, name string, module power) {
-	if module.errOn == nil && module.errTarget == nil {
-		if (module.powerTarget == "AUTO" && !module.on && shouldBeOn) || (module.powerTarget == "ON" && !module.on) {
-			log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
-			mserial.Push(settings.Config.SerialControlDevice, fmt.Sprintf("powerOn%s", name))
-		} else if (module.powerTarget == "AUTO" && module.on && !shouldBeOn) || (module.powerTarget == "OFF" && module.on) {
-			log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
-			gracefulShutdown(name)
-		}
-	} else if module.errTarget != nil {
-		log.Error().Msg(fmt.Sprintf("Setting Error: %s", module.errTarget.Error()))
-		if module.settingComp != "" && module.settingName != "" {
-			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
-			settings.Set(module.settingComp, module.settingName, "AUTO")
-		}
-	} else if module.errOn != nil {
-		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
-	}
 }
 
 // When wireless is turned off, we can infer that LTE is also off
