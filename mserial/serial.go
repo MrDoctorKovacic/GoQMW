@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
@@ -53,7 +53,7 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	if params["command"] != "" {
 		Push(Writer, params["command"])
 	}
-	formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // ReadSerial will continuously pull data from incoming serial
@@ -94,7 +94,7 @@ func Push(device *serial.Port, msg string) {
 		writeQueue[device] = []string{}
 	}
 
-	if !formatting.StringInSlice(msg, writeQueue[device]) {
+	if !format.StringInSlice(msg, writeQueue[device]) {
 		writeQueue[device] = append(writeQueue[device], msg)
 	}
 }

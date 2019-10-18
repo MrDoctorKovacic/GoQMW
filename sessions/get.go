@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -13,13 +13,13 @@ import (
 // HandleGetAll responds to an HTTP request for the entire session
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	requestingMin := r.URL.Query().Get("min") == "1"
-	response := formatting.JSONResponse{OK: true}
+	response := format.JSONResponse{OK: true}
 	if requestingMin {
 		response.Output = GetAllMin()
 	} else {
 		response.Output = GetAll()
 	}
-	formatting.WriteResponse(&w, response)
+	format.WriteResponse(&w, response)
 }
 
 // GetAll returns the entire current session
@@ -57,12 +57,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	sessionValue, err := Get(params["name"])
-	response := formatting.JSONResponse{Output: sessionValue, OK: true}
+	response := format.JSONResponse{Output: sessionValue, OK: true}
 	if err != nil {
 		response.Output = err.Error()
 		response.OK = false
 	}
-	formatting.WriteResponse(&w, response)
+	format.WriteResponse(&w, response)
 }
 
 // Get returns the named session, if it exists. Nil otherwise

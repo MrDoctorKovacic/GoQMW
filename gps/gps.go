@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/bradfitz/latlong"
 	"github.com/rs/zerolog/log"
@@ -60,12 +60,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	//log.Warn().Msg("Responding to get request.")
 	data := Get()
 	/*if data.Latitude == "" && data.Longitude == "" {
-		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
+		format.WriteResponse(&w, format.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
 	} else {
-		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
+		format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 
 	}*/
-	formatting.WriteResponse(&w, formatting.JSONResponse{Output: data, OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: data, OK: true})
 }
 
 // Get returns the latest GPS fix
@@ -106,7 +106,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Debug().Msg(fmt.Sprintf("Logged %s to database", postingString))
 	}
-	formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, format.JSONResponse{Output: "OK", OK: true})
 }
 
 // Set posts a new GPS fix

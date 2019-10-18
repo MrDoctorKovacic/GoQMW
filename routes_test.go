@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 )
 
 func TestSlackAlert(t *testing.T) {
@@ -32,8 +32,8 @@ func TestSlackAlert(t *testing.T) {
 	}
 
 	// Check the response body is what we expect.
-	expectedResponse := formatting.JSONResponse{Output: "Slack URL not set in config.", OK: false}
-	var response formatting.JSONResponse
+	expectedResponse := format.JSONResponse{Output: "Slack URL not set in config.", OK: false}
+	var response format.JSONResponse
 	json.NewDecoder(rr.Body).Decode(&response)
 
 	if expectedResponse.Output != response.Output {

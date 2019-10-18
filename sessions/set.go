@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
@@ -22,7 +22,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 
 	// Default to NOT OK response
-	response := formatting.JSONResponse{OK: false}
+	response := format.JSONResponse{OK: false}
 
 	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
@@ -36,7 +36,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	if len(body) == 0 {
 		response.Output = "Error: Empty body"
-		formatting.WriteResponse(&w, response)
+		format.WriteResponse(&w, response)
 		return
 	}
 
@@ -46,7 +46,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		log.Error().Msg(fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
 		response.Output = err.Error()
-		formatting.WriteResponse(&w, response)
+		format.WriteResponse(&w, response)
 		return
 	}
 
@@ -54,7 +54,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	newPackage := SessionPackage{Name: params["name"], Data: newdata}
 	if err = Set(newPackage, newdata.Quiet); err != nil {
 		response.Output = err.Error()
-		formatting.WriteResponse(&w, response)
+		format.WriteResponse(&w, response)
 		return
 	}
 
@@ -62,7 +62,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	response.OK = true
 	response.Output = newPackage
 
-	formatting.WriteResponse(&w, response)
+	format.WriteResponse(&w, response)
 }
 
 // SetValue prepares a Value structure before passing it to the setter
@@ -73,7 +73,7 @@ func SetValue(name string, value string) {
 // Set does the actual setting of Session Values
 func Set(newPackage SessionPackage, quiet bool) error {
 	// Ensure name is valid
-	if !formatting.IsValidName(newPackage.Name) {
+	if !format.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
 	}
 
@@ -81,7 +81,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	newPackage.Data.LastUpdate = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
 
 	// Correct name
-	newPackage.Name = formatting.Name(newPackage.Name)
+	newPackage.Name = format.Name(newPackage.Name)
 
 	// Trim off whitespace
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 )
@@ -167,7 +167,7 @@ func runServerSocket(host string, token string) {
 	go func() {
 		clientConnected = true
 		defer close(done)
-		err = c.WriteJSON(formatting.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
+		err = c.WriteJSON(format.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
 		if err != nil {
 			log.Error().Msg("Error writing to websocket: " + err.Error())
 			return
@@ -179,7 +179,7 @@ func runServerSocket(host string, token string) {
 				log.Error().Msg("Error reading from websocket: " + err.Error())
 				return
 			}
-			response := formatting.JSONResponse{}
+			response := format.JSONResponse{}
 			err = json.Unmarshal(message, &response)
 
 			if err != nil {
@@ -205,7 +205,7 @@ func runServerSocket(host string, token string) {
 				}
 
 				log.Info().Msg(fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
-				response := formatting.JSONResponse{}
+				response := format.JSONResponse{}
 				err = json.Unmarshal(internalResponse, &response)
 				if err != nil {
 					log.Error().Msg("Error marshalling response to websocket: " + err.Error())
