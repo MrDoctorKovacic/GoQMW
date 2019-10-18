@@ -18,13 +18,10 @@ import (
 
 // ConfigValues controls program settings and general persistent settings
 type ConfigValues struct {
-	BluetoothAddress      string
-	DB                    *influx.Influx
-	HardwareSerialEnabled bool
-	HardwareSerialPort    string
-	HardwareSerialBaud    string
-	SerialControlDevice   *serial.Port
-	SlackURL              string
+	BluetoothAddress    string
+	DB                  *influx.Influx
+	SerialControlDevice *serial.Port
+	SlackURL            string
 }
 
 type settingsWrap struct {
