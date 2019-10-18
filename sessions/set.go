@@ -91,6 +91,10 @@ func Set(newPackage SessionPackage, quiet bool) error {
 
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
+	// Update number of session values
+	if _, exists := session.data[newPackage.Name]; !exists {
+		format.Statistics.SessionValues++
+	}
 	session.data[newPackage.Name] = newPackage.Data
 	session.Mutex.Unlock()
 
