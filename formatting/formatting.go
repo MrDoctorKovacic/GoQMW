@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// FormatName returns string in upper case with underscores replacing spaces
-func FormatName(name string) string {
+// Name returns string in upper case with underscores replacing spaces
+func Name(name string) string {
 	spaceRemover := regexp.MustCompile(`\s+`)
 	name = spaceRemover.ReplaceAllString(name, " ")
 	return strings.ToUpper(strings.Replace(strings.TrimSpace(name), " ", "_", -1))
@@ -17,7 +17,7 @@ func FormatName(name string) string {
 
 // IsValidName verifies the name is alphanumeric
 func IsValidName(name string) bool {
-	return name == FormatName(name)
+	return name == Name(name)
 }
 
 // IsPositiveRequest helps translate UP or LOCK into true or false
