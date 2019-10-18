@@ -2,7 +2,6 @@
 package pybus
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -57,14 +56,14 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 
 	if srcOK && destOK && dataOK && len(src) == 2 && len(dest) == 2 && len(data) > 0 {
 		go PushQueue(fmt.Sprintf(`["%s", "%s", "%s"]`, src, dest, data))
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	} else if params["command"] != "" {
 		// Some commands need special timing functions
 		go PushQueue(params["command"])
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
 	} else {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Invalid command", Status: "fail", OK: false})
+		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "Invalid command", OK: false})
+		return
 	}
+	formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
 }
 
 // RepeatCommand endlessly, helps with request functions
@@ -85,7 +84,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Error: One or more required params is empty", Status: "fail", OK: false})
+		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
 		return
 	}
 
@@ -208,10 +207,11 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		log.Error().Msg(fmt.Sprintf("Invalid device %s", device))
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), Status: "fail", OK: false})
+		response := formatting.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
+		formatting.WriteResponse(&w, response)
 		return
 	}
 
 	// Yay
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: device, Status: "success", OK: true})
+	formatting.WriteResponse(&w, formatting.JSONResponse{Output: device, OK: true})
 }

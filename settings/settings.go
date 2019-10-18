@@ -2,7 +2,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -35,7 +34,8 @@ func init() {
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Responding to GET request with entire settings map.")
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true})
+	response := formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true}
+	formatting.WriteResponse(&w, response)
 }
 
 // HandleGet returns all the values of a specific setting
@@ -49,12 +49,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	responseVal, ok := Settings.Data[componentName]
 	Settings.mutex.Unlock()
 
-	response := formatting.JSONResponse{Output: responseVal, Status: "success", OK: true}
+	response := formatting.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
-		response = formatting.JSONResponse{Output: "Setting not found.", Status: "fail", OK: false}
+		response = formatting.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	json.NewEncoder(w).Encode(response)
+	formatting.WriteResponse(&w, response)
 }
 
 // HandleGetValue returns a specific setting value
@@ -69,12 +69,12 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	responseVal, ok := Settings.Data[componentName][settingName]
 	Settings.mutex.Unlock()
 
-	response := formatting.JSONResponse{Output: responseVal, Status: "success", OK: true}
+	response := formatting.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
-		response = formatting.JSONResponse{Output: "Setting not found.", Status: "fail", OK: false}
+		response = formatting.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	json.NewEncoder(w).Encode(response)
+	formatting.WriteResponse(&w, response)
 }
 
 // GetAll returns all the values of known settings
@@ -153,7 +153,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	Set(componentName, settingName, settingValue)
 
 	// Respond with OK
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: componentName, Status: "success", OK: true})
+	response := formatting.JSONResponse{Output: componentName, OK: true}
+	formatting.WriteResponse(&w, response)
 }
 
 // Set will handle actually updates or posts a new setting value

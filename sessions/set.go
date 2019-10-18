@@ -22,7 +22,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 
 	// Default to NOT OK response
-	response := formatting.JSONResponse{Status: "fail", OK: false}
+	response := formatting.JSONResponse{OK: false}
 
 	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
@@ -36,7 +36,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	if len(body) == 0 {
 		response.Output = "Error: Empty body"
-		json.NewEncoder(w).Encode(response)
+		formatting.WriteResponse(&w, response)
 		return
 	}
 
@@ -46,7 +46,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		log.Error().Msg(fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
 		response.Output = err.Error()
-		json.NewEncoder(w).Encode(response)
+		formatting.WriteResponse(&w, response)
 		return
 	}
 
@@ -54,17 +54,15 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	newPackage := SessionPackage{Name: params["name"], Data: newdata}
 	if err = Set(newPackage, newdata.Quiet); err != nil {
 		response.Output = err.Error()
-		json.NewEncoder(w).Encode(response)
+		formatting.WriteResponse(&w, response)
 		return
 	}
 
 	// Craft OK response
-	response.Status = "success"
 	response.OK = true
 	response.Output = newPackage
 
-	// Respond with success
-	json.NewEncoder(w).Encode(response)
+	formatting.WriteResponse(&w, response)
 }
 
 // SetValue prepares a Value structure before passing it to the setter

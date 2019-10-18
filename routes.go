@@ -64,12 +64,13 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if settings.SlackURL != "" {
 		sessions.SlackAlert(settings.SlackURL, params["message"])
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: params["message"], Status: "success", OK: true})
 	} else {
-		json.NewEncoder(w).Encode("Slack URL not set in config.")
+		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Slack URL not set in config.", Status: "fail", OK: false})
 	}
 
 	// Echo back message
-	json.NewEncoder(w).Encode(params["message"])
+
 }
 
 // **
@@ -97,7 +98,8 @@ func startRouter() {
 	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
 	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: gps.GetTimezone(), Status: "success", OK: true})
+		response := formatting.JSONResponse{Output: gps.GetTimezone(), OK: true}
+		formatting.WriteResponse(&w, response)
 	}).Methods("GET")
 
 	//
@@ -156,7 +158,8 @@ func startRouter() {
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", Status: "success", OK: true})
+		response := formatting.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
+		formatting.WriteResponse(&w, response)
 	}).Methods("GET")
 
 	// Setup checksum middleware

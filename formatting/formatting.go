@@ -2,57 +2,11 @@
 package formatting
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
-
-// JSONResponse for common return value to API
-type JSONResponse struct {
-	Output interface{} `json:"output,omitempty"`
-	Status string      `json:"status,omitempty"`
-	OK     bool        `json:"ok"`
-	Method string      `json:"method,omitempty"`
-	ID     int         `json:"id,omitempty"`
-}
-
-// WriteResponse to an http writer, adding extra info and HTTP status as needed
-func WriteResponse(w *http.ResponseWriter, response JSONResponse) {
-	// Deref writer
-	writer := *w
-
-	// Add string Status if it doesn't exist, add appropriate headers
-	if response.OK {
-		if response.Status == "" {
-			response.Status = "success"
-		}
-		writer.WriteHeader(http.StatusOK)
-	} else {
-		if response.Status == "" {
-			response.Status = "fail"
-			writer.WriteHeader(http.StatusBadRequest)
-		} else if response.Status == "error" {
-			writer.WriteHeader(http.StatusNoContent)
-		} else {
-			writer.WriteHeader(http.StatusBadRequest)
-		}
-	}
-
-	// Log this to debug
-	log.Debug().
-		Str("Output", fmt.Sprintf("%v", response.Output)).
-		Str("Status", response.Status).
-		Bool("OK", response.OK).
-		Msg("Full Response:")
-
-	// Write out this response
-	json.NewEncoder(writer).Encode(response)
-}
 
 // FormatName returns string in upper case with underscores replacing spaces
 func FormatName(name string) string {
