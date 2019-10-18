@@ -176,14 +176,14 @@ func runServerSocket(host string, token string) {
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Error().Msg("Error reading from websocket: " + err.Error())
+				log.Error().Msg(fmt.Sprintf("Error reading from websocket.\nMessage: %s\nError:%s", message, err.Error()))
 				return
 			}
 			response := format.JSONResponse{}
 			err = json.Unmarshal(message, &response)
 
 			if err != nil {
-				log.Error().Msg("Error marshalling json from websocket: " + err.Error())
+				log.Error().Msg(fmt.Sprintf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error()))
 				return
 			}
 
