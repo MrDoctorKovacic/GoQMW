@@ -23,10 +23,10 @@ type settingsWrap struct {
 
 // Settings control generic user defined field:value mappings, which will persist each run
 var (
-	Settings            settingsWrap
-	BluetoothAddress    string
-	SerialControlDevice *serial.Port
-	SlackURL            string
+	Settings         settingsWrap
+	BluetoothAddress string
+	SerialWriter     *serial.Port
+	SlackURL         string
 )
 
 func init() {
