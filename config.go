@@ -103,26 +103,20 @@ func setupSerial() {
 		log.Error().Msg(fmt.Sprintf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error()))
 		return
 	}
-	HardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
+	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	hardwareSerialBaud, usingHardwareBaud := configMap["HARDWARE_SERIAL_BAUD"]
-	settings.Config.HardwareSerialEnabled = usingHardwareSerial
 
-	if settings.Config.HardwareSerialEnabled {
+	if usingHardwareSerial && usingHardwareBaud {
 		// Configure default baudrate
-		HardwareSerialBaud := 9600
-		if usingHardwareBaud {
-			baudrateString, err := strconv.Atoi(hardwareSerialBaud)
-			if err != nil {
-				log.Error().Msg("Failed to convert HardwareSerialBaud to int. Found value: " + hardwareSerialBaud)
-				log.Warn().Msg("Disabling hardware serial functionality")
-				settings.Config.HardwareSerialEnabled = false
-				return
-			}
-
-			HardwareSerialBaud = baudrateString
+		baudrate, err := strconv.Atoi(hardwareSerialBaud)
+		if err != nil {
+			log.Error().Msg("Failed to convert HardwareSerialBaud to int. Found value: " + hardwareSerialBaud)
+			log.Warn().Msg("Disabling hardware serial functionality")
+			return
 		}
+
 		// Start initial reader / writer
-		go sessions.StartSerialComms(HardwareSerialPort, HardwareSerialBaud)
+		go sessions.StartSerialComms(hardwareSerialPort, baudrate)
 
 		// Setup other devices
 		for device, baudrate := range mserial.ParseSerialDevices(settings.GetAll()) {

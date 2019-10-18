@@ -114,8 +114,8 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		if err != nil && !isPositive {
 			log.Info().Msg("Door status is unknown, but we're locking. Go through the pybus")
 			PushQueue("lockDoors")
-		} else if settings.Config.HardwareSerialEnabled && isPositive && doorStatus.Value == "FALSE" ||
-			!isPositive && doorStatus.Value == "TRUE" {
+		} else if settings.Config.SerialControlDevice != nil && isPositive && doorStatus.Value == "FALSE" ||
+			settings.Config.SerialControlDevice != nil && !isPositive && doorStatus.Value == "TRUE" {
 			mserial.Push(settings.Config.SerialControlDevice, "toggleDoorLocks")
 		}
 	case "WINDOW":
