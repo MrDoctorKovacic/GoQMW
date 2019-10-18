@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -19,7 +18,6 @@ func ReadFile(useSettingsFile string) {
 
 	Settings.File = useSettingsFile
 	initSettings, err := parseFile(Settings.File)
-	defer Set("MDROID", "LAST_USED_UTC", time.Now().String())
 
 	if err != nil || initSettings == nil || len(initSettings) == 0 {
 		log.Warn().Msg("Failed to load settings from file '" + Settings.File + "'. Is it empty?")
