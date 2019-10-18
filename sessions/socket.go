@@ -106,6 +106,45 @@ func CheckServer(host string, token string) {
 	}
 }
 
+func parseMessage(message []byte) *format.JSONResponse {
+	response := format.JSONResponse{}
+	err := json.Unmarshal(message, &response)
+
+	if err != nil {
+		log.Error().Msg(fmt.Sprintf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error()))
+		return nil
+	}
+
+	// Check if the server is echoing back to us, or if it's a legitimate request from the server
+	if response.Method != "response" {
+		// TODO! Match this path against a walk through of our router
+		//output := fmt.Sprintf("%v", response.Output)
+		output, ok := response.Output.(string)
+		if !ok {
+			log.Error().Msg("Cannot cast output to string.")
+			return nil
+		}
+
+		log.Info().Msg(fmt.Sprintf("Websocket read output:  %s", output))
+		internalResponse, path, err := getAPIResponse(output)
+		if err != nil {
+			log.Error().Msg("Error from forwarded request websocket: " + err.Error())
+			return nil
+		}
+
+		log.Info().Msg(fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
+		response := format.JSONResponse{}
+		err = json.Unmarshal(internalResponse, &response)
+		if err != nil {
+			log.Error().Msg("Error marshalling response to websocket: " + err.Error())
+			return nil
+		}
+		response.Method = "response"
+		response.Status = path
+	}
+	return nil
+}
+
 func getAPIResponse(dataString string) ([]byte, string, error) {
 	dataArray := strings.Split(dataString, ";")
 	if len(dataArray) != 3 {
@@ -179,47 +218,22 @@ func runServerSocket(host string, token string) {
 				log.Error().Msg(fmt.Sprintf("Error reading from websocket.\nMessage: %s\nError:%s", message, err.Error()))
 				return
 			}
-			response := format.JSONResponse{}
-			err = json.Unmarshal(message, &response)
 
-			if err != nil {
-				log.Error().Msg(fmt.Sprintf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error()))
-				return
+			// parse message by newline, if necessary
+			messageSplit := bytes.Split(message, []byte("\n"))
+			if len(messageSplit) > 1 {
+				log.Printf(fmt.Sprintf("Split incoming message into %d parts", len(messageSplit)))
 			}
-
-			// Check if the server is echoing back to us, or if it's a legitimate request from the server
-			if response.Method != "response" {
-				// TODO! Match this path against a walk through of our router
-				//output := fmt.Sprintf("%v", response.Output)
-				output, ok := response.Output.(string)
-				if !ok {
-					log.Error().Msg("Cannot cast output to string.")
-					return
+			for _, m := range messageSplit {
+				log.Printf(fmt.Sprintf("Sending message %s", m))
+				response := parseMessage(m)
+				if response != nil {
+					err = c.WriteJSON(response)
+					if err != nil {
+						log.Error().Msg("Error writing to websocket: " + err.Error())
+						return
+					}
 				}
-
-				log.Info().Msg(fmt.Sprintf("Websocket read output:  %s", output))
-				internalResponse, path, err := getAPIResponse(output)
-				if err != nil {
-					log.Error().Msg("Error from forwarded request websocket: " + err.Error())
-					return
-				}
-
-				log.Info().Msg(fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
-				response := format.JSONResponse{}
-				err = json.Unmarshal(internalResponse, &response)
-				if err != nil {
-					log.Error().Msg("Error marshalling response to websocket: " + err.Error())
-					return
-				}
-				response.Method = "response"
-				response.Status = path
-
-				err = c.WriteJSON(response)
-				if err != nil {
-					log.Error().Msg("Error writing to websocket: " + err.Error())
-					return
-				}
-
 			}
 		}
 	}()
