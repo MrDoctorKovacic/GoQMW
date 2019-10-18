@@ -81,7 +81,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	newPackage.Data.LastUpdate = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
 
 	// Correct name
-	newPackage.Name = formatting.FormatName(newPackage.Name)
+	newPackage.Name = formatting.Name(newPackage.Name)
 
 	// Trim off whitespace
 	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)

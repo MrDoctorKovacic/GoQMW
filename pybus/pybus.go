@@ -90,8 +90,8 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 
 	// Format similarly to the rest of MDroid suite, removing plurals
 	// Formatting allows for fuzzier requests
-	device := strings.TrimSuffix(formatting.FormatName(params["device"]), "S")
-	command := strings.TrimSuffix(formatting.FormatName(params["command"]), "S")
+	device := strings.TrimSuffix(formatting.Name(params["device"]), "S")
+	command := strings.TrimSuffix(formatting.Name(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
 	isPositive, err := formatting.IsPositiveRequest(command)
@@ -186,7 +186,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			PushQueue("pressStereoPower")
 		}
 	case "LUCIO", "CAMERA", "BOARD":
-		if formatting.FormatName(command) == "AUTO" {
+		if formatting.Name(command) == "AUTO" {
 			settings.Set("BOARD", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("BOARD", "POWER", "ON")
@@ -196,7 +196,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			mserial.Push(mserial.Writer, "powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
-		if formatting.FormatName(command) == "AUTO" {
+		if formatting.Name(command) == "AUTO" {
 			settings.Set("WIRELESS", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("WIRELESS", "POWER", "ON")

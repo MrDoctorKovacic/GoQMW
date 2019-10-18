@@ -41,7 +41,7 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 // HandleGet returns all the values of a specific setting
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatting.FormatName(params["component"])
+	componentName := formatting.Name(params["component"])
 
 	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 
@@ -60,8 +60,8 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 // HandleGetValue returns a specific setting value
 func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := formatting.FormatName(params["component"])
-	settingName := formatting.FormatName(params["name"])
+	componentName := formatting.Name(params["component"])
+	settingName := formatting.Name(params["name"])
 
 	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 
@@ -94,7 +94,7 @@ func GetAll() map[string]map[string]string {
 
 // GetComponent returns all the values of a specific component
 func GetComponent(componentName string) (map[string]string, error) {
-	componentName = formatting.FormatName(componentName)
+	componentName = formatting.Name(componentName)
 	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
@@ -108,7 +108,7 @@ func GetComponent(componentName string) (map[string]string, error) {
 
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
-	componentName = formatting.FormatName(componentName)
+	componentName = formatting.Name(componentName)
 	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
 	Settings.mutex.Lock()
@@ -142,8 +142,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// Parse out params
-	componentName := formatting.FormatName(params["component"])
-	settingName := formatting.FormatName(params["name"])
+	componentName := formatting.Name(params["component"])
+	settingName := formatting.Name(params["name"])
 	settingValue := params["value"]
 
 	// Log if requested

@@ -43,7 +43,7 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
-	sendServiceCommand(formatting.FormatName(machine), "reboot")
+	sendServiceCommand(formatting.Name(machine), "reboot")
 }
 
 // Shutdown the current machine
