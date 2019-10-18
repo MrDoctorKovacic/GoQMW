@@ -13,7 +13,14 @@ import (
 
 // HandleGetAll responds to an HTTP request for the entire session
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	response := formatting.JSONResponse{Output: GetAll(), Status: "success", OK: true}
+	requestingMin := r.URL.Query().Get("min") == "1"
+	response := formatting.JSONResponse{Status: "success", OK: true}
+	if requestingMin {
+		response.Output = GetAllMin()
+	} else {
+		response.Output = GetAll()
+	}
+
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -27,6 +34,21 @@ func GetAll() map[string]Value {
 	defer session.Mutex.Unlock()
 	for index, element := range session.data {
 		newData[index] = element
+	}
+
+	return newData
+}
+
+// GetAllMin returns the entire current session, minus unnecc values
+func GetAllMin() map[string]string {
+	// Log if requested
+	log.Debug().Msg("Responding to request for minimal session")
+
+	newData := map[string]string{}
+	session.Mutex.Lock()
+	defer session.Mutex.Unlock()
+	for index, element := range session.data {
+		newData[index] = element.Value
 	}
 
 	return newData
