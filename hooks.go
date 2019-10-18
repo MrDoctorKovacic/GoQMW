@@ -26,11 +26,11 @@ type power struct {
 
 // Read the target action based on current ACC Power value
 var (
-	soundDef    = power{settingComp: "SOUND", settingName: "POWER"}
-	wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
-	angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
-	tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
-	boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
+	_soundDef    = power{settingComp: "SOUND", settingName: "POWER"}
+	_wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
+	_angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
+	_tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
+	_boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
 )
 
 func setupHooks() {
@@ -122,7 +122,7 @@ func accPower(hook *sessions.SessionPackage) {
 	}
 
 	// Pull all the necessary configuration data
-	tablet := tabletDef
+	tablet := _tabletDef
 	tablet.on, tablet.errOn = sessions.GetBool("TABLET_POWER")
 	tablet.powerTarget, tablet.errTarget = settings.Get(tablet.settingComp, tablet.settingName)
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
