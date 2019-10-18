@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,14 +13,13 @@ import (
 // HandleGetAll responds to an HTTP request for the entire session
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	requestingMin := r.URL.Query().Get("min") == "1"
-	response := formatting.JSONResponse{Status: "success", OK: true}
+	response := formatting.JSONResponse{OK: true}
 	if requestingMin {
 		response.Output = GetAllMin()
 	} else {
 		response.Output = GetAll()
 	}
-
-	json.NewEncoder(w).Encode(response)
+	formatting.WriteResponse(&w, response)
 }
 
 // GetAll returns the entire current session
@@ -59,13 +57,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	sessionValue, err := Get(params["name"])
-	response := formatting.JSONResponse{Status: "success", Output: sessionValue, OK: true}
+	response := formatting.JSONResponse{Output: sessionValue, OK: true}
 	if err != nil {
-		response.Status = "fail"
 		response.Output = err.Error()
 		response.OK = false
 	}
-	json.NewEncoder(w).Encode(response)
+	formatting.WriteResponse(&w, response)
 }
 
 // Get returns the named session, if it exists. Nil otherwise

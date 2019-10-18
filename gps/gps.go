@@ -59,11 +59,13 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Log if requested
 	//log.Warn().Msg("Responding to get request.")
 	data := Get()
-	if data.Latitude == "" && data.Longitude == "" {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
+	/*if data.Latitude == "" && data.Longitude == "" {
+		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
 	} else {
-		json.NewEncoder(w).Encode(formatting.JSONResponse{Output: data, Status: "success", OK: true})
-	}
+		formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
+
+	}*/
+	formatting.WriteResponse(&w, formatting.JSONResponse{Output: data, OK: true})
 }
 
 // Get returns the latest GPS fix
@@ -104,6 +106,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Debug().Msg(fmt.Sprintf("Logged %s to database", postingString))
 	}
+	formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
 }
 
 // Set posts a new GPS fix

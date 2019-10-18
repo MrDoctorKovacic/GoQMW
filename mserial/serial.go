@@ -53,7 +53,7 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	if params["command"] != "" {
 		Push(Writer, params["command"])
 	}
-	json.NewEncoder(w).Encode(formatting.JSONResponse{Output: "OK", Status: "success", OK: true})
+	formatting.WriteResponse(&w, formatting.JSONResponse{Output: "OK", OK: true})
 }
 
 // ReadSerial will continuously pull data from incoming serial
