@@ -1,5 +1,5 @@
-// Package formatting are common utilities used across the MDroid suite
-package formatting
+// Package format are common utilities used across the MDroid suite
+package format
 
 import (
 	"fmt"
