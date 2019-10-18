@@ -138,7 +138,7 @@ func evalWireless(accOn bool, wifiOn bool) {
 		shouldTrigger = false
 	}
 
-	// Pass angel module to generic power trigger
+	// Pass wireless module to generic power trigger
 	genericPowerTrigger(shouldTrigger, "Wireless", wireless)
 }
 
@@ -151,7 +151,7 @@ func evalSound(accOn bool, wifiOn bool) {
 	keyIsIn := getSessionString("KEY_STATE", "FALSE")
 	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
 
-	// Pass angel module to generic power trigger
+	// Pass sound module to generic power trigger
 	genericPowerTrigger(shouldTrigger, "Sound", sound)
 }
 
@@ -203,7 +203,7 @@ func accPower(hook *sessions.SessionPackage) {
 	// Trigger wireless, based on ACC and wifi status
 	go evalWireless(accOn, wifiOn)
 
-	// Trigger wireless, based on ACC and wifi status
+	// Trigger sound, based on ACC and wifi status
 	go evalSound(accOn, wifiOn)
 
 	// Trigger tablet, based on ACC status
