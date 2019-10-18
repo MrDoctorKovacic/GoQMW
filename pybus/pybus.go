@@ -114,9 +114,9 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		if err != nil && !isPositive {
 			log.Info().Msg("Door status is unknown, but we're locking. Go through the pybus")
 			PushQueue("lockDoors")
-		} else if settings.SerialWriter != nil && isPositive && doorStatus.Value == "FALSE" ||
-			settings.SerialWriter != nil && !isPositive && doorStatus.Value == "TRUE" {
-			mserial.Push(settings.SerialWriter, "toggleDoorLocks")
+		} else if mserial.Writer != nil && isPositive && doorStatus.Value == "FALSE" ||
+			mserial.Writer != nil && !isPositive && doorStatus.Value == "TRUE" {
+			mserial.Push(mserial.Writer, "toggleDoorLocks")
 		}
 	case "WINDOW":
 		if command == "POPDOWN" {
@@ -178,20 +178,20 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			settings.Set("BOARD", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("BOARD", "POWER", "ON")
-			mserial.Push(settings.SerialWriter, "powerOnBoard")
+			mserial.Push(mserial.Writer, "powerOnBoard")
 		} else {
 			settings.Set("BOARD", "POWER", "OFF")
-			mserial.Push(settings.SerialWriter, "powerOffBoard")
+			mserial.Push(mserial.Writer, "powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
 		if formatting.FormatName(command) == "AUTO" {
 			settings.Set("WIRELESS", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("WIRELESS", "POWER", "ON")
-			mserial.Push(settings.SerialWriter, "powerOnWireless")
+			mserial.Push(mserial.Writer, "powerOnWireless")
 		} else {
 			settings.Set("WIRELESS", "POWER", "OFF")
-			mserial.Push(settings.SerialWriter, "powerOffWireless")
+			mserial.Push(mserial.Writer, "powerOffWireless")
 		}
 	default:
 		log.Error().Msg(fmt.Sprintf("Invalid device %s", device))
