@@ -2,7 +2,7 @@ package format
 
 import "testing"
 
-func TestFormatName(t *testing.T) {
+func TestName(t *testing.T) {
 	tables := []struct {
 		input  string
 		output string
@@ -16,9 +16,9 @@ func TestFormatName(t *testing.T) {
 	}
 
 	for _, table := range tables {
-		got := FormatName(table.input)
+		got := Name(table.input)
 		if got != table.output {
-			t.Errorf("FormatName(%s) = %s; want %s", table.input, got, table.output)
+			t.Errorf("Name(%s) = %s; want %s", table.input, got, table.output)
 		}
 	}
 }
