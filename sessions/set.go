@@ -12,7 +12,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
 	"github.com/MrDoctorKovacic/MDroid-Core/gps"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -100,7 +100,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	go runHooks(newPackage)
 
 	// Insert into database
-	if settings.DB != nil {
+	if influx.DB != nil {
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		valueString := fmt.Sprintf("value=%s", newPackage.Data.Value)
 		if _, err := strconv.ParseFloat(newPackage.Data.Value, 32); err != nil {
@@ -109,7 +109,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
-		online, err := settings.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
+		online, err := influx.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
 			// Only spam our log if Influx is online

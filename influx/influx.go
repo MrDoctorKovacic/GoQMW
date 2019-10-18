@@ -12,6 +12,9 @@ type Influx struct {
 	Started  bool
 }
 
+// DB currently being used
+var DB *Influx
+
 // Ping influx DB server for connectivity
 func (db *Influx) Ping() (bool, error) {
 	// Ping db instance

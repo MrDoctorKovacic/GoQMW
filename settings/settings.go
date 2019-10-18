@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/formatting"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 
@@ -26,7 +25,6 @@ type settingsWrap struct {
 var (
 	Settings            settingsWrap
 	BluetoothAddress    string
-	DB                  *influx.Influx
 	SerialControlDevice *serial.Port
 	SlackURL            string
 )

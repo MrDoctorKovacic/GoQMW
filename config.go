@@ -85,11 +85,11 @@ func setupDatabase(configAddr *map[string]string) {
 	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
-		settings.DB = nil
+		influx.DB = nil
 		log.Info().Msg("Not logging to influx db")
 		return
 	}
-	settings.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
+	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
 }
 
 //
