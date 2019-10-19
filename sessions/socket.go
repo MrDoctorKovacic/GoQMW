@@ -229,7 +229,8 @@ func runServerSocket(host string, token string) {
 				log.Printf(fmt.Sprintf("Sending message %s", m))
 				response := parseMessage(m)
 				if response != nil {
-					err = c.WriteJSON(response)
+					log.Info().Msg(fmt.Sprintf("Responding with %v", *response))
+					err = c.WriteJSON(*response)
 					if err != nil {
 						log.Error().Msg("Error writing to websocket: " + err.Error())
 						return
