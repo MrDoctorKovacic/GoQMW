@@ -61,7 +61,7 @@ func angelEyesSettings(settingName string, settingValue string) {
 // When wireless setting is changed
 func wirelessSettings(settingName string, settingValue string) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 
 	// Determine state of wireless
 	evalWirelessPower(accOn, wifiOn)
@@ -70,7 +70,7 @@ func wirelessSettings(settingName string, settingValue string) {
 // When key state is changed in session
 func keyState(hook *sessions.SessionPackage) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 
 	// Determine state of angel eyes
 	evalAngelEyesPower(hook.Data.Value)
@@ -128,7 +128,7 @@ func accPower(hook *sessions.SessionPackage) {
 	}
 
 	// Pull the necessary configuration data
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
 	// Trigger wireless, based on ACC and wifi status
