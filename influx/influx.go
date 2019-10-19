@@ -2,7 +2,11 @@
 package influx
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/parnurzeal/gorequest"
+	"github.com/rs/zerolog/log"
 )
 
 // Influx for writing/posting/querying LocalHost db
@@ -26,18 +30,72 @@ func (db *Influx) Ping() (bool, error) {
 	return resp.StatusCode == 204, nil
 }
 
-// Write to influx DB server with data pairs
-func (db *Influx) Write(msg string) (bool, error) {
+// Helper function to parse interfaces as an influx string
+func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error {
+	for name, value := range *data {
+		switch vv := value.(type) {
+		case string, bool:
+			stmt.WriteString(fmt.Sprintf("%s=\"%v\"", name, vv))
+		case int, int64, float32, float64:
+			if floatValue, ok := value.(float64); ok {
+				stmt.WriteString(fmt.Sprintf("%s=%f", name, floatValue))
+			} else {
+				return fmt.Errorf("Could not marshall %v into a float", value)
+			}
+		}
+	}
+	return nil
+}
 
+// Insert will prepare a new write statement and pass it along
+func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields map[string]interface{}) error {
+	if db == nil {
+		return fmt.Errorf("Database is nil")
+	}
+
+	// Prepare new insert statement
+	var stmt strings.Builder
+	stmt.WriteString(measurement)
+
+	// Write tags first
+	var tagstring strings.Builder
+	if err := parseWriterData(&tagstring, &tags); err != nil {
+		return err
+	}
+
+	// Check if any tags were added. If not, remove the trailing comma
+	if tagstring.String() != "" {
+		stmt.WriteRune(',')
+	}
+
+	// Space between tags and fields
+	stmt.WriteString(tagstring.String())
+	stmt.WriteRune(' ')
+
+	// Write fields next
+	if err := parseWriterData(&stmt, &fields); err != nil {
+		return err
+	}
+
+	// Pass string we've built to write function
+	if err := db.Write(stmt.String()); err != nil {
+		return fmt.Errorf("Error writing %s to influx DB:\n%s", stmt.String(), err.Error())
+	}
+
+	// Debug log and return
+	log.Debug().Msg(fmt.Sprintf("Logged %s to database", stmt.String()))
+	return nil
+}
+
+// Write to influx DB server with data pairs
+func (db *Influx) Write(msg string) error {
 	// Check for positive ping response first.
-	// Throw away these requests, since they're being saved in session & will
-	// be outdated by the time Influx wakes up
 	if !db.Started {
 		if isOnline, err := db.Ping(); !isOnline {
 			if err != nil {
-				return false, err
+				return err
 			}
-			return false, nil
+			return fmt.Errorf("Database is not online")
 		}
 		db.Started = true
 	}
@@ -45,10 +103,10 @@ func (db *Influx) Write(msg string) (bool, error) {
 	request := gorequest.New()
 	_, _, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
 	if errs != nil {
-		return true, errs[0]
+		return errs[0]
 	}
 
-	return true, nil
+	return nil
 }
 
 // Query to influx DB server with data pairs
