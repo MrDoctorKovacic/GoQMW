@@ -37,11 +37,7 @@ func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error 
 		case string, bool:
 			stmt.WriteString(fmt.Sprintf("%s=\"%v\"", name, vv))
 		case int, int64, float32, float64:
-			if floatValue, ok := value.(float64); ok {
-				stmt.WriteString(fmt.Sprintf("%s=%f", name, floatValue))
-			} else {
-				return fmt.Errorf("Could not marshall %v into a float", value)
-			}
+			stmt.WriteString(fmt.Sprintf("%s=%f", name, value))
 		default:
 			return fmt.Errorf("Cannot process type of %v", vv)
 		}
