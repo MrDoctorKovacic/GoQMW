@@ -65,7 +65,8 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 	strResponse, _ := json.Marshal(response)
 	Statistics.Total++
 	// Add the request and response sizes together
-	Statistics.TotalSize += int64(len(strResponse)) + r.ContentLength
+	requestSize := int64(len(strResponse)) + r.ContentLength
+	Statistics.TotalSize += requestSize
 
 	intOK := 0
 	if response.OK {
@@ -74,7 +75,7 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 
 	// Log this to our DB
 	if influx.DB != nil {
-		err := influx.DB.Insert("requests", map[string]interface{}{"method": r.Method, "path": r.URL.Path}, map[string]interface{}{"ok": intOK})
+		err := influx.DB.Insert("requests", map[string]interface{}{"method": r.Method, "path": r.URL.Path}, map[string]interface{}{"ok": intOK, "size": requestSize})
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing method=%s, path=%s to influx DB: %s", r.Method, r.URL.Path, err.Error())
 			// Only spam our log if Influx is online
