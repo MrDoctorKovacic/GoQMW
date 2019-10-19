@@ -141,6 +141,7 @@ func parseMessage(message []byte) *format.JSONResponse {
 		}
 		response.Method = "response"
 		response.Status = path
+		return &response
 	}
 	return nil
 }
