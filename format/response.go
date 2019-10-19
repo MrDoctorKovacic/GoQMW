@@ -74,11 +74,11 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 
 	// Log this to our DB
 	if influx.DB != nil {
-		online, err := influx.DB.Write(fmt.Sprintf("requests,method=\"%s\",path=\"%s\" ok=%d", r.Method, r.URL.Path, intOK))
+		err := influx.DB.Insert("requests", map[string]interface{}{"method": r.Method, "path": r.URL.Path}, map[string]interface{}{"ok": intOK})
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing method=%s, path=%s to influx DB: %s", r.Method, r.URL.Path, err.Error())
 			// Only spam our log if Influx is online
-			if online {
+			if influx.DB.Started {
 				log.Error().Msg(errorText)
 			}
 		}

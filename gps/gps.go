@@ -99,8 +99,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into database
 	if postingString != "" && influx.DB != nil {
-		online, err := influx.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
-		if err != nil && online {
+		err := influx.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
+		if err != nil && influx.DB.Started {
 			log.Error().Msg(fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
 			return
 		}
@@ -134,20 +134,14 @@ func Set(newdata Fix) string {
 	postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
 
 	// Append posting strings based on what GPS information was posted
-	if newdata.Altitude != "" {
-		if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
-			postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
-		}
+	if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
+		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 	}
-	if newdata.Speed != "" {
-		if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
-			postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
-		}
+	if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
+		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 	}
-	if newdata.Climb != "" {
-		if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
-			postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
-		}
+	if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
+		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}
 	if newdata.Time == "" {
 		newdata.Time = time.Now().In(GetTimezone()).Format("2006-01-02 15:04:05.999")
@@ -158,10 +152,8 @@ func Set(newdata Fix) string {
 	if newdata.EPT != "" {
 		postingString.WriteString(fmt.Sprintf("EPT=%s,", newdata.EPT))
 	}
-	if newdata.Course != "" {
-		if convFloat, err := strconv.ParseFloat(newdata.Course, 32); err == nil {
-			postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
-		}
+	if convFloat, err := strconv.ParseFloat(newdata.Course, 32); err == nil {
+		postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
 	}
 
 	return postingString.String()

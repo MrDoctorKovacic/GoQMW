@@ -111,11 +111,11 @@ func Set(newPackage SessionPackage, quiet bool) error {
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
-		online, err := influx.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
+		err := influx.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 		if err != nil {
 			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
 			// Only spam our log if Influx is online
-			if online {
+			if influx.DB.Started {
 				log.Error().Msg(errorText)
 			}
 			return fmt.Errorf(errorText)
