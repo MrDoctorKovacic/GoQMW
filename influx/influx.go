@@ -42,7 +42,10 @@ func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error 
 			} else {
 				return fmt.Errorf("Could not marshall %v into a float", value)
 			}
+		default:
+			return fmt.Errorf("Cannot process type of %v", vv)
 		}
+
 	}
 	return nil
 }
