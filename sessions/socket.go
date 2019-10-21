@@ -43,7 +43,7 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Pass through lock first
-		writeSession := GetAll()
+		writeSession := GetAllMin()
 		if err = c.WriteJSON(writeSession); err != nil {
 			log.Error().Msg("Error writing to webstream: " + err.Error())
 			break
