@@ -109,6 +109,7 @@ func startRouter() {
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")
 
+	router.HandleFunc("/stat/", stat.HandleGetAll).Methods("GET")
 	router.HandleFunc("/stat/{name}", stat.HandleGet).Methods("GET")
 	router.HandleFunc("/stat/{name}", stat.HandleSet).Methods("POST")
 
