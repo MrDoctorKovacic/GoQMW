@@ -42,7 +42,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 func get(name string) (stat, bool) {
 	statsLock.Lock()
 	defer statsLock.Unlock()
-	statResponse, ok := stats[name]
+	statResponse, ok := stats[format.Name(name)]
 	return statResponse, ok
 }
 
@@ -78,5 +78,5 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Debug().Msg(fmt.Sprintf("Logged stats to database"))
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	format.WriteResponse(&w, r, format.JSONResponse{Output: formattedName, OK: true})
 }
