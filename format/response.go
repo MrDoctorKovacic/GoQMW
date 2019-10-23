@@ -21,13 +21,13 @@ type JSONResponse struct {
 
 // stat for requests, provided they go through our WriteResponse
 type stat struct {
-	Failures      int           `json:"failures,omitempty"`
-	Successes     int           `json:"successes,omitempty"`
-	Total         int           `json:"total,omitempty"`
-	TotalSize     int64         `json:"totalSize,omitempty"`
-	SessionValues int           `json:"sessionValues,omitempty"`
-	TimeStarted   time.Time     `json:"timeStarted,omitempty"`
-	TimeRunning   time.Duration `json:"timeRunning,omitempty"`
+	Failures      int       `json:"failures,omitempty"`
+	Successes     int       `json:"successes,omitempty"`
+	Total         int       `json:"total,omitempty"`
+	TotalSize     int64     `json:"totalSize,omitempty"`
+	SessionValues int       `json:"sessionValues,omitempty"`
+	TimeStarted   time.Time `json:"timeStarted,omitempty"`
+	TimeRunning   float64   `json:"timeRunning,omitempty"`
 }
 
 // Statistics counts various program data
@@ -102,7 +102,7 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 // HandleGetStats exports all known stat requests
 func HandleGetStats(w http.ResponseWriter, r *http.Request) {
 	// Calculate time running
-	Statistics.TimeRunning = time.Since(Statistics.TimeStarted)
+	Statistics.TimeRunning = time.Since(Statistics.TimeStarted).Seconds()
 
 	// Echo back message
 	WriteResponse(&w, r, JSONResponse{Output: Statistics, OK: true})
