@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
-	"github.com/MrDoctorKovacic/MDroid-Core/gps"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
