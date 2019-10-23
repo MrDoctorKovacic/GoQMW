@@ -67,7 +67,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 			"cpu":     newdata.UsedCPU,
 			"ram":     newdata.UsedRAM,
 			"disk":    newdata.UsedDisk,
-			"network": newdata.UsedDisk,
+			"network": newdata.UsedNetwork,
 			"temp":    newdata.TempCPU,
 		}
 
