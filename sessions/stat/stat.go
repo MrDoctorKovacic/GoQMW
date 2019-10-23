@@ -32,6 +32,13 @@ func init() {
 	stats = make(map[string]stat, 0)
 }
 
+// HandleGetAll returns all the latest stats
+func HandleGetAll(w http.ResponseWriter, r *http.Request) {
+	statsLock.Lock()
+	defer statsLock.Unlock()
+	format.WriteResponse(&w, r, format.JSONResponse{Output: stats, OK: true})
+}
+
 // HandleGet returns the latest stat
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
