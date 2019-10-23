@@ -11,10 +11,11 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/stat"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
@@ -107,6 +108,9 @@ func startRouter() {
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")
+
+	router.HandleFunc("/stat/{name}", stat.HandleGet).Methods("GET")
+	router.HandleFunc("/stat/{name}", stat.HandleSet).Methods("POST")
 
 	//
 	// Settings routes
