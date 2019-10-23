@@ -1,3 +1,4 @@
+// Package gps implements session values regarding GPS and timezone locations
 package gps
 
 import (
