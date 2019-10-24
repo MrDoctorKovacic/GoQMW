@@ -37,7 +37,6 @@ func Setup(configAddr *map[string]string) {
 	if usingBluetooth {
 		EnableAutoRefresh()
 		SetAddress(bluetoothAddress)
-		BluetoothAddress = bluetoothAddress
 	}
 	BluetoothAddress = ""
 }
