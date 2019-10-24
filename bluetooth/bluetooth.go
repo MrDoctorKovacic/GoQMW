@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"os/user"
 	"regexp"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
@@ -133,29 +136,54 @@ func SetAddress(address string) {
 }
 
 // SendDBusCommand used as a general BT control function for these endpoints
-func SendDBusCommand(preargs *[]string, args []string, hideOutput bool, skipAddressCheck bool) (string, bool) {
+func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddressCheck bool) (string, bool) {
 	if !skipAddressCheck && BluetoothAddress == "" {
 		log.Warn().Msg("No valid BT Address to run command")
 		return "No valid BT Address to run command", false
 	}
 
+	// Use current (presumably root) user if is nil
+	if runAs == nil {
+		var err error
+		runAs, err = user.Current()
+		if err != nil {
+			log.Error().Msg("Error getting current user permissions in exec call")
+			log.Error().Msg(err.Error())
+			return "", false
+		}
+	}
+
+	// Get user details
+	u := *runAs
+	uid, err := strconv.ParseUint(u.Uid, 10, 32)
+	if err != nil {
+		log.Error().Msg("Error parsing uid into uint32")
+		log.Error().Msg(err.Error())
+		return "", false
+	}
+	gid, err := strconv.ParseUint(u.Gid, 10, 32)
+	if err != nil {
+		log.Error().Msg("Error parsing gid into uint32")
+		log.Error().Msg(err.Error())
+		return "", false
+	}
+
 	// Fill in the meta nonsense
-	commandArgs := append(*preargs, "dbus-send")
 	args = append([]string{"--system", "--type=method_call", "--dest=org.bluez", "--print-reply"}, args...)
-	commandArgs = append(commandArgs, args...)
-	command, commandArgs := commandArgs[0], commandArgs[1:len(commandArgs)]
 
 	// Execute the build dbus command
 	var stderr bytes.Buffer
 	var out bytes.Buffer
-	cmd := exec.Command(command, commandArgs...)
+	cmd := exec.Command("dbus-send", args...)
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 
 	if err := cmd.Run(); err != nil {
 		log.Error().Msg(err.Error())
 		log.Error().Msg(stderr.String())
-		log.Error().Msg(command + strings.Join(commandArgs, " "))
+		log.Error().Msg(strings.Join(args, " "))
 		return stderr.String(), false
 	}
 
@@ -169,10 +197,18 @@ func SendDBusCommand(preargs *[]string, args []string, hideOutput bool, skipAddr
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Connecting to bluetooth device...")
+
+	runAs, err := user.Lookup("casey")
+	if err != nil {
+		log.Error().Msg("Could not lookup user")
+		log.Error().Msg(err.Error())
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Could not lookup user", OK: false})
+		return
+	}
+
 	go SendDBusCommand(
-		&[]string{"su", "-", "casey", "-c"},
-		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress,
-			"org.bluez.Device1.Connect"},
+		runAs,
+		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress, "org.bluez.Device1.Connect"},
 		false,
 		true)
 	/*
@@ -193,8 +229,17 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 // Disconnect bluetooth device
 func Disconnect(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Disconnecting from bluetooth device...")
+
+	runAs, err := user.Lookup("casey")
+	if err != nil {
+		log.Error().Msg("Could not lookup user")
+		log.Error().Msg(err.Error())
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Could not lookup user", OK: false})
+		return
+	}
+
 	go SendDBusCommand(
-		&[]string{"su", "-", "casey", "-c"},
+		runAs,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress,
 			"org.bluez.Device1.Disonnect"},
 		false,
