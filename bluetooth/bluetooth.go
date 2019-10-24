@@ -36,9 +36,9 @@ func Setup(configAddr *map[string]string) {
 	configMap := *configAddr
 	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
 	if usingBluetooth {
+		SetAddress(bluetoothAddress)
 		log.Info().Msg("Enabling auto refresh of BT address")
 		go startAutoRefresh()
-		SetAddress(bluetoothAddress)
 	}
 	BluetoothAddress = ""
 }
