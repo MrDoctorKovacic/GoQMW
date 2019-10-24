@@ -249,7 +249,7 @@ func Disconnect() error {
 		return fmt.Errorf("Could not lookup user")
 	}
 
-	go SendDBusCommand(
+	SendDBusCommand(
 		runAs,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress,
 			"org.bluez.Device1.Disonnect"},
