@@ -143,7 +143,7 @@ func SendDBusCommand(preargs *[]string, args []string, hideOutput bool, skipAddr
 	commandArgs := append(*preargs, "dbus-send")
 	args = append([]string{"--system", "--type=method_call", "--dest=org.bluez", "--print-reply"}, args...)
 	commandArgs = append(commandArgs, args...)
-	command, commandArgs := commandArgs[len(commandArgs)-1], commandArgs[:len(commandArgs)-1]
+	command, commandArgs := commandArgs[0], commandArgs[1:len(commandArgs)]
 
 	// Execute the build dbus command
 	var stderr bytes.Buffer
