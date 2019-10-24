@@ -217,16 +217,16 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 	log.Info().Msg("Connecting to bluetooth device...")
 
-	runAs, err := user.Lookup("casey")
+	/*runAs, err := user.Lookup("casey")
 	if err != nil {
 		log.Error().Msg("Could not lookup user")
 		log.Error().Msg(err.Error())
 		format.WriteResponse(&w, r, format.JSONResponse{Output: "Could not lookup user", OK: false})
 		return
-	}
+	}*/
 
 	go SendDBusCommand(
-		runAs,
+		nil,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress, "org.bluez.Device1.Connect"},
 		false,
 		true)
