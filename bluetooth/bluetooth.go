@@ -35,12 +35,14 @@ func init() {
 func Setup(configAddr *map[string]string) {
 	configMap := *configAddr
 	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
-	if usingBluetooth {
-		SetAddress(bluetoothAddress)
-		log.Info().Msg("Enabling auto refresh of BT address")
-		go startAutoRefresh()
+	if !usingBluetooth {
+		BluetoothAddress = ""
+		return
 	}
-	BluetoothAddress = ""
+
+	SetAddress(bluetoothAddress)
+	log.Info().Msg("Enabling auto refresh of BT address")
+	go startAutoRefresh()
 }
 
 // Parse the variant output from DBus into map of string
