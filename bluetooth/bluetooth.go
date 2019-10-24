@@ -184,7 +184,7 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 		log.Error().Msg(err.Error())
 		log.Error().Msg(stderr.String())
 		log.Error().Msg("Args: " + strings.Join(args, " "))
-		log.Error().Msg(runAs.Username)
+		log.Error().Msg("Ran as: " + runAs.Username)
 		return stderr.String(), false
 	}
 
