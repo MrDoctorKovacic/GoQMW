@@ -15,11 +15,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/godbus/dbus"
 	"github.com/gosimple/slug"
-	"github.com/muka/go-bluetooth/api"
-	"github.com/muka/go-bluetooth/bluez/profile/adapter"
-	"github.com/muka/go-bluetooth/bluez/profile/agent"
 	"github.com/rs/zerolog/log"
 )
 
@@ -216,59 +212,19 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
-	// Turn scanning on
-	//ScanOn()
+	ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
 
-	defer api.Exit()
-
-	//Connect DBus System bus
-	conn, err := dbus.SystemBus()
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-
-	ag := agent.NewSimpleAgent()
-	err = agent.ExposeAgent(conn, ag, agent.CapKeyboardDisplay, true)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-
-	a, err := adapter.GetAdapter("B8:08:CF:CB:6F:D2")
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-
-	dev, err := discover(a, BluetoothAddress)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-
-	if dev == nil {
-		log.Error().Msg("Device not found, is it advertising?")
-		return
-	}
-
-	err = connect(dev)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
-
-	/*runAs, err := user.Lookup("casey")
+	runAs, err := user.Lookup("casey")
 	if err != nil {
 		log.Error().Msg("Could not lookup user")
 		log.Error().Msg(err.Error())
 		format.WriteResponse(&w, r, format.JSONResponse{Output: "Could not lookup user", OK: false})
 		return
-	}*/
+	}
 
 	go SendDBusCommand(
-		nil,
+		runAs,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress, "org.bluez.Device1.Connect"},
 		false,
 		true)
