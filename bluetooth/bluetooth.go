@@ -36,6 +36,7 @@ func Setup(configAddr *map[string]string) {
 	configMap := *configAddr
 	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
 	if !usingBluetooth {
+		log.Warn().Msg("No bluetooth address found in config, using empty address")
 		BluetoothAddress = ""
 		return
 	}
