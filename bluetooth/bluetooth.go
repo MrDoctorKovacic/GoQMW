@@ -18,10 +18,11 @@ import (
 
 // Regex expressions for parsing dbus output
 var (
-	BluetoothAddress string
-	replySerialRegex *regexp.Regexp
-	findStringRegex  *regexp.Regexp
-	cleanRegex       *regexp.Regexp
+	BluetoothAddress   string
+	BluetoothConnected bool
+	replySerialRegex   *regexp.Regexp
+	findStringRegex    *regexp.Regexp
+	cleanRegex         *regexp.Regexp
 )
 
 func init() {
@@ -35,7 +36,8 @@ func Setup(configAddr *map[string]string) {
 	configMap := *configAddr
 	bluetoothAddress, usingBluetooth := configMap["BLUETOOTH_ADDRESS"]
 	if usingBluetooth {
-		EnableAutoRefresh()
+		log.Info().Msg("Enabling auto refresh of BT address")
+		go startAutoRefresh()
 		SetAddress(bluetoothAddress)
 	}
 	BluetoothAddress = ""
@@ -78,12 +80,6 @@ func cleanDBusOutput(output string) map[string]string {
 	}
 
 	return outputMap
-}
-
-// EnableAutoRefresh continously refreshes bluetooth media devices
-func EnableAutoRefresh() {
-	log.Info().Msg("Enabling auto refresh of BT address")
-	go startAutoRefresh()
 }
 
 // startAutoRefresh will begin go routine for refreshing bt media device address
