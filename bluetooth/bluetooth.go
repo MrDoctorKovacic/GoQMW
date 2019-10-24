@@ -17,11 +17,11 @@ import (
 
 // Regex expressions for parsing dbus output
 var (
-	BluetoothAddress   string
-	BluetoothConnected bool
-	replySerialRegex   *regexp.Regexp
-	findStringRegex    *regexp.Regexp
-	cleanRegex         *regexp.Regexp
+	BluetoothAddress string
+	tmuxStarted      bool
+	replySerialRegex *regexp.Regexp
+	findStringRegex  *regexp.Regexp
+	cleanRegex       *regexp.Regexp
 )
 
 func init() {
