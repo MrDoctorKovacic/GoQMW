@@ -49,6 +49,21 @@ func Setup(configAddr *map[string]string) {
 	go startAutoRefresh()
 }
 
+// ScanOn turns on bluetooth scan with bluetoothctl
+func ScanOn() {
+	var stderr bytes.Buffer
+	var out bytes.Buffer
+	cmd := exec.Command("echo", "scan", "on", "|", "bluetoothctl")
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Error().Msg("Error turning scan on")
+		log.Error().Msg(err.Error())
+		log.Error().Msg(stderr.String())
+	}
+}
+
 // Parse the variant output from DBus into map of string
 func cleanDBusOutput(output string) map[string]string {
 	outputMap := make(map[string]string, 0)
@@ -197,8 +212,9 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
-	// Disconnect first
-	//Disconnect()
+	// Turn scanning on
+	ScanOn()
+
 	log.Info().Msg("Connecting to bluetooth device...")
 
 	runAs, err := user.Lookup("casey")
