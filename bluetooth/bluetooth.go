@@ -16,6 +16,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gosimple/slug"
+	"github.com/muka/go-bluetooth/bluez/profile/adapter"
 	"github.com/rs/zerolog/log"
 )
 
@@ -213,9 +214,31 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
 	// Turn scanning on
-	ScanOn()
-
+	//ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
+
+	a, err := adapter.NewAdapter1FromAdapterID("B8:08:CF:CB:6F:D2")
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+
+	dev, err := discover(a, "98:09:CF:91:4D:10")
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+
+	if dev == nil {
+		log.Error().Msg("Device not found, is it advertising?")
+		return
+	}
+
+	err = connect(dev)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
 
 	/*runAs, err := user.Lookup("casey")
 	if err != nil {
