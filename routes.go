@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/bluetooth"
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
@@ -135,20 +134,6 @@ func startRouter() {
 	//
 	router.HandleFunc("/serial/{command}/{checksum}", mserial.WriteSerialHandler).Methods("POST")
 	router.HandleFunc("/serial/{command}", mserial.WriteSerialHandler).Methods("POST")
-
-	//
-	// Bluetooth routes
-	//
-	router.HandleFunc("/bluetooth", bluetooth.GetDeviceInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/getDeviceInfo", bluetooth.GetDeviceInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/getMediaInfo", bluetooth.GetMediaInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/disconnect", bluetooth.HandleDisconnect).Methods("GET")
-	router.HandleFunc("/bluetooth/connect", bluetooth.Connect).Methods("GET")
-	router.HandleFunc("/bluetooth/prev", bluetooth.Prev).Methods("GET")
-	router.HandleFunc("/bluetooth/next", bluetooth.Next).Methods("GET")
-	router.HandleFunc("/bluetooth/pause", bluetooth.Pause).Methods("GET")
-	router.HandleFunc("/bluetooth/play", bluetooth.Play).Methods("GET")
-	router.HandleFunc("/bluetooth/refresh", bluetooth.ForceRefresh).Methods("GET")
 
 	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
