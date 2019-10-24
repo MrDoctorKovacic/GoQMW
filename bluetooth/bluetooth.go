@@ -155,7 +155,7 @@ func SendDBusCommand(preargs *[]string, args []string, hideOutput bool, skipAddr
 	if err := cmd.Run(); err != nil {
 		log.Error().Msg(err.Error())
 		log.Error().Msg(stderr.String())
-		log.Error().Msg(strings.Join(args, " "))
+		log.Error().Msg(command + strings.Join(commandArgs, " "))
 		return stderr.String(), false
 	}
 
