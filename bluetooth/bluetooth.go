@@ -15,8 +15,11 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/godbus/dbus"
 	"github.com/gosimple/slug"
+	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/bluez/profile/adapter"
+	"github.com/muka/go-bluetooth/bluez/profile/agent"
 	"github.com/rs/zerolog/log"
 )
 
@@ -217,7 +220,23 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	//ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
 
-	a, err := adapter.NewAdapter1FromAdapterID("B8_08_CF_CB_6F_D2")
+	defer api.Exit()
+
+	//Connect DBus System bus
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+
+	ag := agent.NewSimpleAgent()
+	err = agent.ExposeAgent(conn, ag, agent.CapKeyboardDisplay, true)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+
+	a, err := adapter.GetAdapter("B8_08_CF_CB_6F_D2")
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return

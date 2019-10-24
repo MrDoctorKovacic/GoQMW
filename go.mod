@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/bradfitz/latlong v0.0.0-20170410180902-f3db6d0dff40
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/godbus/dbus v4.1.0+incompatible // indirect
+	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
 	github.com/gosimple/slug v1.8.0
