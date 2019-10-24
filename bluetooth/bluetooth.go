@@ -49,11 +49,10 @@ func Setup(configAddr *map[string]string) {
 	go startAutoRefresh()
 }
 
-// ScanOn turns on bluetooth scan with bluetoothctl
-func ScanOn() {
+func runCommand(commandName string, commandArgs []string) {
 	var stderr bytes.Buffer
 	var out bytes.Buffer
-	cmd := exec.Command("echo", "scan", "on", "|", "bluetoothctl")
+	cmd := exec.Command(commandName, commandArgs...)
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
 
@@ -61,6 +60,26 @@ func ScanOn() {
 		log.Error().Msg("Error turning scan on")
 		log.Error().Msg(err.Error())
 		log.Error().Msg(stderr.String())
+		return
+	}
+}
+
+type command struct {
+	name string
+	args []string
+}
+
+// ScanOn turns on bluetooth scan with bluetoothctl
+func ScanOn() {
+	//command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", fmt.Sprintf("connect %s", BluetoothAddress)}},
+	tmuxCommands := []command{
+		command{name: "tmux", args: []string{"new-session", "-d", "-s", "bluetoothConnect", "bluetoothctl"}},
+		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", "scan on"}},
+		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "Enter"}},
+	}
+
+	for _, c := range tmuxCommands {
+		runCommand(c.name, c.args)
 	}
 }
 
@@ -214,6 +233,7 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 func Connect(w http.ResponseWriter, r *http.Request) {
 	ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
+	time.Sleep(2 * time.Second)
 
 	runAs, err := user.Lookup("casey")
 	if err != nil {
