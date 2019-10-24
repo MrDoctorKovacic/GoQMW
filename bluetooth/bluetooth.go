@@ -197,6 +197,8 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
+	// Disconnect first
+	Disconnect()
 	log.Info().Msg("Connecting to bluetooth device...")
 
 	runAs, err := user.Lookup("casey")
@@ -227,16 +229,24 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
+// HandleDisconnect bluetooth device
+func HandleDisconnect(w http.ResponseWriter, r *http.Request) {
+	err := Disconnect()
+	if err != nil {
+		log.Error().Msg(err.Error())
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Could not lookup user", OK: false})
+	}
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+}
+
 // Disconnect bluetooth device
-func Disconnect(w http.ResponseWriter, r *http.Request) {
+func Disconnect() error {
 	log.Info().Msg("Disconnecting from bluetooth device...")
 
 	runAs, err := user.Lookup("casey")
 	if err != nil {
 		log.Error().Msg("Could not lookup user")
-		log.Error().Msg(err.Error())
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Could not lookup user", OK: false})
-		return
+		return fmt.Errorf("Could not lookup user")
 	}
 
 	go SendDBusCommand(
@@ -256,8 +266,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 			log.Error().Msg(err.Error())
 			log.Error().Msg(stderr.String())
 		}*/
-
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	return nil
 }
 
 func askDeviceInfo() map[string]string {
