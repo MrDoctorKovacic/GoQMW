@@ -50,7 +50,8 @@ func cleanDBusOutput(output string) map[string]string {
 	outputArray := findStringRegex.FindAllString(s, -1)
 
 	if outputArray == nil {
-		log.Error().Msg("Error parsing dbus output")
+		log.Error().Msg("Error parsing dbus output. Full output:")
+		log.Error().Msg(output)
 	}
 
 	var (
