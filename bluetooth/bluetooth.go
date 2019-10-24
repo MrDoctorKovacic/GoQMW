@@ -109,14 +109,8 @@ func HandleDisconnect(w http.ResponseWriter, r *http.Request) {
 func Disconnect() error {
 	log.Info().Msg("Disconnecting from bluetooth device...")
 
-	runAs, err := user.Lookup("casey")
-	if err != nil {
-		log.Error().Msg("Could not lookup user")
-		return fmt.Errorf("Could not lookup user")
-	}
-
 	SendDBusCommand(
-		runAs,
+		nil,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress,
 			"org.bluez.Device1.Disonnect"},
 		false,
