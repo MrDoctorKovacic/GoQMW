@@ -75,7 +75,7 @@ func SetAddress(address string) {
 func Connect(w http.ResponseWriter, r *http.Request) {
 	ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	runAs, err := user.Lookup("casey")
 	if err != nil {
@@ -85,12 +85,13 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go SendDBusCommand(
+	SendDBusCommand(
 		runAs,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress, "org.bluez.Device1.Connect"},
 		false,
 		true)
 
+	log.Info().Msg("Connection successful.")
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
