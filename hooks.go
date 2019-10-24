@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
@@ -26,7 +26,6 @@ type power struct {
 
 // Read the target action based on current ACC Power value
 var (
-	_soundDef    = power{settingComp: "SOUND", settingName: "POWER"}
 	_wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
 	_angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
 	_tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
@@ -64,7 +63,7 @@ func wirelessSettings(settingName string, settingValue string) {
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 
 	// Determine state of wireless
-	evalWirelessPower(accOn, wifiOn)
+	evalWirelessPower(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
 }
 
 // When key state is changed in session
@@ -72,14 +71,14 @@ func keyState(hook *sessions.SessionPackage) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 
+	// Determine state of wireless
+	evalWirelessPower(hook.Data.Value, accOn, wifiOn)
+
 	// Determine state of angel eyes
 	evalAngelEyesPower(hook.Data.Value)
 
 	// Determine state of the video boards
 	evalVideoPower(hook.Data.Value, accOn, wifiOn)
-
-	// Determine state of the sound board
-	evalSoundPower(hook.Data.Value, accOn, wifiOn)
 }
 
 // When light sensor is changed in session
@@ -132,15 +131,12 @@ func accPower(hook *sessions.SessionPackage) {
 	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
 	// Trigger wireless, based on ACC and wifi status
-	go evalWirelessPower(accOn, wifiOn)
+	go evalWirelessPower(keyIsIn, accOn, wifiOn)
 
 	// Trigger video, based on ACC and wifi status
 	go evalVideoPower(keyIsIn, accOn, wifiOn)
 
-	// Trigger sound, based on ACC and wifi status
-	go evalSoundPower(keyIsIn, accOn, wifiOn)
-
-	// Trigger sound, based on ACC and wifi status
+	// Trigger tablet, based on ACC and wifi status
 	go evalTabletPower(keyIsIn, accOn, wifiOn)
 }
 

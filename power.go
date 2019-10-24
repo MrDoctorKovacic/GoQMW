@@ -47,31 +47,19 @@ func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
 }
 
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
-func evalWirelessPower(accOn bool, wifiOn bool) {
+func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 	wireless := _wirelessDef
 	wireless.on, wireless.errOn = sessions.GetBool("WIRELESS_POWER")
 	wireless.powerTarget, wireless.errTarget = settings.Get(wireless.settingComp, wireless.settingName)
 
 	// Wireless is most likely supposed to be on, only one case where it should not be
 	shouldTrigger := true
-	if !accOn && wifiOn {
+	if wifiOn && keyIsIn == "FALSE" {
 		shouldTrigger = false
 	}
 
 	// Pass wireless module to generic power trigger
 	genericPowerTrigger(shouldTrigger, "Wireless", wireless)
-}
-
-// Evaluates if the sound board should be on, and then passes that struct along as generic power module
-func evalSoundPower(keyIsIn string, accOn bool, wifiOn bool) {
-	sound := _soundDef
-	sound.on, sound.errOn = sessions.GetBool("SOUND_POWER")
-	sound.powerTarget, sound.errTarget = settings.Get(sound.settingComp, sound.settingName)
-
-	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
-
-	// Pass sound module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Sound", sound)
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
