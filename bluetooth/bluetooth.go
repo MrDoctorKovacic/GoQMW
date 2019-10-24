@@ -73,6 +73,7 @@ type command struct {
 func ScanOn() {
 	//command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", fmt.Sprintf("connect %s", BluetoothAddress)}},
 	tmuxCommands := []command{
+		command{name: "tmux", args: []string{"kill-session", "-t", "bluetoothConnect"}},
 		command{name: "tmux", args: []string{"new-session", "-d", "-s", "bluetoothConnect", "bluetoothctl"}},
 		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", "scan on"}},
 		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "Enter"}},
