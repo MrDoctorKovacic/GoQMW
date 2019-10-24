@@ -142,7 +142,7 @@ func SendDBusCommand(args []string, hideOutput bool) (string, bool) {
 	}
 
 	// Fill in the meta nonsense
-	args = append([]string{"--system", "--type=method_call", "--dest=org.bluez"}, args...)
+	args = append([]string{"--system", "--type=method_call", "--dest=org.bluez", "--print-reply"}, args...)
 	var stderr bytes.Buffer
 	var out bytes.Buffer
 	cmd := exec.Command("dbus-send", args...)
