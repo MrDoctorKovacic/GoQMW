@@ -75,7 +75,7 @@ func SetAddress(address string) {
 func Connect(w http.ResponseWriter, r *http.Request) {
 	ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
-	time.Sleep(5 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	runAs, err := user.Lookup("casey")
 	if err != nil {
