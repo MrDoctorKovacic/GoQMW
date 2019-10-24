@@ -217,13 +217,13 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	//ScanOn()
 	log.Info().Msg("Connecting to bluetooth device...")
 
-	a, err := adapter.NewAdapter1FromAdapterID("B8:08:CF:CB:6F:D2")
+	a, err := adapter.NewAdapter1FromAdapterID("B8_08_CF_CB_6F_D2")
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
 	}
 
-	dev, err := discover(a, "98:09:CF:91:4D:10")
+	dev, err := discover(a, BluetoothAddress)
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
