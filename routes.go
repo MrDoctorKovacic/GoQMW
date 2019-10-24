@@ -142,7 +142,7 @@ func startRouter() {
 	router.HandleFunc("/bluetooth", bluetooth.GetDeviceInfo).Methods("GET")
 	router.HandleFunc("/bluetooth/getDeviceInfo", bluetooth.GetDeviceInfo).Methods("GET")
 	router.HandleFunc("/bluetooth/getMediaInfo", bluetooth.GetMediaInfo).Methods("GET")
-	router.HandleFunc("/bluetooth/disconnect", bluetooth.HandleDisconnect).Methods("GET")
+	router.HandleFunc("/bluetooth/off", bluetooth.HandleDisconnect).Methods("GET")
 	router.HandleFunc("/bluetooth/connect", bluetooth.Connect).Methods("GET")
 	router.HandleFunc("/bluetooth/prev", bluetooth.Prev).Methods("GET")
 	router.HandleFunc("/bluetooth/next", bluetooth.Next).Methods("GET")
