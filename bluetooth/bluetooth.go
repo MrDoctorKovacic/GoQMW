@@ -198,7 +198,7 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 // Connect bluetooth device
 func Connect(w http.ResponseWriter, r *http.Request) {
 	// Disconnect first
-	Disconnect()
+	//Disconnect()
 	log.Info().Msg("Connecting to bluetooth device...")
 
 	runAs, err := user.Lookup("casey")
@@ -214,17 +214,6 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress, "org.bluez.Device1.Connect"},
 		false,
 		true)
-	/*
-		var stderr bytes.Buffer
-		var out bytes.Buffer
-		cmd := exec.Command("/bin/sh", "/home/casey/MDroid/bluetooth/connect.sh")
-		cmd.Stdout = &out
-		cmd.Stderr = &stderr
-
-		if err := cmd.Run(); err != nil {
-			log.Error().Msg(err.Error())
-			log.Error().Msg(stderr.String())
-		}*/
 
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
@@ -255,17 +244,7 @@ func Disconnect() error {
 			"org.bluez.Device1.Disonnect"},
 		false,
 		true)
-	/*
-		var stderr bytes.Buffer
-		var out bytes.Buffer
-		cmd := exec.Command("/bin/sh", "/home/casey/MDroid/bluetooth/disconnect.sh")
-		cmd.Stdout = &out
-		cmd.Stderr = &stderr
 
-		if err := cmd.Run(); err != nil {
-			log.Error().Msg(err.Error())
-			log.Error().Msg(stderr.String())
-		}*/
 	return nil
 }
 
