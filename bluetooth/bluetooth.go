@@ -236,7 +236,7 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := adapter.GetAdapter("B8_08_CF_CB_6F_D2")
+	a, err := adapter.GetAdapter("B8:08:CF:CB:6F:D2")
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
