@@ -156,7 +156,9 @@ func SendDBusCommand(preargs *[]string, args []string, hideOutput bool, skipAddr
 		return stderr.String(), false
 	}
 
-	log.Debug().Msg(out.String())
+	if !hideOutput {
+		log.Debug().Msg(out.String())
+	}
 
 	return out.String(), true
 }
