@@ -3,10 +3,7 @@ package bluetooth
 import (
 	"bytes"
 	"os/exec"
-	"os/user"
-	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/rs/zerolog/log"
 )
@@ -72,36 +69,10 @@ func getConnectedAddress() string {
 }
 
 // SendDBusCommand used as a general BT control function for these endpoints
-func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddressCheck bool) (string, bool) {
+func SendDBusCommand(args []string, hideOutput bool, skipAddressCheck bool) (string, bool) {
 	if !skipAddressCheck && BluetoothAddress == "" {
 		log.Warn().Msg("No valid BT Address to run command")
 		return "No valid BT Address to run command", false
-	}
-
-	// Use current (presumably root) user if is nil
-	if runAs == nil {
-		var err error
-		runAs, err = user.Current()
-		if err != nil {
-			log.Error().Msg("Error getting current user permissions in exec call")
-			log.Error().Msg(err.Error())
-			return "", false
-		}
-	}
-
-	// Get user details
-	u := *runAs
-	uid, err := strconv.ParseUint(u.Uid, 10, 32)
-	if err != nil {
-		log.Error().Msg("Error parsing uid into uint32")
-		log.Error().Msg(err.Error())
-		return "", false
-	}
-	gid, err := strconv.ParseUint(u.Gid, 10, 32)
-	if err != nil {
-		log.Error().Msg("Error parsing gid into uint32")
-		log.Error().Msg(err.Error())
-		return "", false
 	}
 
 	// Fill in the meta nonsense
@@ -113,14 +84,11 @@ func SendDBusCommand(runAs *user.User, args []string, hideOutput bool, skipAddre
 	cmd := exec.Command("dbus-send", args...)
 	cmd.Stdout = &out
 	cmd.Stderr = &stderr
-	cmd.SysProcAttr = &syscall.SysProcAttr{}
-	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 
 	if err := cmd.Run(); err != nil {
 		log.Error().Msg(err.Error())
 		log.Error().Msg(stderr.String())
 		log.Error().Msg("Args: " + strings.Join(args, " "))
-		log.Error().Msg("Ran as: " + runAs.Username)
 		return stderr.String(), false
 	}
 
