@@ -4,6 +4,7 @@ package bluetooth
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os/exec"
 	"regexp"
@@ -212,17 +213,29 @@ func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Getting device info...")
 
-	result, ok := SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}, true)
+	deviceMessage := []string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}
+	result, ok := SendDBusCommand(deviceMessage, true)
 	if !ok {
 		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		return
+	}
+	if result == "" {
+		// empty response
+		log.Warn().Msg(fmt.Sprintf("Empty dbus response when querying device, not attempting to clean. We asked: \n%s", strings.Join(deviceMessage, " ")))
 		return
 	}
 	deviceStatus := cleanDBusOutput(result)
 
 	log.Info().Msg("Getting media info...")
-	result, ok = SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}, true)
+	mediaMessage := []string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}
+	result, ok = SendDBusCommand(mediaMessage, true)
 	if !ok {
 		json.NewEncoder(w).Encode(format.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		return
+	}
+	if result == "" {
+		// empty response
+		log.Warn().Msg(fmt.Sprintf("Empty dbus response when querying media, not attempting to clean. We asked: \n%s", strings.Join(mediaMessage, " ")))
 		return
 	}
 
