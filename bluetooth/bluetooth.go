@@ -112,7 +112,7 @@ func Disconnect() error {
 	SendDBusCommand(
 		nil,
 		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress,
-			"org.bluez.Device1.Disonnect"},
+			"org.bluez.Device1.Disconnect"},
 		false,
 		true)
 
