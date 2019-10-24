@@ -18,9 +18,11 @@ type command struct {
 
 // ScanOn turns on bluetooth scan with bluetoothctl
 func ScanOn() {
+	if tmuxStarted {
+		runCommand("tmux", []string{"kill-session", "-t", "bluetoothConnect"})
+	}
 	//command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", fmt.Sprintf("connect %s", BluetoothAddress)}},
 	tmuxCommands := []command{
-		command{name: "tmux", args: []string{"kill-session", "-t", "bluetoothConnect"}},
 		command{name: "tmux", args: []string{"new-session", "-d", "-s", "bluetoothConnect", "bluetoothctl"}},
 		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", "scan on"}},
 		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "Enter"}},
@@ -29,6 +31,7 @@ func ScanOn() {
 	for _, c := range tmuxCommands {
 		runCommand(c.name, c.args)
 	}
+	tmuxStarted = true
 }
 
 func runCommand(commandName string, commandArgs []string) {
