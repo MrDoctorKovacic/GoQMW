@@ -43,7 +43,7 @@ func PushQueue(command string) {
 	}
 	defer resp.Body.Close()
 
-	log.Info().Msg(fmt.Sprintf("Added %s to the Pybus Queue", command))
+	log.Debug().Msg(fmt.Sprintf("Added %s to the Pybus Queue", command))
 }
 
 // StartRoutine handles incoming requests to the pybus program, will add routines to the queue
