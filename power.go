@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
@@ -80,5 +82,18 @@ func genericPowerTrigger(shouldBeOn bool, name string, module power) {
 		}
 	} else if module.errOn != nil {
 		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
+	}
+}
+
+// Some shutdowns are more complicated than others, ensure we shut down safely
+func gracefulShutdown(name string) {
+	serialCommand := fmt.Sprintf("powerOff%s", name)
+
+	if name == "Board" || name == "Wireless" {
+		sendServiceCommand(format.Name(name), "shutdown")
+		time.Sleep(time.Second * 10)
+		mserial.Push(mserial.Writer, serialCommand)
+	} else {
+		mserial.Push(mserial.Writer, serialCommand)
 	}
 }
