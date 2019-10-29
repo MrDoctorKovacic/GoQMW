@@ -76,6 +76,9 @@ func parseConfig() {
 		go pybus.RepeatCommand("requestTimeStatus", 60)
 		go pybus.RepeatCommand("requestTemperatureStatus", 120)
 	}
+
+	// Default video status to false
+	sessions.SetValue("VIDEO_ON", "FALSE")
 }
 
 // Set up InfluxDB time series logging
