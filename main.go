@@ -23,6 +23,7 @@ func main() {
 func sendServiceCommand(name string, command string) {
 	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
 	if machineServiceAddress == "" {
+		log.Error().Msg(fmt.Sprintf("Device %s address not found, not issuing %s", name, command))
 		return
 	}
 
