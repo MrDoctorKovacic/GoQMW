@@ -78,7 +78,7 @@ func parseConfig() {
 	}
 
 	// Default video status to false
-	sessions.SetValue("VIDEO_ON", "FALSE")
+	sessions.SetValue("VIDEO_ON", "TRUE")
 }
 
 // Set up InfluxDB time series logging
