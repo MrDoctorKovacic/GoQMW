@@ -107,7 +107,7 @@ func auxCurrent(hook *sessions.SessionPackage) {
 
 	modifier := .06
 	if currentFloat < .3 {
-		modifier = .08
+		modifier = .09
 	}
 
 	realCurrent := currentFloat + modifier
