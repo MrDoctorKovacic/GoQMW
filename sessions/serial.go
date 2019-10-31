@@ -24,47 +24,51 @@ func StartSerialComms(deviceName string, baudrate int) {
 	}
 
 	var isWriter bool
-
 	// Use first Serial device as a R/W, all others will only be read from
 	if mserial.Writer == nil {
 		mserial.Writer = s
 		isWriter = true
-		log.Info().Msg("Using serial device " + deviceName + " as default writer")
+		log.Info().Msg(fmt.Sprintf("Using serial device %s as default writer", deviceName))
 	}
 
-	// Continiously read from serial port
-	endedSerial := ReadFromSerial(s, isWriter)
-	if endedSerial {
-		log.Error().Msg("Serial disconnected, closing port and reopening")
+	// Continually read from serial port
+	log.Info().Msg(fmt.Sprintf("Starting new serial reader on device %s", deviceName))
+	ReadFromSerial(s, isWriter) // this will block until abrubtly ended
+	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
 
-		// Replace main serial writer
-		if mserial.Writer == s {
-			mserial.Writer = nil
-		}
-
-		s.Close()
-		time.Sleep(time.Second * 10)
-		log.Error().Msg("Reopening serial port...")
-		StartSerialComms(deviceName, baudrate)
+	// Replace main serial writer
+	if mserial.Writer == s {
+		mserial.Writer = nil
 	}
+
+	s.Close()
+	time.Sleep(time.Second * 10)
+	log.Error().Msg("Reopening serial port...")
+	StartSerialComms(deviceName, baudrate)
 }
 
 // ReadFromSerial reads serial data into the session
-func ReadFromSerial(device *serial.Port, isWriter bool) bool {
-	log.Info().Msg("Starting serial read")
-	for connected := true; connected; {
-		response, err := mserial.ReadSerial(device, isWriter)
+func ReadFromSerial(device *serial.Port, isWriter bool) {
+	for {
+		response, err := mserial.Read(device)
 		if err != nil {
 			// The device is nil, break out of this read loop
+			log.Error().Msg("Failed to read from serial port")
 			log.Error().Msg(err.Error())
-			break
+			return
 		}
-		parseSerialJSON(response)
+
+		// Parse serial data
+		parseJSON(response)
+
+		// Write to device if is necessary
+		if isWriter {
+			mserial.Pop(device)
+		}
 	}
-	return true
 }
 
-func parseSerialJSON(marshalledJSON interface{}) {
+func parseJSON(marshalledJSON interface{}) {
 	if marshalledJSON == nil {
 		log.Debug().Msg("Marshalled JSON is nil.")
 		return

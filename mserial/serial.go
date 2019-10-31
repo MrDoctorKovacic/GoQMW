@@ -28,19 +28,17 @@ func init() {
 // ParseSerialDevices parses through other serial devices, if enabled
 func ParseSerialDevices(settingsData map[string]map[string]string) map[string]int {
 
-	serialDevices, additionalSerialDevices := settingsData["TLV"]
+	serialDevices, additionalSerialDevices := settingsData["Serial Devices"]
 	var devices map[string]int
 
 	if additionalSerialDevices {
-		// Loop through each READONLY serial device and set up
-		// No room to config baud rate here, use 9600 as default
 		for deviceName, baudrateString := range serialDevices {
 			deviceBaud, err := strconv.Atoi(baudrateString)
 			if err != nil {
-				log.Error().Msg("Failed to convert given baudrate string to int. Found values: " + deviceName + ": " + baudrateString)
-				return nil
+				log.Error().Msg(fmt.Sprintf("Failed to convert given baudrate string to int. Found values: %s: %s", deviceName, baudrateString))
+			} else {
+				devices[deviceName] = deviceBaud
 			}
-			devices[deviceName] = deviceBaud
 		}
 	}
 
@@ -56,33 +54,18 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
-// ReadSerial will continuously pull data from incoming serial
-func ReadSerial(serialDevice *serial.Port, isWriter bool) (interface{}, error) {
+// Read will continuously pull data from incoming serial
+func Read(serialDevice *serial.Port) (interface{}, error) {
 	reader := bufio.NewReader(serialDevice)
-
-	// While connected, try to read from the device
-	// If we become disconnected, the goroutine will end and will have to be restarted
-	for connected := true; connected; {
-		//buf := make([]byte, 1024)
-		//n, err := serialDevice.Read(buf)
-		msg, err := reader.ReadBytes('}')
-
-		// Parse serial data
-		if err != nil {
-			log.Error().Msg("Failed to read from serial port")
-			log.Error().Msg(err.Error())
-			connected = false
-			break
-		} else {
-			var data interface{}
-			json.Unmarshal(msg, &data)
-			if isWriter {
-				go Pop(serialDevice)
-			}
-			return data, nil
-		}
+	msg, err := reader.ReadBytes('}')
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("Disconnected from serial")
+
+	// Parse serial data
+	var data interface{}
+	json.Unmarshal(msg, &data)
+	return data, nil
 }
 
 // Push queues a message for writing
