@@ -58,12 +58,12 @@ func SetupTokens(configAddr *map[string]string) {
 	// Set up Auth tokens
 	token, usingTokens := configMap["AUTH_TOKEN"]
 	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
-
-	if usingTokens && usingCentralHost {
-		go CheckServer(serverHost, token)
-	} else {
+	if !usingTokens || !usingCentralHost {
 		log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
+		return
 	}
+
+	go CheckServer(serverHost, token)
 }
 
 // CheckServer will continiously ping a central server for waiting packets,
@@ -72,7 +72,7 @@ func CheckServer(host string, token string) {
 
 	for {
 		// Start by assuming we're not on LTE, lower the wait time
-		timeToWait := time.Second * 1
+		timeToWait := time.Millisecond * 500
 		if !clientConnected {
 			lteEnabled, err := Get("LTE_ON")
 			if err != nil {
