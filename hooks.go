@@ -94,7 +94,7 @@ func voltage(hook *sessions.SessionPackage) {
 		return
 	}
 
-	sessions.SetValue(hook.Name[0:len(hook.Name)-4], fmt.Sprintf("%.3f", (voltageFloat/1024)*24.4))
+	sessions.SetValue(hook.Name[0:len(hook.Name)-4], fmt.Sprintf("%.3f", 0.15+(voltageFloat/1024)*24.4))
 }
 
 // Modifiers to the incoming Current sensor value
