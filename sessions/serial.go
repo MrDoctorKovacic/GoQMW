@@ -17,6 +17,7 @@ func StartSerialComms(deviceName string, baudrate int) {
 	log.Info().Msg("Opening serial device " + deviceName)
 	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
 	s, err := serial.OpenPort(c)
+	defer s.Close()
 	if err != nil {
 		log.Error().Msg("Failed to open serial port " + deviceName)
 		log.Error().Msg(err.Error())
@@ -44,7 +45,7 @@ func StartSerialComms(deviceName string, baudrate int) {
 	s.Close()
 	time.Sleep(time.Second * 10)
 	log.Error().Msg("Reopening serial port...")
-	StartSerialComms(deviceName, baudrate)
+	go StartSerialComms(deviceName, baudrate)
 }
 
 // ReadFromSerial reads serial data into the session
