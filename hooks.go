@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
@@ -106,7 +105,7 @@ func auxCurrent(hook *sessions.SessionPackage) {
 		return
 	}
 
-	realCurrent := math.Abs(1000 * ((((currentFloat * 3.3) / 4095.0) - 1.5) / 185))
+	realCurrent := currentFloat + .06
 	sessions.SetValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
 
