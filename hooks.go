@@ -99,7 +99,7 @@ func voltage(hook *sessions.SessionPackage) {
 
 // Modifiers to the incoming Current sensor value
 func auxCurrent(hook *sessions.SessionPackage) {
-	currentFloat, err := strconv.ParseFloat(hook.Data.Value, 64)
+	currentFloat, err := strconv.ParseFloat(hook.Data.Value, 32)
 	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
 		return
