@@ -105,7 +105,12 @@ func auxCurrent(hook *sessions.SessionPackage) {
 		return
 	}
 
-	realCurrent := currentFloat + .06
+	modifier := .06
+	if currentFloat < .3 {
+		modifier = .08
+	}
+
+	realCurrent := currentFloat + modifier
 	sessions.SetValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
 }
 
