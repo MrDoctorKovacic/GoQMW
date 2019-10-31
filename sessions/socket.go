@@ -109,7 +109,6 @@ func CheckServer(host string, token string) {
 func parseMessage(message []byte) *format.JSONResponse {
 	response := format.JSONResponse{}
 	err := json.Unmarshal(message, &response)
-
 	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error()))
 		return nil
@@ -117,22 +116,20 @@ func parseMessage(message []byte) *format.JSONResponse {
 
 	// Check if the server is echoing back to us, or if it's a legitimate request from the server
 	if response.Method != "response" {
-		// TODO! Match this path against a walk through of our router
-		//output := fmt.Sprintf("%v", response.Output)
 		output, ok := response.Output.(string)
 		if !ok {
 			log.Error().Msg("Cannot cast output to string.")
 			return nil
 		}
 
-		log.Info().Msg(fmt.Sprintf("Websocket read output:  %s", output))
+		log.Info().Msg(fmt.Sprintf("Websocket read request:  %s", output))
 		internalResponse, path, err := getAPIResponse(output)
 		if err != nil {
 			log.Error().Msg("Error from forwarded request websocket: " + err.Error())
 			return nil
 		}
 
-		log.Info().Msg(fmt.Sprintf("Internal API response:  %s", string(internalResponse)))
+		log.Info().Msg(fmt.Sprintf("API response:  %s", string(internalResponse)))
 		response := format.JSONResponse{}
 		err = json.Unmarshal(internalResponse, &response)
 		if err != nil {
