@@ -73,32 +73,30 @@ func CheckServer(host string, token string) {
 	for {
 		// Start by assuming we're not on LTE, lower the wait time
 		timeToWait := time.Millisecond * 500
-		if !clientConnected {
-			lteEnabled, err := Get("LTE_ON")
-			if err != nil {
-				// Set LTE status to something intelligible
-				log.Debug().Msg("Error getting LTE status. Defaulting to FALSE")
-				SetValue("LTE_ON", "FALSE")
-				timeToWait = time.Second * 5
-			} else if lteEnabled.Value == "TRUE" {
-				// Slow frequency of pings while on LTE
-				timeToWait = time.Second * 5
-			}
+		lteEnabled, err := Get("LTE_ON")
+		if err != nil {
+			// Set LTE status to something intelligible
+			log.Debug().Msg("Error getting LTE status. Defaulting to FALSE")
+			SetValue("LTE_ON", "FALSE")
+			timeToWait = time.Second * 5
+		} else if lteEnabled.Value == "TRUE" {
+			// Slow frequency of pings while on LTE
+			timeToWait = time.Second * 5
+		}
 
-			resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
-			if err != nil {
-				// handle error
-				if !failedOnce {
-					failedOnce = true
-				} else {
-					log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
-				}
+		resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
+		if err != nil {
+			// handle error
+			if !failedOnce {
+				failedOnce = true
 			} else {
-				resp.Body.Close()
-				if resp.StatusCode == 200 {
-					log.Info().Msg("Client is waiting on us, connect to server to acquire a websocket")
-					runServerSocket(host, token)
-				}
+				log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
+			}
+		} else {
+			resp.Body.Close()
+			if resp.StatusCode == 200 {
+				log.Info().Msg("Client is waiting on us, connect to server to acquire a websocket")
+				runServerSocket(host, token)
 			}
 		}
 
