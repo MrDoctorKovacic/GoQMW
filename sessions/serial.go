@@ -24,8 +24,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 		return
 	}
 
-	var isWriter bool
 	// Use first Serial device as a R/W, all others will only be read from
+	isWriter := false
 	if mserial.Writer == nil {
 		mserial.Writer = s
 		isWriter = true
