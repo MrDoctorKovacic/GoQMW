@@ -51,6 +51,11 @@ func StartSerialComms(deviceName string, baudrate int) {
 // ReadFromSerial reads serial data into the session
 func ReadFromSerial(device *serial.Port, isWriter bool) {
 	for {
+		// Write to device if is necessary
+		if isWriter {
+			mserial.Pop(device)
+		}
+
 		response, err := mserial.Read(device)
 		if err != nil {
 			// The device is nil, break out of this read loop
@@ -61,11 +66,6 @@ func ReadFromSerial(device *serial.Port, isWriter bool) {
 
 		// Parse serial data
 		parseJSON(response)
-
-		// Write to device if is necessary
-		if isWriter {
-			mserial.Pop(device)
-		}
 	}
 }
 
