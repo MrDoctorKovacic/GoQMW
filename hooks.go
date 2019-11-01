@@ -153,13 +153,16 @@ func lightSensorReason(hook *sessions.SessionPackage) {
 	delta, err := format.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 
 	if err != nil {
-		if hook.Data.Value == "RAIN" &&
-			keyPosition.Value == "OFF" &&
-			doorsLocked.Value == "TRUE" &&
-			windowsOpen.Value == "TRUE" &&
-			delta.Minutes() > 5 {
-			sessions.SlackAlert(settings.SlackURL, "Windows are down in the rain, eh?")
-		}
+		log.Error().Msg(err.Error())
+		return
+	}
+
+	if hook.Data.Value == "RAIN" &&
+		keyPosition.Value == "OFF" &&
+		doorsLocked.Value == "TRUE" &&
+		windowsOpen.Value == "TRUE" &&
+		delta.Minutes() > 5 {
+		sessions.SlackAlert(settings.SlackURL, "Windows are down in the rain, eh?")
 	}
 }
 
