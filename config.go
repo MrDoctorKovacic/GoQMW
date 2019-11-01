@@ -69,12 +69,7 @@ func parseConfig() {
 
 	// Set up pybus repeat commands
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
-		go pybus.RepeatCommand("requestIgnitionStatus", 10)
-		go pybus.RepeatCommand("requestLampStatus", 20)
-		go pybus.RepeatCommand("requestVehicleStatus", 30)
-		go pybus.RepeatCommand("requestOdometer", 45)
-		go pybus.RepeatCommand("requestTimeStatus", 60)
-		go pybus.RepeatCommand("requestTemperatureStatus", 120)
+		pybus.StartRepeats()
 	}
 
 	// Default video status to false
