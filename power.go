@@ -66,22 +66,27 @@ func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 
 // Error check against module's status fetches, then check if we're powering on or off
 func genericPowerTrigger(shouldBeOn bool, name string, module power) {
-	if module.errOn == nil && module.errTarget == nil {
-		if (module.powerTarget == "AUTO" && !module.on && shouldBeOn) || (module.powerTarget == "ON" && !module.on) {
-			log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
-			mserial.Push(mserial.Writer, fmt.Sprintf("powerOn%s", name))
-		} else if (module.powerTarget == "AUTO" && module.on && !shouldBeOn) || (module.powerTarget == "OFF" && module.on) {
-			log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
-			gracefulShutdown(name)
-		}
-	} else if module.errTarget != nil {
+	// Handle error in fetches
+	if module.errTarget != nil {
 		log.Error().Msg(fmt.Sprintf("Setting Error: %s", module.errTarget.Error()))
 		if module.settingComp != "" && module.settingName != "" {
 			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
 			settings.Set(module.settingComp, module.settingName, "AUTO")
 		}
-	} else if module.errOn != nil {
+		return
+	}
+	if module.errOn != nil {
 		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
+		return
+	}
+
+	// Evaluate power target with trigger and settings info
+	if (module.powerTarget == "AUTO" && !module.on && shouldBeOn) || (module.powerTarget == "ON" && !module.on) {
+		log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
+		mserial.Push(mserial.Writer, fmt.Sprintf("powerOn%s", name))
+	} else if (module.powerTarget == "AUTO" && module.on && !shouldBeOn) || (module.powerTarget == "OFF" && module.on) {
+		log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
+		gracefulShutdown(name)
 	}
 }
 
