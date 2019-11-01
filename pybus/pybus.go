@@ -66,8 +66,8 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
 
-// RepeatCommand endlessly, helps with request functions
-func RepeatCommand(command string, sleepSeconds int) {
+// repeatCommand endlessly, helps with request functions
+func repeatCommand(command string, sleepSeconds int) {
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
 		if hasPower, err := sessions.Get("ACC_POWER"); err == nil && hasPower.Value == "TRUE" {
@@ -75,6 +75,16 @@ func RepeatCommand(command string, sleepSeconds int) {
 		}
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
 	}
+}
+
+// StartRepeats that will send a command only on ACC power
+func StartRepeats() {
+	go repeatCommand("requestIgnitionStatus", 10)
+	go repeatCommand("requestLampStatus", 20)
+	go repeatCommand("requestVehicleStatus", 30)
+	go repeatCommand("requestOdometer", 45)
+	go repeatCommand("requestTimeStatus", 60)
+	go repeatCommand("requestTemperatureStatus", 120)
 }
 
 // ParseCommand is a list of pre-approved routes to PyBus for easier routing
