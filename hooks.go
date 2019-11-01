@@ -70,13 +70,9 @@ func keyState(hook *sessions.SessionPackage) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 
-	// Determine state of wireless
+	// Determine state of wireless, angel eyes, and main board
 	evalWirelessPower(hook.Data.Value, accOn, wifiOn)
-
-	// Determine state of angel eyes
 	evalAngelEyesPower(hook.Data.Value)
-
-	// Determine state of the video boards
 	evalVideoPower(hook.Data.Value, accOn, wifiOn)
 }
 
@@ -118,7 +114,6 @@ func auxCurrent(hook *sessions.SessionPackage) {
 
 // Trigger for booting boards/tablets
 func accPower(hook *sessions.SessionPackage) {
-	// Read the target action based on current ACC Power value
 	var accOn bool
 
 	// Check incoming ACC power value is valid
@@ -136,13 +131,9 @@ func accPower(hook *sessions.SessionPackage) {
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
-	// Trigger wireless, based on ACC and wifi status
+	// Trigger wireless, video, and tablet based on ACC and wifi status
 	go evalWirelessPower(keyIsIn, accOn, wifiOn)
-
-	// Trigger video, based on ACC and wifi status
 	go evalVideoPower(keyIsIn, accOn, wifiOn)
-
-	// Trigger tablet, based on ACC and wifi status
 	go evalTabletPower(keyIsIn, accOn, wifiOn)
 }
 
