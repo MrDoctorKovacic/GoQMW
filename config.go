@@ -93,11 +93,6 @@ func setupDatabase(configAddr *map[string]string) {
 	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
 }
 
-//
-// PROPRIETARY
-// Configure hardware serials, should not be used outside my own config
-//
-
 func setupSerial() {
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
