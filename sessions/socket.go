@@ -18,11 +18,6 @@ import (
 // Session WebSocket upgrader
 var upgrader = websocket.Upgrader{} // use default options
 
-var (
-	clientConnected bool
-	failedOnce      bool
-)
-
 // GetSessionSocket returns the entire current session as a webstream
 func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // return true for now, although this should range over accepted origins
@@ -69,6 +64,7 @@ func SetupTokens(configAddr *map[string]string) {
 // CheckServer will continiously ping a central server for waiting packets,
 // and will open a websocket as a client if so
 func CheckServer(host string, token string) {
+	var failedOnce bool
 
 	for {
 		// Start by assuming we're not on LTE, lower the wait time
@@ -200,7 +196,6 @@ func runServerSocket(host string, token string) {
 	done := make(chan struct{})
 
 	go func() {
-		clientConnected = true
 		defer close(done)
 		err = c.WriteJSON(format.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
 		if err != nil {
@@ -238,7 +233,6 @@ func runServerSocket(host string, token string) {
 	for {
 		select {
 		case <-done:
-			clientConnected = false
 			log.Info().Msg("Closed websocket connection.")
 			return
 		}
