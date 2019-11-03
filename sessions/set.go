@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -66,8 +66,10 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetValue prepares a Value structure before passing it to the setter
-func SetValue(name string, value string) {
-	Set(SessionPackage{Name: name, Data: Value{Value: value}}, true)
+func SetValue(name string, value string) SessionPackage {
+	newPackage := SessionPackage{Name: name, Data: Value{Name: name, Value: value}}
+	Set(newPackage, true)
+	return newPackage
 }
 
 // Set does the actual setting of Session Values
