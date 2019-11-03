@@ -13,6 +13,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/bradfitz/latlong"
+	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
 )
 
@@ -35,6 +36,50 @@ type Fix struct {
 	Speed     string `json:"speed,omitempty"`
 	Climb     string `json:"climb,omitempty"`
 	Course    string `json:"course,omitempty"`
+}
+
+var FixType = graphql.NewObject(
+	graphql.ObjectConfig{
+		Name: "Fix",
+		Fields: graphql.Fields{
+			"Latitude": &graphql.Field{
+				Type: graphql.String,
+			},
+			"Longitude": &graphql.Field{
+				Type: graphql.FieldType,
+			},
+			"Speed": &graphql.Field{
+				Type: graphql.String,
+			},
+			"Course": &graphql.Field{
+				Type: graphql.FieldType,
+			},
+		},
+	},
+)
+
+var LocationType = graphql.NewObject(
+	graphql.ObjectConfig{
+		Name: "Location",
+		Fields: graphql.Fields{
+			"Timezone": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Working IANA Time Zone",
+			},
+			"Fix": &graphql.Field{
+				Type:        FixType,
+				Description: "Latest GPS fix",
+			},
+		},
+	},
+)
+
+var Query = &graphql.Field{
+	Type:        LocationType,
+	Description: "Various location data",
+	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+		return Get(), nil
+	},
 }
 
 // status will control logging and reporting of status / warnings / errors

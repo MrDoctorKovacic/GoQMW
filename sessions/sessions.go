@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
 )
 
 // Value holds the data and last update info for each session value
 type Value struct {
+	Name       string `json:"name,omitempty"`
 	Value      string `json:"value,omitempty"`
 	LastUpdate string `json:"lastUpdate,omitempty"`
 	Quiet      bool   `json:"quiet,omitempty"`
@@ -38,6 +40,62 @@ type hooks struct {
 
 var hookList hooks
 var session Session
+
+var sessionType = graphql.NewObject(
+	graphql.ObjectConfig{
+		Name: "Session",
+		Fields: graphql.Fields{
+			"name": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Value Name",
+			},
+			"value": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Value as a string",
+			},
+			"lastUpdate": &graphql.Field{
+				Type:        graphql.String,
+				Description: "UTC Time when inserted",
+			},
+		},
+	},
+)
+
+var SessionQuery = &graphql.Field{
+	Type:        graphql.NewList(sessionType),
+	Description: "Get session values",
+	Args: graphql.FieldConfigArgument{
+		"names": &graphql.ArgumentConfig{
+			Type:        graphql.NewList(graphql.String),
+			Description: "List of names to fetch. If not provided, will get entire session",
+		},
+	},
+	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+
+		var outputList []Value
+		names, ok := p.Args["name"].([]string)
+		if ok {
+			for _, name := range names {
+				s, err := Get(name)
+				if err != nil {
+					return nil, err
+				}
+				s.Name = name
+				outputList = append(outputList, s)
+
+			}
+			return outputList, nil
+		}
+
+		// Return entire session
+		s := GetAll()
+		for name, val := range s {
+			val.Name = name
+			outputList = append(outputList, val)
+		}
+		return outputList, nil
+	},
+}
 
 func init() {
 	session.data = make(map[string]Value)
