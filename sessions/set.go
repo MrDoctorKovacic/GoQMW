@@ -41,7 +41,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := mux.Vars(r)
-	var newdata Value
+	var newdata Data
 
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		log.Error().Msg(fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
@@ -51,8 +51,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call the setter
-	newPackage := SessionPackage{Name: params["name"], Data: newdata}
-	if err = Set(newPackage, newdata.Quiet); err != nil {
+	newdata.Name = params["name"]
+	if err = Set(newdata); err != nil {
 		response.Output = err.Error()
 		format.WriteResponse(&w, r, response)
 		return
@@ -60,36 +60,36 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	// Craft OK response
 	response.OK = true
-	response.Output = newPackage
+	response.Output = newdata
 
 	format.WriteResponse(&w, r, response)
 }
 
 // SetValue prepares a Value structure before passing it to the setter
-func SetValue(name string, value string) SessionPackage {
-	newPackage := SessionPackage{Name: name, Data: Value{Name: name, Value: value}}
-	Set(newPackage, true)
+func SetValue(name string, value string) Data {
+	newPackage := Data{Name: name, Value: value, Quiet: true}
+	Set(newPackage)
 	return newPackage
 }
 
 // Set does the actual setting of Session Values
-func Set(newPackage SessionPackage, quiet bool) error {
+func Set(newPackage Data) error {
 	// Ensure name is valid
 	if !format.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
 	}
 
 	// Set last updated time to now
-	newPackage.Data.LastUpdate = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
+	newPackage.LastUpdate = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
 
 	// Correct name
 	newPackage.Name = format.Name(newPackage.Name)
 
 	// Trim off whitespace
-	newPackage.Data.Value = strings.TrimSpace(newPackage.Data.Value)
+	newPackage.Value = strings.TrimSpace(newPackage.Value)
 
 	// Log if requested
-	log.Debug().Msg(fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Data.Value))
+	log.Debug().Msg(fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Value))
 
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
@@ -97,7 +97,7 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	if _, exists := session.data[newPackage.Name]; !exists {
 		format.Statistics.SessionValues++
 	}
-	session.data[newPackage.Name] = newPackage.Data
+	session.data[newPackage.Name] = newPackage
 	session.Mutex.Unlock()
 
 	// Finish post processing
@@ -106,23 +106,23 @@ func Set(newPackage SessionPackage, quiet bool) error {
 	// Insert into database
 	if influx.DB != nil {
 		// Convert to a float if that suits the value, otherwise change field to value_string
-		valueString := fmt.Sprintf("value=%s", newPackage.Data.Value)
-		if _, err := strconv.ParseFloat(newPackage.Data.Value, 32); err != nil {
-			valueString = fmt.Sprintf("value_string=\"%s\"", newPackage.Data.Value)
+		valueString := fmt.Sprintf("value=%s", newPackage.Value)
+		if _, err := strconv.ParseFloat(newPackage.Value, 32); err != nil {
+			valueString = fmt.Sprintf("value_string=\"%s\"", newPackage.Value)
 		}
 
 		// In Sessions, all values come in and out as strings regardless,
 		// but this conversion alows Influx queries on the floats to be executed
 		err := influx.DB.Write(fmt.Sprintf("pybus,name=%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 		if err != nil {
-			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Data.Value, err.Error())
+			errorText := fmt.Sprintf("Error writing %s=%s to influx DB: %s", newPackage.Name, newPackage.Value, err.Error())
 			// Only spam our log if Influx is online
 			if influx.DB.Started {
 				log.Error().Msg(errorText)
 			}
 			return fmt.Errorf(errorText)
 		}
-		log.Debug().Msg(fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Data.Value))
+		log.Debug().Msg(fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Value))
 	}
 
 	return nil
