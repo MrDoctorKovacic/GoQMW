@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -142,6 +143,14 @@ func startRouter() {
 	router.HandleFunc("/{device}/{command}", pybus.ParseCommand).Methods("GET")
 
 	//
+	// GraphQL Implementation
+	//
+	router.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
+		result := executeQuery(r.URL.Query().Get("query"), schema)
+		json.NewEncoder(w).Encode(result)
+	})
+
+	//
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -151,8 +160,6 @@ func startRouter() {
 
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
-
-	go graphql.startGQLServer()
 
 	// Start the router in an endless loop
 	for {
