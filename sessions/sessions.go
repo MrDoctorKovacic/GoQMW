@@ -55,6 +55,7 @@ var sessionType = graphql.NewObject(
 	},
 )
 
+// SessionMutation is a GraphQL schema for session POST requests
 var SessionMutation = &graphql.Field{
 	Type:        sessionType,
 	Description: "Post new session value",
@@ -71,6 +72,7 @@ var SessionMutation = &graphql.Field{
 	},
 }
 
+// SessionQuery is a GraphQL schema for session GET requests
 var SessionQuery = &graphql.Field{
 	Type:        graphql.NewList(sessionType),
 	Description: "Get session values",
@@ -81,7 +83,6 @@ var SessionQuery = &graphql.Field{
 		},
 	},
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-
 		var outputList []Data
 		names, ok := p.Args["name"].([]string)
 		if ok {
@@ -99,8 +100,7 @@ var SessionQuery = &graphql.Field{
 
 		// Return entire session
 		s := GetAll()
-		for name, val := range s {
-			val.Name = name
+		for _, val := range s {
 			outputList = append(outputList, val)
 		}
 		return outputList, nil
