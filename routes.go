@@ -152,6 +152,8 @@ func startRouter() {
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
 
+	go graphql.startGQLServer()
+
 	// Start the router in an endless loop
 	for {
 		err := http.ListenAndServe(":5353", router)
