@@ -19,6 +19,17 @@ type settingsWrap struct {
 	Data  map[string]map[string]string // Main settings map
 }
 
+type Setting struct {
+	Name        string `json:"name,omitempty"`
+	Value       string `json:"value,omitempty"`
+	LastUpdated string `json:"lastUpdated,omitempty"`
+}
+
+type Component struct {
+	Name     string    `json:"name,omitempty"`
+	Settings []Setting `json:"settings,omitempty"`
+}
+
 // Settings control generic user defined field:value mappings, which will persist each run
 var Settings settingsWrap
 
@@ -158,7 +169,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set will handle actually updates or posts a new setting value
-func Set(componentName string, settingName string, settingValue string) {
+func Set(componentName string, settingName string, settingValue string) bool {
 	// Insert componentName into Map if not exists
 	Settings.mutex.Lock()
 	if _, ok := Settings.Data[componentName]; !ok {
@@ -177,4 +188,6 @@ func Set(componentName string, settingName string, settingValue string) {
 
 	// Trigger hooks
 	runHooks(componentName, settingName, settingValue)
+
+	return true
 }
