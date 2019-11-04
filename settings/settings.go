@@ -114,7 +114,7 @@ func GetComponent(componentName string) (map[string]string, error) {
 	if ok {
 		return component, nil
 	}
-	return nil, fmt.Errorf("Could not find component/setting with those values")
+	return nil, fmt.Errorf("Could not find component with name %s", componentName)
 }
 
 // Get returns all the values of a specific setting
