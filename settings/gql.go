@@ -1,10 +1,7 @@
 package settings
 
 import (
-	"fmt"
-
 	"github.com/graphql-go/graphql"
-	"github.com/rs/zerolog/log"
 )
 
 var componentType = graphql.NewObject(
@@ -77,10 +74,8 @@ var SettingQuery = &graphql.Field{
 		var outputList []Component
 		components, ok := p.Args["components"].([]string)
 		if !ok {
-			log.Info().Msg("No arguments provided, fetching all settings")
 			// Return entire setting
 			settingMap := GetAll()
-			log.Info().Msg(fmt.Sprintf("%v", settingMap))
 			components = []string{}
 			for compName := range settingMap {
 				components = append(components, compName)
