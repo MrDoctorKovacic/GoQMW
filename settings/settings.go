@@ -170,6 +170,11 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 // Set will handle actually updates or posts a new setting value
 func Set(componentName string, settingName string, settingValue string) bool {
+	// Format names
+	componentName = format.Name(componentName)
+	settingName = format.Name(settingName)
+	settingValue = format.Name(settingValue)
+
 	// Insert componentName into Map if not exists
 	Settings.mutex.Lock()
 	if _, ok := Settings.Data[componentName]; !ok {
