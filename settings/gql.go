@@ -1,6 +1,11 @@
 package settings
 
-import "github.com/graphql-go/graphql"
+import (
+	"fmt"
+
+	"github.com/graphql-go/graphql"
+	"github.com/rs/zerolog/log"
+)
 
 var componentType = graphql.NewObject(
 	graphql.ObjectConfig{
@@ -70,29 +75,30 @@ var SettingQuery = &graphql.Field{
 	},
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		var outputList []Component
-		components, ok := p.Args["components"].([]Component)
-		if ok {
-			for _, component := range components {
-				c := Component{Name: component.Name, Settings: []Setting{}}
-				s, err := GetComponent(component.Name)
-				if err != nil {
-					return nil, err
-				}
-				for name, value := range s {
-					c.Settings = append(c.Settings, Setting{Name: name, Value: value})
-				}
-				outputList = append(outputList, c)
+		components, ok := p.Args["components"].([]string)
+		if !ok {
+			log.Info().Msg("No arguments provided, fetching all settings")
+			// Return entire setting
+			settingMap := GetAll()
+			log.Info().Msg(fmt.Sprintf("%v", settingMap))
+			components = []string{}
+			for compName := range settingMap {
+				components = append(components, compName)
 			}
-			return outputList, nil
+
 		}
 
-		// Return entire setting
-		/*
-			s := GetAll()
-			for _, val := range s {
-				outputList = append(outputList, val)
+		for _, component := range components {
+			c := Component{Name: component, Settings: []Setting{}}
+			s, err := GetComponent(component)
+			if err != nil {
+				return nil, err
 			}
-			return outputList, nil*/
-		return nil, nil
+			for name, value := range s {
+				c.Settings = append(c.Settings, Setting{Name: name, Value: value})
+			}
+			outputList = append(outputList, c)
+		}
+		return outputList, nil
 	},
 }
