@@ -81,6 +81,7 @@ func CheckServer(host string, token string) {
 		}
 
 		resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
+		SetValue("LAST_SERVER_RESPONSE", resp.Status)
 		if err != nil {
 			// handle error
 			if !failedOnce {
