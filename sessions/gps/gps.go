@@ -114,7 +114,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 func Set(newdata Fix) string {
 	// Update value for global session if the data is newer
 	if newdata.Latitude == "" && newdata.Longitude == "" {
-		log.Warn().Msg("Not inserting new GPS fix, no new Lat or Long")
+		log.Debug().Msg("Not inserting new GPS fix, no new Lat or Long")
 		return ""
 	}
 
