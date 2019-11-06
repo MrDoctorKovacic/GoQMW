@@ -35,6 +35,7 @@ func init() {
 
 // Main config parsing
 func parseConfig() {
+	log.Info().Msg("Starting MDroid Core")
 	flag.StringVar(&settings.Settings.File, "settings-file", "", "File to recover the persistent settings.")
 	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
@@ -44,6 +45,7 @@ func parseConfig() {
 	}
 
 	// Parse settings file
+	log.Info().Msg("Checking settings file...")
 	settings.ReadFile(settings.Settings.File)
 
 	// Check settings
