@@ -91,12 +91,12 @@ func sendServiceCommand(name string, command string) {
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	if settings.SlackURL != "" {
-		sessions.SlackAlert(settings.SlackURL, params["message"])
-		format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
-	} else {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Slack URL not set in config.", OK: false})
+	err := sessions.SlackAlert(params["message"])
+	if err != nil {
+		format.WriteResponse(&w, r, format.JSONResponse{Output: err.Error(), OK: false})
+		return
 	}
+	format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
 }
 
 // **

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
 )
@@ -145,21 +146,19 @@ func runHooks(triggerPackage Data) {
 }
 
 // SlackAlert sends a message to a slack channel webhook
-func SlackAlert(channel string, message string) {
-	if channel == "" {
-		log.Warn().Msg("Empty slack channel")
-		return
+func SlackAlert(message string) error {
+	channel, err := settings.Get("MDROID", "SLACK_URL")
+	if err != nil || channel == "" {
+		return fmt.Errorf("Empty slack channel")
 	}
 	if message == "" {
-		log.Warn().Msg("Empty slack message")
-		return
+		return fmt.Errorf("Empty slack message")
 	}
 
 	jsonStr := []byte(fmt.Sprintf(`{"text":"%s"}`, message))
 	req, err := http.NewRequest("POST", channel, bytes.NewBuffer(jsonStr))
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return
+		return err
 	}
 	req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
@@ -176,8 +175,8 @@ func SlackAlert(channel string, message string) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return
+		return err
 	}
 	log.Info().Msg(fmt.Sprintf("response Body: %s", string(body)))
+	return nil
 }

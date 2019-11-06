@@ -150,7 +150,7 @@ func lightSensorReason(hook *sessions.Data) {
 		doorsLocked.Value == "TRUE" &&
 		windowsOpen.Value == "TRUE" &&
 		delta.Minutes() > 5 {
-		sessions.SlackAlert(settings.SlackURL, "Windows are down in the rain, eh?")
+		sessions.SlackAlert("Windows are down in the rain, eh?")
 	}
 }
 
