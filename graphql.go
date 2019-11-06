@@ -5,6 +5,7 @@ import (
 
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/stat"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
@@ -15,6 +16,7 @@ var queryType = graphql.NewObject(
 		Name: "Query",
 		Fields: graphql.Fields{
 			"gps":          gps.Query,
+			"stat":         stat.Query,
 			"sessionList":  sessions.SessionQuery,
 			"settingsList": settings.SettingQuery,
 		},
