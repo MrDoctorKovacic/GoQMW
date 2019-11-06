@@ -120,9 +120,16 @@ func accPower(hook *sessions.Data) {
 
 // When wireless is turned off, we can infer that LTE is also off
 func wirelessPower(hook *sessions.Data) {
-	if hook.Value == "FALSE" {
-		// When board is turned off but doesn't have time to reflect LTE status
+	// Pull the necessary configuration data
+	lteOn := sessions.GetBoolDefault("LTE_ON", false)
+
+	// When board is turned off but doesn't have time to reflect LTE status
+	if hook.Value == "FALSE" && lteOn {
+		// Indicate LTE is off
 		sessions.SetValue("LTE_ON", "FALSE")
+
+		// Reset network (temporary fix for DNS issues on LTE -> WIFI transition)
+		resetNetwork()
 	}
 }
 
