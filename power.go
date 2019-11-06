@@ -15,7 +15,7 @@ import (
 type power struct {
 	isOn      bool
 	target    string
-	lastCheck time.Time
+	lastCheck triggerType
 	settings  settingType
 	errors    errorType
 }
@@ -28,6 +28,11 @@ type settingType struct {
 type errorType struct {
 	target error
 	on     error
+}
+
+type triggerType struct {
+	time   time.Time
+	target string
 }
 
 // Read the target action based on current ACC Power value
@@ -104,7 +109,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 	}
 
 	// Add a limit to how many checks can occur
-	if time.Since(module.lastCheck) < time.Second*3 {
+	if module.lastCheck.target != module.target && time.Since(module.lastCheck.time) < time.Second*3 {
 		log.Info().Msg(fmt.Sprintf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target))
 		return
 	}
@@ -120,7 +125,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 
 	// Log and set next time threshold
 	log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.target))
-	module.lastCheck = time.Now()
+	module.lastCheck = triggerType{time: time.Now(), target: module.target}
 }
 
 // Some shutdowns are more complicated than others, ensure we shut down safely
