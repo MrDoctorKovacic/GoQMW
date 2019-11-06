@@ -13,27 +13,34 @@ import (
 
 // Define temporary holding struct for power values
 type power struct {
-	on          bool
-	powerTarget string
-	errOn       error
-	errTarget   error
-	triggerOn   bool
-	settingComp string
-	settingName string
+	isOn     bool
+	target   string
+	settings settingType
+	errors   errorType
+}
+
+type settingType struct {
+	component string
+	name      string
+}
+
+type errorType struct {
+	target error
+	on     error
 }
 
 // Read the target action based on current ACC Power value
 var (
-	_wireless = power{settingComp: "WIRELESS", settingName: "POWER"}
-	_angel    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
-	_tablet   = power{settingComp: "TABLET", settingName: "POWER"}
-	_board    = power{settingComp: "BOARD", settingName: "POWER"}
+	_wireless = power{settings: settingType{component: "WIRELESS", name: "POWER"}}
+	_angel    = power{settings: settingType{component: "ANGEL_EYES", name: "POWER"}}
+	_tablet   = power{settings: settingType{component: "TABLET", name: "POWER"}}
+	_board    = power{settings: settingType{component: "BOARD", name: "POWER"}}
 )
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower(keyIsIn string) {
-	_angel.on, _angel.errOn = sessions.GetBool("ANGEL_EYES_POWER")
-	_angel.powerTarget, _angel.errTarget = settings.Get(_angel.settingComp, _angel.settingName)
+	_angel.isOn, _angel.errors.on = sessions.GetBool("ANGEL_EYES_POWER")
+	_angel.target, _angel.errors.target = settings.Get(_angel.settings.component, _angel.settings.name)
 	lightSensor := sessions.GetBoolDefault("LIGHT_SENSOR_ON", false)
 
 	shouldTrigger := !lightSensor && keyIsIn != "FALSE"
@@ -44,8 +51,8 @@ func evalAngelEyesPower(keyIsIn string) {
 
 // Evaluates if the video boards should be on, and then passes that struct along as generic power module
 func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
-	_board.on, _board.errOn = sessions.GetBool("BOARD_POWER")
-	_board.powerTarget, _board.errTarget = settings.Get(_board.settingComp, _board.settingName)
+	_board.isOn, _board.errors.on = sessions.GetBool("BOARD_POWER")
+	_board.target, _board.errors.target = settings.Get(_board.settings.component, _board.settings.name)
 
 	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
 
@@ -55,8 +62,8 @@ func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
 
 // Evaluates if the tablet should be on, and then passes that struct along as generic power module
 func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
-	_tablet.on, _tablet.errOn = sessions.GetBool("TABLET_POWER")
-	_tablet.powerTarget, _tablet.errTarget = settings.Get(_tablet.settingComp, _tablet.settingName)
+	_tablet.isOn, _tablet.errors.on = sessions.GetBool("TABLET_POWER")
+	_tablet.target, _tablet.errors.target = settings.Get(_tablet.settings.component, _tablet.settings.name)
 
 	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
 
@@ -66,8 +73,8 @@ func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
 
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
 func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
-	_wireless.on, _wireless.errOn = sessions.GetBool("WIRELESS_POWER")
-	_wireless.powerTarget, _wireless.errTarget = settings.Get(_wireless.settingComp, _wireless.settingName)
+	_wireless.isOn, _wireless.errors.on = sessions.GetBool("WIRELESS_POWER")
+	_wireless.target, _wireless.errors.target = settings.Get(_wireless.settings.component, _wireless.settings.name)
 
 	// Wireless is most likely supposed to be on, only one case where it should not be
 	shouldTrigger := true
@@ -82,25 +89,25 @@ func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 // Error check against module's status fetches, then check if we're powering on or off
 func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 	// Handle error in fetches
-	if module.errTarget != nil {
-		log.Error().Msg(fmt.Sprintf("Setting Error: %s", module.errTarget.Error()))
-		if module.settingComp != "" && module.settingName != "" {
+	if module.errors.target != nil {
+		log.Error().Msg(fmt.Sprintf("Setting Error: %s", module.errors.target.Error()))
+		if module.settings.component != "" && module.settings.name != "" {
 			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
-			settings.Set(module.settingComp, module.settingName, "AUTO")
+			settings.Set(module.settings.component, module.settings.name, "AUTO")
 		}
 		return
 	}
-	if module.errOn != nil {
-		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errOn.Error()))
+	if module.errors.on != nil {
+		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errors.on.Error()))
 		return
 	}
 
 	// Evaluate power target with trigger and settings info
-	if (module.powerTarget == "AUTO" && !module.on && shouldBeOn) || (module.powerTarget == "ON" && !module.on) {
-		log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.powerTarget))
+	if (module.target == "AUTO" && !module.isOn && shouldBeOn) || (module.target == "ON" && !module.isOn) {
+		log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.target))
 		mserial.Push(mserial.Writer, fmt.Sprintf("powerOn%s", name))
-	} else if (module.powerTarget == "AUTO" && module.on && !shouldBeOn) || (module.powerTarget == "OFF" && module.on) {
-		log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.powerTarget))
+	} else if (module.target == "AUTO" && module.isOn && !shouldBeOn) || (module.target == "OFF" && module.isOn) {
+		log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.target))
 		gracefulShutdown(name)
 	}
 }
