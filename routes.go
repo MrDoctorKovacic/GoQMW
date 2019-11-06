@@ -19,6 +19,7 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions/stat"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -99,6 +100,26 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
 }
 
+func handleChangeLogLevel(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	level := format.Name(params["level"])
+	switch level {
+	case "INFO":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "DEBUG":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "ERROR":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	default:
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Invalid log level.", OK: false})
+	}
+	format.WriteResponse(&w, r, format.JSONResponse{Output: level, OK: true})
+}
+
+func changeLogLevel(level zerolog.Level) {
+	zerolog.SetGlobalLevel(level)
+}
+
 // **
 // end router functions
 // **
@@ -118,6 +139,7 @@ func startRouter() {
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 	router.HandleFunc("/stats", format.HandleGetStats).Methods("GET")
+	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
 
 	//
 	// GPS Routes
