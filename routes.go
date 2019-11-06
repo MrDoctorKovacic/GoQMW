@@ -60,6 +60,22 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	sendServiceCommand(machine, "shutdown")
 }
 
+// sendServiceCommand sends a command to a network machine, using a simple python server to recieve
+func sendServiceCommand(name string, command string) {
+	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
+	if machineServiceAddress == "" {
+		log.Error().Msg(fmt.Sprintf("Device %s address not found, not issuing %s", name, command))
+		return
+	}
+
+	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
+	if err != nil {
+		log.Error().Msg(fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
+		return
+	}
+	defer resp.Body.Close()
+}
+
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if settings.SlackURL != "" {
