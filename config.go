@@ -65,8 +65,6 @@ func parseConfig() {
 	sessions.SetupTokens(&configMap)
 	setupSerial()
 
-	settings.SlackURL = configMap["SLACK_URL"]
-
 	// Set up pybus repeat commands
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
 		pybus.StartRepeats()
