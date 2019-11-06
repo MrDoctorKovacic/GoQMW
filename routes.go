@@ -190,6 +190,8 @@ func startRouter() {
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
 
+	log.Info().Msg("MDroid Core successfully started")
+
 	// Start the router in an endless loop
 	for {
 		err := http.ListenAndServe(":5353", router)

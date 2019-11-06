@@ -57,15 +57,7 @@ func init() {
 
 // HandleGet returns the latest GPS fix
 func HandleGet(w http.ResponseWriter, r *http.Request) {
-	// Log if requested
-	//log.Warn().Msg("Responding to get request.")
 	data := Get()
-	/*if data.Latitude == "" && data.Longitude == "" {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "GPS data is empty", Status: "fail", OK: false})
-	} else {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
-
-	}*/
 	format.WriteResponse(&w, r, format.JSONResponse{Output: data, OK: true})
 }
 
@@ -206,4 +198,5 @@ func SetupTimezone(configAddr *map[string]string) {
 
 	// Timezone is not set in config
 	Location.Timezone, _ = time.LoadLocation("UTC")
+	log.Info().Msg(fmt.Sprintf("Set timezone to %s", Location.Timezone.String()))
 }
