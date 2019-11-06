@@ -13,10 +13,11 @@ import (
 
 // Define temporary holding struct for power values
 type power struct {
-	isOn     bool
-	target   string
-	settings settingType
-	errors   errorType
+	isOn      bool
+	target    string
+	lastCheck time.Time
+	settings  settingType
+	errors    errorType
 }
 
 type settingType struct {
@@ -102,14 +103,24 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 		return
 	}
 
+	// Add a limit to how many checks can occur
+	if time.Since(module.lastCheck) < time.Second*3 {
+		log.Info().Msg(fmt.Sprintf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target))
+		return
+	}
+
 	// Evaluate power target with trigger and settings info
 	if (module.target == "AUTO" && !module.isOn && shouldBeOn) || (module.target == "ON" && !module.isOn) {
-		log.Info().Msg(fmt.Sprintf("Powering on %s, because target is %s", name, module.target))
 		mserial.Push(mserial.Writer, fmt.Sprintf("powerOn%s", name))
 	} else if (module.target == "AUTO" && module.isOn && !shouldBeOn) || (module.target == "OFF" && module.isOn) {
-		log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.target))
 		gracefulShutdown(name)
+	} else {
+		return
 	}
+
+	// Log and set next time threshold
+	log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.target))
+	module.lastCheck = time.Now()
 }
 
 // Some shutdowns are more complicated than others, ensure we shut down safely
