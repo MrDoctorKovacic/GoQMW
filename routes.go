@@ -205,26 +205,29 @@ func authMiddleware(next http.Handler) http.Handler {
 
 func checksumMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
+		for r.Method == "POST" {
 			params := mux.Vars(r)
 			checksum, ok := params["checksum"]
 
-			if ok && checksum != "" {
-				body, err := ioutil.ReadAll(r.Body)
-				defer r.Body.Close() //  must close
-				if err != nil {
-					log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
-					format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
-					return
-				}
-
-				if md5.Sum(body) != md5.Sum([]byte(checksum)) {
-					log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
-					format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
-					return
-				}
-				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			if !ok || checksum == "" {
+				break
 			}
+
+			body, err := ioutil.ReadAll(r.Body)
+			defer r.Body.Close() //  must close
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
+				format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
+				break
+			}
+
+			if md5.Sum(body) != md5.Sum([]byte(checksum)) {
+				log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
+				format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
+				break
+			}
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			break
 		}
 
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
