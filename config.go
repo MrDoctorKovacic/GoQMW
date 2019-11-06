@@ -35,6 +35,7 @@ func init() {
 
 // Main config parsing
 func parseConfig() {
+	log.Info().Msg("Starting MDroid Core")
 	flag.StringVar(&settings.Settings.File, "settings-file", "", "File to recover the persistent settings.")
 	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
@@ -43,10 +44,8 @@ func parseConfig() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	// Setup hooks for extra settings/session parsing
-	setupHooks()
-
 	// Parse settings file
+	log.Info().Msg("Checking settings file...")
 	settings.ReadFile(settings.Settings.File)
 
 	// Check settings
@@ -54,10 +53,17 @@ func parseConfig() {
 		panic(err)
 	}
 
+	// Default video status
+	sessions.SetValue("VIDEO_ON", "TRUE")
+
+	// Setup hooks for extra settings/session parsing
+	setupHooks()
+
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
-		log.Warn().Msg("No config found in settings file, not parsing through config")
+		log.Warn().Msg("MDROID settings not found, aborting config")
+		return // abort config
 	}
 
 	gps.SetupTimezone(&configMap)
@@ -65,15 +71,11 @@ func parseConfig() {
 	sessions.SetupTokens(&configMap)
 	setupSerial()
 
-	settings.SlackURL = configMap["SLACK_URL"]
-
 	// Set up pybus repeat commands
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
 		pybus.StartRepeats()
 	}
-
-	// Default video status to false
-	sessions.SetValue("VIDEO_ON", "TRUE")
+	log.Info().Msg("Configuration complete, starting server...")
 }
 
 // Set up InfluxDB time series logging
@@ -82,10 +84,11 @@ func setupDatabase(configAddr *map[string]string) {
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
 		influx.DB = nil
-		log.Info().Msg("Not logging to influx db")
+		log.Warn().Msg("InfluxDB is disabled")
 		return
 	}
 	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
+	log.Info().Msg(fmt.Sprintf("Using InfluxDB at %s", databaseHost))
 }
 
 func setupSerial() {
@@ -102,6 +105,7 @@ func setupSerial() {
 	}
 
 	// Start initial reader / writer
+	log.Info().Msg(fmt.Sprintf("Registering %s as serial writer", hardwareSerialPort))
 	go sessions.StartSerialComms(hardwareSerialPort, 9600)
 
 	// Setup other devices

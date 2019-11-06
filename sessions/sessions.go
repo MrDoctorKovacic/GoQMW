@@ -7,31 +7,28 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
 )
 
-// Value holds the data and last update info for each session value
-type Value struct {
+// Data holds the data and last update info for each session value
+type Data struct {
+	Name       string `json:"name,omitempty"`
 	Value      string `json:"value,omitempty"`
 	LastUpdate string `json:"lastUpdate,omitempty"`
 	Quiet      bool   `json:"quiet,omitempty"`
 }
 
-// SessionPackage contains both name and data
-type SessionPackage struct {
-	Name string
-	Data Value
-}
-
-// Session is a mapping of SessionPackages, which contain session values
+// Session is a mapping of Datas, which contain session values
 type Session struct {
-	data  map[string]Value
+	data  map[string]Data
 	Mutex sync.Mutex
 	file  string
 }
 
 type hooks struct {
-	list  map[string][]func(triggerPackage *SessionPackage)
+	list  map[string][]func(triggerPackage *Data)
 	count int
 	mutex sync.Mutex
 }
@@ -39,13 +36,85 @@ type hooks struct {
 var hookList hooks
 var session Session
 
+var sessionType = graphql.NewObject(
+	graphql.ObjectConfig{
+		Name: "Session",
+		Fields: graphql.Fields{
+			"name": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Value Name",
+			},
+			"value": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Value as a string",
+			},
+			"lastUpdate": &graphql.Field{
+				Type:        graphql.String,
+				Description: "UTC Time when inserted",
+			},
+		},
+	},
+)
+
+// SessionMutation is a GraphQL schema for session POST requests
+var SessionMutation = &graphql.Field{
+	Type:        sessionType,
+	Description: "Post new session value",
+	Args: graphql.FieldConfigArgument{
+		"name": &graphql.ArgumentConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"value": &graphql.ArgumentConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+	},
+	Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+		return SetValue(params.Args["name"].(string), params.Args["value"].(string)), nil
+	},
+}
+
+// SessionQuery is a GraphQL schema for session GET requests
+var SessionQuery = &graphql.Field{
+	Type:        graphql.NewList(sessionType),
+	Description: "Get session values",
+	Args: graphql.FieldConfigArgument{
+		"names": &graphql.ArgumentConfig{
+			Type:        graphql.NewList(graphql.String),
+			Description: "List of names to fetch. If not provided, will get entire session",
+		},
+	},
+	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+		var outputList []Data
+		names, ok := p.Args["names"].([]string)
+		if ok {
+			for _, name := range names {
+				s, err := Get(name)
+				if err != nil {
+					return nil, err
+				}
+				s.Name = name
+				outputList = append(outputList, s)
+
+			}
+			return outputList, nil
+		}
+
+		// Return entire session
+		s := GetAll()
+		for _, val := range s {
+			outputList = append(outputList, val)
+		}
+		return outputList, nil
+	},
+}
+
 func init() {
-	session.data = make(map[string]Value)
-	hookList = hooks{list: make(map[string][]func(triggerPackage *SessionPackage), 0), count: 0}
+	session.data = make(map[string]Data)
+	hookList = hooks{list: make(map[string][]func(triggerPackage *Data), 0), count: 0}
 }
 
 // RegisterHook adds a new hook into a settings change
-func RegisterHook(componentName string, hook func(triggerPackage *SessionPackage)) {
+func RegisterHook(componentName string, hook func(triggerPackage *Data)) {
 	log.Info().Msg(fmt.Sprintf("Adding new hook for %s", componentName))
 	hookList.mutex.Lock()
 	defer hookList.mutex.Unlock()
@@ -54,14 +123,14 @@ func RegisterHook(componentName string, hook func(triggerPackage *SessionPackage
 }
 
 // RegisterHookSlice takes a list of componentNames to apply the same hook to
-func RegisterHookSlice(componentNames *[]string, hook func(triggerPackage *SessionPackage)) {
+func RegisterHookSlice(componentNames *[]string, hook func(triggerPackage *Data)) {
 	for _, name := range *componentNames {
 		RegisterHook(name, hook)
 	}
 }
 
 // Runs all hooks registered with a specific component name
-func runHooks(triggerPackage SessionPackage) {
+func runHooks(triggerPackage Data) {
 	hookList.mutex.Lock()
 	defer hookList.mutex.Unlock()
 	allHooks, ok := hookList.list[triggerPackage.Name]
@@ -77,21 +146,19 @@ func runHooks(triggerPackage SessionPackage) {
 }
 
 // SlackAlert sends a message to a slack channel webhook
-func SlackAlert(channel string, message string) {
-	if channel == "" {
-		log.Warn().Msg("Empty slack channel")
-		return
+func SlackAlert(message string) error {
+	channel, err := settings.Get("MDROID", "SLACK_URL")
+	if err != nil || channel == "" {
+		return fmt.Errorf("Empty slack channel")
 	}
 	if message == "" {
-		log.Warn().Msg("Empty slack message")
-		return
+		return fmt.Errorf("Empty slack message")
 	}
 
 	jsonStr := []byte(fmt.Sprintf(`{"text":"%s"}`, message))
 	req, err := http.NewRequest("POST", channel, bytes.NewBuffer(jsonStr))
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return
+		return err
 	}
 	req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
@@ -108,8 +175,8 @@ func SlackAlert(channel string, message string) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Msg(err.Error())
-		return
+		return err
 	}
 	log.Info().Msg(fmt.Sprintf("response Body: %s", string(body)))
+	return nil
 }

@@ -36,10 +36,6 @@ func TestSlackAlert(t *testing.T) {
 	var response format.JSONResponse
 	json.NewDecoder(rr.Body).Decode(&response)
 
-	if expectedResponse.Output != response.Output {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			response.Output, expectedResponse.Output)
-	}
 	if expectedResponse.OK != response.OK {
 		t.Errorf("handler returned unexpected OK: got %v want %v",
 			response.OK, expectedResponse.OK)

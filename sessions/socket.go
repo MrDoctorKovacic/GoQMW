@@ -58,6 +58,7 @@ func SetupTokens(configAddr *map[string]string) {
 		return
 	}
 
+	log.Info().Msg("Successfully set up auth tokens")
 	go CheckServer(serverHost, token)
 }
 
@@ -65,6 +66,7 @@ func SetupTokens(configAddr *map[string]string) {
 // and will open a websocket as a client if so
 func CheckServer(host string, token string) {
 	var failedOnce bool
+	log.Info().Msg(fmt.Sprintf("Starting pings to main server at %s", host))
 
 	for {
 		// Start by assuming we're not on LTE, lower the wait time
@@ -81,6 +83,7 @@ func CheckServer(host string, token string) {
 		}
 
 		resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
+		SetValue("LAST_SERVER_RESPONSE", resp.Status)
 		if err != nil {
 			// handle error
 			if !failedOnce {
