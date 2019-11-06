@@ -72,7 +72,7 @@ func parseConfig() {
 		pybus.StartRepeats()
 	}
 
-	// Default video status to false
+	// Default video status
 	sessions.SetValue("VIDEO_ON", "TRUE")
 }
 
