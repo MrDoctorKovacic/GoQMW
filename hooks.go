@@ -12,25 +12,6 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
-// Define temporary holding struct for power values
-type power struct {
-	on          bool
-	powerTarget string
-	errOn       error
-	errTarget   error
-	triggerOn   bool
-	settingComp string
-	settingName string
-}
-
-// Read the target action based on current ACC Power value
-var (
-	_wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
-	_angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
-	_tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
-	_boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
-)
-
 func setupHooks() {
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
 	settings.RegisterHook("WIRELESS", wirelessSettings)
