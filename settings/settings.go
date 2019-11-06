@@ -19,12 +19,14 @@ type settingsWrap struct {
 	Data  map[string]map[string]string // Main settings map
 }
 
+// Setting is GraphQL handler struct
 type Setting struct {
 	Name        string `json:"name,omitempty"`
 	Value       string `json:"value,omitempty"`
 	LastUpdated string `json:"lastUpdated,omitempty"`
 }
 
+// Component is GraphQL handler struct
 type Component struct {
 	Name     string    `json:"name,omitempty"`
 	Settings []Setting `json:"settings,omitempty"`
