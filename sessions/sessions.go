@@ -85,7 +85,7 @@ var SessionQuery = &graphql.Field{
 	},
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		var outputList []Data
-		names, ok := p.Args["name"].([]string)
+		names, ok := p.Args["names"].([]string)
 		if ok {
 			for _, name := range names {
 				s, err := Get(name)
