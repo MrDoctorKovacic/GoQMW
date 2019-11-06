@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
@@ -30,6 +31,18 @@ func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
+}
+
+// Reset network entirely
+func resetNetwork() {
+	cmd := exec.Command("/etc/init.d/network", "restart")
+	log.Info().Msg("Restarting network...")
+	err := cmd.Run()
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+	log.Info().Msg("Network reset complete.")
 }
 
 // Reboot the machine
