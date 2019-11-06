@@ -51,14 +51,18 @@ func parseConfig() {
 		panic(err)
 	}
 
+	// Default video status
+	sessions.SetValue("VIDEO_ON", "TRUE")
+
+	// Setup hooks for extra settings/session parsing
+	setupHooks()
+
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
 		log.Warn().Msg("No config found in settings file, not parsing through config")
+		return // abort config
 	}
-
-	// Setup hooks for extra settings/session parsing
-	setupHooks()
 
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
@@ -69,9 +73,6 @@ func parseConfig() {
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
 		pybus.StartRepeats()
 	}
-
-	// Default video status
-	sessions.SetValue("VIDEO_ON", "TRUE")
 }
 
 // Set up InfluxDB time series logging
