@@ -35,13 +35,8 @@ type Component struct {
 // Settings control generic user defined field:value mappings, which will persist each run
 var Settings settingsWrap
 
-// Misc settings we'd end up looking for
-var (
-	SlackURL string
-)
-
 func init() {
-	Settings = settingsWrap{File: "./settings.json", Data: make(map[string]map[string]string, 0)}
+	Settings = settingsWrap{Data: make(map[string]map[string]string, 0)}
 }
 
 // HandleGetAll returns all current settings
