@@ -23,11 +23,11 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAll returns the entire current session
-func GetAll() map[string]Value {
+func GetAll() map[string]Data {
 	// Log if requested
 	log.Debug().Msg("Responding to request for full session")
 
-	newData := map[string]Value{}
+	newData := map[string]Data{}
 	session.Mutex.Lock()
 	defer session.Mutex.Unlock()
 	for index, element := range session.data {
@@ -66,7 +66,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get returns the named session, if it exists. Nil otherwise
-func Get(name string) (value Value, err error) {
+func Get(name string) (data Data, err error) {
 
 	// Log if requested
 	log.Debug().Msg(fmt.Sprintf("Responding to request for session value %s", name))

@@ -19,16 +19,24 @@ type settingsWrap struct {
 	Data  map[string]map[string]string // Main settings map
 }
 
+// Setting is GraphQL handler struct
+type Setting struct {
+	Name        string `json:"name,omitempty"`
+	Value       string `json:"value,omitempty"`
+	LastUpdated string `json:"lastUpdated,omitempty"`
+}
+
+// Component is GraphQL handler struct
+type Component struct {
+	Name     string    `json:"name,omitempty"`
+	Settings []Setting `json:"settings,omitempty"`
+}
+
 // Settings control generic user defined field:value mappings, which will persist each run
 var Settings settingsWrap
 
-// Misc settings we'd end up looking for
-var (
-	SlackURL string
-)
-
 func init() {
-	Settings = settingsWrap{File: "./settings.json", Data: make(map[string]map[string]string, 0)}
+	Settings = settingsWrap{Data: make(map[string]map[string]string, 0)}
 }
 
 // HandleGetAll returns all current settings
@@ -103,7 +111,7 @@ func GetComponent(componentName string) (map[string]string, error) {
 	if ok {
 		return component, nil
 	}
-	return nil, fmt.Errorf("Could not find component/setting with those values")
+	return nil, fmt.Errorf("Could not find component with name %s", componentName)
 }
 
 // Get returns all the values of a specific setting
@@ -158,7 +166,12 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set will handle actually updates or posts a new setting value
-func Set(componentName string, settingName string, settingValue string) {
+func Set(componentName string, settingName string, settingValue string) bool {
+	// Format names
+	componentName = format.Name(componentName)
+	settingName = format.Name(settingName)
+	settingValue = format.Name(settingValue)
+
 	// Insert componentName into Map if not exists
 	Settings.mutex.Lock()
 	if _, ok := Settings.Data[componentName]; !ok {
@@ -177,4 +190,6 @@ func Set(componentName string, settingName string, settingValue string) {
 
 	// Trigger hooks
 	runHooks(componentName, settingName, settingValue)
+
+	return true
 }

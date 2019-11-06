@@ -14,12 +14,12 @@ import (
 // StartSerialComms will set up the serial port,
 // and start the ReadSerial goroutine
 func StartSerialComms(deviceName string, baudrate int) {
-	log.Info().Msg("Opening serial device " + deviceName)
+	log.Info().Msg(fmt.Sprintf("Opening serial device %s at baud %d", deviceName, baudrate))
 	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
 	s, err := serial.OpenPort(c)
 	defer s.Close()
 	if err != nil {
-		log.Error().Msg("Failed to open serial port " + deviceName)
+		log.Error().Msg(fmt.Sprintf("Failed to open serial port %s", deviceName))
 		log.Error().Msg(err.Error())
 		return
 	}

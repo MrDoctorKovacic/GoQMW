@@ -12,25 +12,6 @@ import (
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 )
 
-// Define temporary holding struct for power values
-type power struct {
-	on          bool
-	powerTarget string
-	errOn       error
-	errTarget   error
-	triggerOn   bool
-	settingComp string
-	settingName string
-}
-
-// Read the target action based on current ACC Power value
-var (
-	_wirelessDef = power{settingComp: "WIRELESS", settingName: "POWER"}
-	_angelDef    = power{settingComp: "ANGEL_EYES", settingName: "POWER"}
-	_tabletDef   = power{settingComp: "TABLET", settingName: "POWER"}
-	_boardDef    = power{settingComp: "BOARD", settingName: "POWER"}
-)
-
 func setupHooks() {
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
 	settings.RegisterHook("WIRELESS", wirelessSettings)
@@ -66,27 +47,27 @@ func wirelessSettings(settingName string, settingValue string) {
 }
 
 // When key state is changed in session
-func keyState(hook *sessions.SessionPackage) {
+func keyState(hook *sessions.Data) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 
 	// Determine state of wireless, angel eyes, and main board
-	evalWirelessPower(hook.Data.Value, accOn, wifiOn)
-	evalAngelEyesPower(hook.Data.Value)
-	evalVideoPower(hook.Data.Value, accOn, wifiOn)
+	evalWirelessPower(hook.Value, accOn, wifiOn)
+	evalAngelEyesPower(hook.Value)
+	evalVideoPower(hook.Value, accOn, wifiOn)
 }
 
 // When light sensor is changed in session
-func lightSensorOn(hook *sessions.SessionPackage) {
+func lightSensorOn(hook *sessions.Data) {
 	// Determine state of angel eyes
 	evalAngelEyesPower(sessions.GetStringDefault("KEY_STATE", "FALSE"))
 }
 
 // Convert main raw voltage into an actual number
-func voltage(hook *sessions.SessionPackage) {
-	voltageFloat, err := strconv.ParseFloat(hook.Data.Value, 64)
+func voltage(hook *sessions.Data) {
+	voltageFloat, err := strconv.ParseFloat(hook.Value, 64)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
+		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Value))
 		return
 	}
 
@@ -94,10 +75,10 @@ func voltage(hook *sessions.SessionPackage) {
 }
 
 // Modifiers to the incoming Current sensor value
-func auxCurrent(hook *sessions.SessionPackage) {
-	currentFloat, err := strconv.ParseFloat(hook.Data.Value, 32)
+func auxCurrent(hook *sessions.Data) {
+	currentFloat, err := strconv.ParseFloat(hook.Value, 32)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Data.Value))
+		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Value))
 		return
 	}
 
@@ -113,17 +94,17 @@ func auxCurrent(hook *sessions.SessionPackage) {
 }
 
 // Trigger for booting boards/tablets
-func accPower(hook *sessions.SessionPackage) {
+func accPower(hook *sessions.Data) {
 	var accOn bool
 
 	// Check incoming ACC power value is valid
-	switch hook.Data.Value {
+	switch hook.Value {
 	case "TRUE":
 		accOn = true
 	case "FALSE":
 		accOn = false
 	default:
-		log.Error().Msg(fmt.Sprintf("ACC Power Trigger unexpected value: %s", hook.Data.Value))
+		log.Error().Msg(fmt.Sprintf("ACC Power Trigger unexpected value: %s", hook.Value))
 		return
 	}
 
@@ -138,15 +119,22 @@ func accPower(hook *sessions.SessionPackage) {
 }
 
 // When wireless is turned off, we can infer that LTE is also off
-func wirelessPower(hook *sessions.SessionPackage) {
-	if hook.Data.Value == "FALSE" {
-		// When board is turned off but doesn't have time to reflect LTE status
+func wirelessPower(hook *sessions.Data) {
+	// Pull the necessary configuration data
+	lteOn := sessions.GetBoolDefault("LTE_ON", false)
+
+	// When board is turned off but doesn't have time to reflect LTE status
+	if hook.Value == "FALSE" && lteOn {
+		// Indicate LTE is off
 		sessions.SetValue("LTE_ON", "FALSE")
+
+		// Reset network (temporary fix for DNS issues on LTE -> WIFI transition)
+		resetNetwork()
 	}
 }
 
 // Alert me when it's raining and windows are down
-func lightSensorReason(hook *sessions.SessionPackage) {
+func lightSensorReason(hook *sessions.Data) {
 	keyPosition, _ := sessions.Get("KEY_POSITION")
 	doorsLocked, _ := sessions.Get("DOORS_LOCKED")
 	windowsOpen, _ := sessions.Get("WINDOWS_OPEN")
@@ -157,17 +145,17 @@ func lightSensorReason(hook *sessions.SessionPackage) {
 		return
 	}
 
-	if hook.Data.Value == "RAIN" &&
+	if hook.Value == "RAIN" &&
 		keyPosition.Value == "OFF" &&
 		doorsLocked.Value == "TRUE" &&
 		windowsOpen.Value == "TRUE" &&
 		delta.Minutes() > 5 {
-		sessions.SlackAlert(settings.SlackURL, "Windows are down in the rain, eh?")
+		sessions.SlackAlert("Windows are down in the rain, eh?")
 	}
 }
 
 // Restart different machines when seat memory buttons are pressed
-func seatMemory(hook *sessions.SessionPackage) {
+func seatMemory(hook *sessions.Data) {
 	switch hook.Name {
 	case "SEAT_MEMORY_1":
 		sendServiceCommand("BOARD", "restart")

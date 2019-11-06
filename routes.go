@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
@@ -29,6 +31,18 @@ func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
+}
+
+// Reset network entirely
+func resetNetwork() {
+	cmd := exec.Command("/etc/init.d/network", "restart")
+	log.Info().Msg("Restarting network...")
+	err := cmd.Run()
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return
+	}
+	log.Info().Msg("Network reset complete.")
 }
 
 // Reboot the machine
@@ -59,14 +73,30 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	sendServiceCommand(machine, "shutdown")
 }
 
+// sendServiceCommand sends a command to a network machine, using a simple python server to recieve
+func sendServiceCommand(name string, command string) {
+	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
+	if machineServiceAddress == "" {
+		log.Error().Msg(fmt.Sprintf("Device %s address not found, not issuing %s", name, command))
+		return
+	}
+
+	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
+	if err != nil {
+		log.Error().Msg(fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
+		return
+	}
+	defer resp.Body.Close()
+}
+
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	if settings.SlackURL != "" {
-		sessions.SlackAlert(settings.SlackURL, params["message"])
-		format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
-	} else {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Slack URL not set in config.", OK: false})
+	err := sessions.SlackAlert(params["message"])
+	if err != nil {
+		format.WriteResponse(&w, r, format.JSONResponse{Output: err.Error(), OK: false})
+		return
 	}
+	format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
 }
 
 // **
@@ -142,6 +172,14 @@ func startRouter() {
 	router.HandleFunc("/{device}/{command}", pybus.ParseCommand).Methods("GET")
 
 	//
+	// GraphQL Implementation
+	//
+	router.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
+		result := executeQuery(r.URL.Query().Get("query"), schema)
+		json.NewEncoder(w).Encode(result)
+	})
+
+	//
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -151,6 +189,8 @@ func startRouter() {
 
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
+
+	log.Info().Msg("MDroid Core successfully started")
 
 	// Start the router in an endless loop
 	for {
@@ -180,26 +220,29 @@ func authMiddleware(next http.Handler) http.Handler {
 
 func checksumMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
+		for r.Method == "POST" {
 			params := mux.Vars(r)
 			checksum, ok := params["checksum"]
 
-			if ok && checksum != "" {
-				body, err := ioutil.ReadAll(r.Body)
-				defer r.Body.Close() //  must close
-				if err != nil {
-					log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
-					format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
-					return
-				}
-
-				if md5.Sum(body) != md5.Sum([]byte(checksum)) {
-					log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
-					format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
-					return
-				}
-				r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			if !ok || checksum == "" {
+				break
 			}
+
+			body, err := ioutil.ReadAll(r.Body)
+			defer r.Body.Close() //  must close
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
+				format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
+				break
+			}
+
+			if md5.Sum(body) != md5.Sum([]byte(checksum)) {
+				log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
+				format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
+				break
+			}
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			break
 		}
 
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
