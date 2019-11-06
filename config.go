@@ -43,9 +43,6 @@ func parseConfig() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	// Setup hooks for extra settings/session parsing
-	setupHooks()
-
 	// Parse settings file
 	settings.ReadFile(settings.Settings.File)
 
@@ -59,6 +56,9 @@ func parseConfig() {
 	if err != nil {
 		log.Warn().Msg("No config found in settings file, not parsing through config")
 	}
+
+	// Setup hooks for extra settings/session parsing
+	setupHooks()
 
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
