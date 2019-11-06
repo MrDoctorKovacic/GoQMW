@@ -15,6 +15,7 @@ import (
 
 // stat holds various data points we expect to receive
 type stat struct {
+	Name        string  `json:"name,omitempty"`
 	UsedRAM     float32 `json:"usedRAM,omitempty"`
 	UsedCPU     float32 `json:"usedCPU,omitempty"`
 	UsedDisk    float32 `json:"usedDisk,omitempty"`
@@ -53,6 +54,17 @@ func get(name string) (stat, bool) {
 	return statResponse, ok
 }
 
+func getAll() map[string]stat {
+	newData := map[string]stat{}
+	statsLock.Lock()
+	defer statsLock.Unlock()
+	for index, element := range stats {
+		newData[index] = element
+	}
+
+	return newData
+}
+
 // HandleSet posts a new stat
 func HandleSet(w http.ResponseWriter, r *http.Request) {
 	var newdata stat
@@ -63,6 +75,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	formattedName := format.Name(params["name"])
+	newdata.Name = formattedName
 	statsLock.Lock()
 	stats[formattedName] = newdata
 	statsLock.Unlock()
