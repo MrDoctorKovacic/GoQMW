@@ -62,7 +62,7 @@ func parseConfig() {
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
-		log.Warn().Msg("No config found in settings file, not parsing through config")
+		log.Warn().Msg("MDROID settings not found, aborting config")
 		return // abort config
 	}
 
@@ -75,6 +75,7 @@ func parseConfig() {
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
 		pybus.StartRepeats()
 	}
+	log.Info().Msg("Configuration complete, starting server...")
 }
 
 // Set up InfluxDB time series logging
@@ -83,10 +84,11 @@ func setupDatabase(configAddr *map[string]string) {
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
 		influx.DB = nil
-		log.Info().Msg("Not logging to influx db")
+		log.Warn().Msg("InfluxDB is disabled")
 		return
 	}
 	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
+	log.Info().Msg(fmt.Sprintf("Using InfluxDB at %s", databaseHost))
 }
 
 func setupSerial() {
@@ -103,6 +105,7 @@ func setupSerial() {
 	}
 
 	// Start initial reader / writer
+	log.Info().Msg(fmt.Sprintf("Registering %s as serial writer", hardwareSerialPort))
 	go sessions.StartSerialComms(hardwareSerialPort, 9600)
 
 	// Setup other devices
