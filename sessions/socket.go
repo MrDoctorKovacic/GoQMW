@@ -83,15 +83,16 @@ func CheckServer(host string, token string) {
 		}
 
 		resp, err := http.Get(fmt.Sprintf("http://%s/ws/ping", host))
-		SetValue("LAST_SERVER_RESPONSE", resp.Status)
 		if err != nil {
 			// handle error
+			SetValue("LAST_SERVER_RESPONSE", "ERROR")
 			if !failedOnce {
 				failedOnce = true
 			} else {
 				log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
 			}
 		} else {
+			SetValue("LAST_SERVER_RESPONSE", resp.Status)
 			resp.Body.Close()
 			if resp.StatusCode == 200 {
 				log.Info().Msg("Client is waiting on us, connect to server to acquire a websocket")
