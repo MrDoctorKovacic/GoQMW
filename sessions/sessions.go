@@ -19,20 +19,11 @@ type Data struct {
 	Quiet      bool   `json:"quiet,omitempty"`
 }
 
-// Measurement is struct for session values stored as float32
-type Measurement struct {
-	Name       string `json:"name,omitempty"`
-	Value      string `json:"value,omitempty"`
-	LastUpdate string `json:"lastUpdate,omitempty"`
-	Quiet      bool   `json:"quiet,omitempty"`
-}
-
 // Session is a mapping of Datas, which contain session values
 type Session struct {
-	data         map[string]Data
-	measurements map[string]Measurement
-	Mutex        sync.Mutex
-	file         string
+	data  map[string]Data
+	Mutex sync.Mutex
+	file  string
 }
 
 var session Session
