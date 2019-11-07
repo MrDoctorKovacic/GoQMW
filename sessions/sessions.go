@@ -35,12 +35,6 @@ type Session struct {
 	file         string
 }
 
-type hooks struct {
-	list  map[string][]func(triggerPackage *Data)
-	count int
-	mutex sync.Mutex
-}
-
 var session Session
 
 func init() {

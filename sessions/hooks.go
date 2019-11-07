@@ -2,9 +2,16 @@ package sessions
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/rs/zerolog/log"
 )
+
+type hooks struct {
+	list  map[string][]func(triggerPackage *Data)
+	count int
+	mutex sync.Mutex
+}
 
 var hookList hooks
 
