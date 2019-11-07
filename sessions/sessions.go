@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,11 +19,20 @@ type Data struct {
 	Quiet      bool   `json:"quiet,omitempty"`
 }
 
+// Measurement is struct for session values stored as float32
+type Measurement struct {
+	Name       string `json:"name,omitempty"`
+	Value      string `json:"value,omitempty"`
+	LastUpdate string `json:"lastUpdate,omitempty"`
+	Quiet      bool   `json:"quiet,omitempty"`
+}
+
 // Session is a mapping of Datas, which contain session values
 type Session struct {
-	data  map[string]Data
-	Mutex sync.Mutex
-	file  string
+	data         map[string]Data
+	measurements map[string]Measurement
+	Mutex        sync.Mutex
+	file         string
 }
 
 type hooks struct {
@@ -35,78 +43,6 @@ type hooks struct {
 
 var hookList hooks
 var session Session
-
-var sessionType = graphql.NewObject(
-	graphql.ObjectConfig{
-		Name: "Session",
-		Fields: graphql.Fields{
-			"name": &graphql.Field{
-				Type:        graphql.String,
-				Description: "Value Name",
-			},
-			"value": &graphql.Field{
-				Type:        graphql.String,
-				Description: "Value as a string",
-			},
-			"lastUpdate": &graphql.Field{
-				Type:        graphql.String,
-				Description: "UTC Time when inserted",
-			},
-		},
-	},
-)
-
-// SessionMutation is a GraphQL schema for session POST requests
-var SessionMutation = &graphql.Field{
-	Type:        sessionType,
-	Description: "Post new session value",
-	Args: graphql.FieldConfigArgument{
-		"name": &graphql.ArgumentConfig{
-			Type: graphql.NewNonNull(graphql.String),
-		},
-		"value": &graphql.ArgumentConfig{
-			Type: graphql.NewNonNull(graphql.String),
-		},
-	},
-	Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-		return SetValue(params.Args["name"].(string), params.Args["value"].(string)), nil
-	},
-}
-
-// SessionQuery is a GraphQL schema for session GET requests
-var SessionQuery = &graphql.Field{
-	Type:        graphql.NewList(sessionType),
-	Description: "Get session values",
-	Args: graphql.FieldConfigArgument{
-		"names": &graphql.ArgumentConfig{
-			Type:        graphql.NewList(graphql.String),
-			Description: "List of names to fetch. If not provided, will get entire session",
-		},
-	},
-	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		var outputList []Data
-		names, ok := p.Args["names"].([]string)
-		if ok {
-			for _, name := range names {
-				s, err := Get(name)
-				if err != nil {
-					return nil, err
-				}
-				s.Name = name
-				outputList = append(outputList, s)
-
-			}
-			return outputList, nil
-		}
-
-		// Return entire session
-		s := GetAll()
-		for _, val := range s {
-			outputList = append(outputList, val)
-		}
-		return outputList, nil
-	},
-}
 
 func init() {
 	session.data = make(map[string]Data)
