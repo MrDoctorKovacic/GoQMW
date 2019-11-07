@@ -4,30 +4,18 @@ go 1.12
 
 require (
 	github.com/bradfitz/latlong v0.0.0-20170410180902-f3db6d0dff40
-	github.com/fatih/structs v1.1.0 // indirect
-	github.com/godbus/dbus v4.1.0+incompatible
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
-	github.com/gosimple/slug v1.8.0
 	github.com/graphql-go/graphql v0.7.8
-	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/moul/http2curl v1.0.0 // indirect
-	github.com/muka/go-bluetooth v0.0.0-20190905083735-68fa9c3514a2
+	github.com/jonas-p/go-shp v0.1.1 // indirect
 	github.com/parnurzeal/gorequest v0.2.16
-	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
-	github.com/rakyll/statik v0.1.6 // indirect
 	github.com/rs/zerolog v1.15.0
-	github.com/samsarahq/go v0.0.0-20190905175208-8d057fd44004 // indirect
-	github.com/samsarahq/thunder v0.5.0
-	github.com/satori/go.uuid v1.2.0 // indirect
-	github.com/sirupsen/logrus v1.4.2 // indirect
+	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07
-	golang.org/x/crypto v0.0.0-20190927123631-a832865fa7ad // indirect
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582 // indirect
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/sys v0.0.0-20191010194322-b09406accb47 // indirect
-	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190927191325-030b2cf1153e // indirect
 	moul.io/http2curl v1.0.0 // indirect
 )
