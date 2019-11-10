@@ -118,7 +118,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 	if (module.target == "AUTO" && !module.isOn && shouldBeOn) || (module.target == "ON" && !module.isOn) {
 		mserial.Push(mserial.Writer, fmt.Sprintf("powerOn%s", name))
 	} else if (module.target == "AUTO" && module.isOn && !shouldBeOn) || (module.target == "OFF" && module.isOn) {
-		gracefulShutdown(name)
+		go gracefulShutdown(name)
 	} else {
 		return
 	}
