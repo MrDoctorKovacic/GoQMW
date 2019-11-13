@@ -28,8 +28,8 @@ func GetAll() map[string]Data {
 	log.Debug().Msg("Responding to request for full session")
 
 	newData := map[string]Data{}
-	session.Mutex.Lock()
-	defer session.Mutex.Unlock()
+	session.Mutex.RLock()
+	defer session.Mutex.RUnlock()
 	for index, element := range session.data {
 		newData[index] = element
 	}
@@ -43,8 +43,8 @@ func GetAllMin() map[string]string {
 	log.Debug().Msg("Responding to request for minimal session")
 
 	newData := map[string]string{}
-	session.Mutex.Lock()
-	defer session.Mutex.Unlock()
+	session.Mutex.RLock()
+	defer session.Mutex.RUnlock()
 	for index, element := range session.data {
 		newData[index] = element.Value
 	}
@@ -71,8 +71,8 @@ func Get(name string) (data Data, err error) {
 	// Log if requested
 	log.Debug().Msg(fmt.Sprintf("Responding to request for session value %s", name))
 
-	session.Mutex.Lock()
-	defer session.Mutex.Unlock()
+	session.Mutex.RLock()
+	defer session.Mutex.RUnlock()
 	sessionValue, ok := session.data[name]
 
 	if !ok {

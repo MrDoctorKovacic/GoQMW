@@ -15,7 +15,7 @@ import (
 
 type settingsWrap struct {
 	File  string
-	mutex sync.Mutex
+	mutex sync.RWMutex
 	Data  map[string]map[string]string // Main settings map
 }
 
@@ -53,9 +53,9 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting component %s", componentName))
 
-	Settings.mutex.Lock()
+	Settings.mutex.RLock()
 	responseVal, ok := Settings.Data[componentName]
-	Settings.mutex.Unlock()
+	Settings.mutex.RUnlock()
 
 	response := format.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
@@ -73,9 +73,9 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
 
-	Settings.mutex.Lock()
+	Settings.mutex.RLock()
 	responseVal, ok := Settings.Data[componentName][settingName]
-	Settings.mutex.Unlock()
+	Settings.mutex.RUnlock()
 
 	response := format.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
@@ -91,8 +91,8 @@ func GetAll() map[string]map[string]string {
 
 	newData := map[string]map[string]string{}
 
-	Settings.mutex.Lock()
-	defer Settings.mutex.Unlock()
+	Settings.mutex.RLock()
+	defer Settings.mutex.RUnlock()
 	for index, element := range Settings.Data {
 		newData[index] = element
 	}
@@ -105,8 +105,8 @@ func GetComponent(componentName string) (map[string]string, error) {
 	componentName = format.Name(componentName)
 	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
-	Settings.mutex.Lock()
-	defer Settings.mutex.Unlock()
+	Settings.mutex.RLock()
+	defer Settings.mutex.RUnlock()
 	component, ok := Settings.Data[componentName]
 	if ok {
 		return component, nil
@@ -119,8 +119,8 @@ func Get(componentName string, settingName string) (string, error) {
 	componentName = format.Name(componentName)
 	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
 
-	Settings.mutex.Lock()
-	defer Settings.mutex.Unlock()
+	Settings.mutex.RLock()
+	defer Settings.mutex.RUnlock()
 	component, ok := Settings.Data[componentName]
 	if ok {
 		setting, ok := component[settingName]
