@@ -42,6 +42,8 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 	// Deref writer
 	writer := *w
 
+	writer.Header().Set("Content-Type", "application/json")
+
 	// Add string Status if it doesn't exist, add appropriate headers
 	if response.OK {
 		if response.Status == "" {
