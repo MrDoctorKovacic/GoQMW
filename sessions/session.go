@@ -22,7 +22,7 @@ type Data struct {
 // Session is a mapping of Datas, which contain session values
 type Session struct {
 	data  map[string]Data
-	Mutex sync.Mutex
+	Mutex sync.RWMutex
 	file  string
 }
 

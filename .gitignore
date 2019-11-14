@@ -1,3 +1,4 @@
 session.json
 core-debug.log
 .syncthing*
+.sync-conflict*
