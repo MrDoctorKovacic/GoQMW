@@ -55,7 +55,11 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 	if _lock.errors.target != nil {
-		log.Error().Msg(_lock.errors.target.Error())
+		log.Error().Msg(fmt.Sprintf("Setting Error: %s", _lock.errors.target.Error()))
+		if _lock.settings.component != "" && _lock.settings.name != "" {
+			log.Error().Msg("Setting read error for AUTOLOCK. Resetting to AUTO")
+			settings.Set(_lock.settings.component, _lock.settings.name, "AUTO")
+		}
 		return
 	}
 
