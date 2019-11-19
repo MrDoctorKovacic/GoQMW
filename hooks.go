@@ -13,6 +13,7 @@ import (
 )
 
 func setupHooks() {
+	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
 	settings.RegisterHook("WIRELESS", wirelessSettings)
 	sessions.RegisterHookSlice(&[]string{"MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW"}, voltage)
@@ -37,6 +38,15 @@ func angelEyesSettings(settingName string, settingValue string) {
 	evalAngelEyesPower(sessions.GetStringDefault("KEY_STATE", "FALSE"))
 }
 
+// When auto lock setting is changed
+func autoLockSettings(settingName string, settingValue string) {
+	accOn := sessions.GetBoolDefault("ACC_POWER", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
+
+	// Determine state of auto lock
+	evalAutoLock(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
+}
+
 // When wireless setting is changed
 func wirelessSettings(settingName string, settingValue string) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
@@ -55,6 +65,7 @@ func keyState(hook *sessions.Data) {
 	evalWirelessPower(hook.Value, accOn, wifiOn)
 	evalAngelEyesPower(hook.Value)
 	evalVideoPower(hook.Value, accOn, wifiOn)
+	evalAutoLock(hook.Value, accOn, wifiOn)
 }
 
 // When light sensor is changed in session
@@ -116,6 +127,7 @@ func accPower(hook *sessions.Data) {
 	go evalWirelessPower(keyIsIn, accOn, wifiOn)
 	go evalVideoPower(keyIsIn, accOn, wifiOn)
 	go evalTabletPower(keyIsIn, accOn, wifiOn)
+	go evalAutoLock(keyIsIn, accOn, wifiOn)
 }
 
 // When wireless is turned off, we can infer that LTE is also off

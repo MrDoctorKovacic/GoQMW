@@ -37,11 +37,52 @@ type triggerType struct {
 
 // Read the target action based on current ACC Power value
 var (
+	_lock     = power{settings: settingType{component: "MDROID", name: "AUTOLOCK"}}
 	_wireless = power{settings: settingType{component: "WIRELESS", name: "POWER"}}
 	_angel    = power{settings: settingType{component: "ANGEL_EYES", name: "POWER"}}
 	_tablet   = power{settings: settingType{component: "TABLET", name: "POWER"}}
 	_board    = power{settings: settingType{component: "BOARD", name: "POWER"}}
 )
+
+// Evaluates if the doors should be locked
+func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
+	_lock.isOn, _lock.errors.on = sessions.GetBool("DOORS_LOCKED")
+	_lock.target, _lock.errors.target = settings.Get(_lock.settings.component, _lock.settings.name)
+	shouldTrigger := !_lock.isOn && !accOn && !wifiOn && keyIsIn == "FALSE"
+
+	if _lock.errors.on != nil {
+		log.Error().Msg(_lock.errors.on.Error())
+		return
+	}
+	if _lock.errors.target != nil {
+		log.Error().Msg(_lock.errors.target.Error())
+		return
+	}
+
+	// Instead of power trigger, evaluate here. Lock once every so often
+	if _lock.target == "AUTO" && shouldTrigger {
+		lastLock, err := sessions.Get("DOORS_LOCKED")
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+		lockToggleTime, err := time.Parse("", lastLock.LastUpdate)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+
+		// For debugging
+		log.Info().Msg(lockToggleTime.String())
+		//lockedInLast15Mins := time.Since(_lock.lastCheck.time) < time.Minute*15
+		unlockedInLast5Minutes := time.Since(lockToggleTime) < time.Minute*5 // handle case where car is UNLOCKED recently, i.e. getting back in. Before putting key in
+
+		if unlockedInLast5Minutes {
+			return
+		}
+
+		//_lock.lastCheck = triggerType{time: time.Now(), target: _lock.target}
+		mserial.Push(mserial.Writer, "toggleDoorLocks")
+	}
+}
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower(keyIsIn string) {
