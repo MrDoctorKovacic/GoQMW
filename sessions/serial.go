@@ -11,11 +11,7 @@ import (
 	"github.com/tarm/serial"
 )
 
-type SerialDevice struct {
-	Port     *serial.Port
-	IsWriter bool
-}
-
+// OpenSerialPort will return a *serial.Port with the given arguments
 func OpenSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
 	log.Info().Msg(fmt.Sprintf("Opening serial device %s at baud %d", deviceName, baudrate))
 	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
