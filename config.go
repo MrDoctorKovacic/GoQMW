@@ -56,9 +56,6 @@ func parseConfig() {
 	// Default video status
 	sessions.SetValue("VIDEO_ON", "TRUE")
 
-	// Setup hooks for extra settings/session parsing
-	setupHooks()
-
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
@@ -70,6 +67,9 @@ func parseConfig() {
 	setupDatabase(&configMap)
 	sessions.SetupTokens(&configMap)
 	setupSerial()
+
+	// Setup hooks for extra settings/session parsing
+	setupHooks()
 
 	// Set up pybus repeat commands
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
@@ -103,11 +103,25 @@ func setupSerial() {
 		log.Error().Msg(fmt.Sprintf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error()))
 		return
 	}
-	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 
+	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	if !usingHardwareSerial {
 		log.Error().Msg(fmt.Sprintf("No hardware serial port. Not setting up serial devices.\n%s", err.Error()))
 		return
+	}
+
+	// Check if serial is required for startup
+	serialRequiredSetting, ok := configMap["SERIAL_STARTUP"]
+	if ok && serialRequiredSetting == "TRUE" {
+		// Serial is required for setup.
+		// Open a port, set state to the output and immediately close for later concurrent reading
+		s, err := sessions.OpenSerialPort(hardwareSerialPort, 9600)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+		sessions.ReadSerial(s)
+		log.Info().Msg("Closing port for later reading")
+		s.Close()
 	}
 
 	// Start initial reader / writer
