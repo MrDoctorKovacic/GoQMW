@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -47,11 +46,6 @@ func parseConfig() {
 	// Parse settings file
 	settings.ReadFile(settings.Settings.File)
 
-	// Check settings
-	if _, err := json.Marshal(settings.GetAll()); err != nil {
-		panic(err)
-	}
-
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
@@ -64,8 +58,6 @@ func parseConfig() {
 	sessions.SetupTokens(&configMap)
 	sessions.InitializeDefaults()
 	setupSerial()
-
-	// Setup hooks for extra settings/session parsing
 	setupHooks()
 
 	// Set up pybus repeat commands

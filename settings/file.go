@@ -11,6 +11,7 @@ import (
 // ReadFile will handle the initialization of settings,
 // either from past mapping or by creating a new one
 func ReadFile(useSettingsFile string) {
+	log.Info().Msg("Checking settings file...")
 	if useSettingsFile == "" {
 		log.Warn().Msg("Failed to load settings from file '" + Settings.File + "'. Is it empty?")
 		return
@@ -20,8 +21,7 @@ func ReadFile(useSettingsFile string) {
 	initSettings, err := parseFile(Settings.File)
 
 	if err != nil || initSettings == nil || len(initSettings) == 0 {
-		log.Warn().Msg("Failed to load settings from file '" + Settings.File + "'. Is it empty?")
-		return
+		panic("Failed to load settings from file '" + Settings.File + "'. Is it empty?")
 	}
 
 	// Set new settings globally
