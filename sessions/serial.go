@@ -11,18 +11,32 @@ import (
 	"github.com/tarm/serial"
 )
 
-// StartSerialComms will set up the serial port,
-// and start the ReadSerial goroutine
-func StartSerialComms(deviceName string, baudrate int) {
+type SerialDevice struct {
+	Port     *serial.Port
+	IsWriter bool
+}
+
+func OpenSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
 	log.Info().Msg(fmt.Sprintf("Opening serial device %s at baud %d", deviceName, baudrate))
 	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
 	s, err := serial.OpenPort(c)
 	defer s.Close()
 	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// StartSerialComms will set up the serial port,
+// and start the ReadSerial goroutine
+func StartSerialComms(deviceName string, baudrate int) {
+	s, err := OpenSerialPort(deviceName, baudrate)
+	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Failed to open serial port %s", deviceName))
 		log.Error().Msg(err.Error())
 		return
 	}
+	defer s.Close()
 
 	// Use first Serial device as a R/W, all others will only be read from
 	isWriter := false
