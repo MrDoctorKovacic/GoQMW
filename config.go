@@ -45,16 +45,12 @@ func parseConfig() {
 	}
 
 	// Parse settings file
-	log.Info().Msg("Checking settings file...")
 	settings.ReadFile(settings.Settings.File)
 
 	// Check settings
 	if _, err := json.Marshal(settings.GetAll()); err != nil {
 		panic(err)
 	}
-
-	// Default video status
-	sessions.SetValue("VIDEO_ON", "TRUE")
 
 	// Parse through config if found in settings file
 	configMap, err := settings.GetComponent("MDROID")
@@ -66,6 +62,7 @@ func parseConfig() {
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
 	sessions.SetupTokens(&configMap)
+	sessions.InitializeDefaults()
 	setupSerial()
 
 	// Setup hooks for extra settings/session parsing

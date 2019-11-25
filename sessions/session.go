@@ -30,6 +30,12 @@ var session Session
 
 func init() {
 	session.data = make(map[string]Data)
+
+}
+
+// InitializeDefaults sets default session values here
+func InitializeDefaults() {
+	SetValue("VIDEO_ON", "TRUE")
 }
 
 // SlackAlert sends a message to a slack channel webhook
