@@ -82,7 +82,7 @@ func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields
 	}
 
 	// Debug log and return
-	log.Debug().Msg(fmt.Sprintf("Logged %s to database", stmt.String()))
+	log.Debug().Msgf("Logged %s to database", stmt.String())
 	return nil
 }
 

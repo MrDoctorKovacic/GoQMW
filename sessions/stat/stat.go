@@ -3,7 +3,6 @@ package stat
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -93,10 +92,10 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 		err := influx.DB.Insert("stats", map[string]interface{}{"name": formattedName}, fields)
 		if err != nil && influx.DB.Started {
-			log.Error().Msg(fmt.Sprintf("Error writing string stats to influx DB: %s", err.Error()))
+			log.Error().Msgf("Error writing string stats to influx DB: %s", err.Error())
 			return
 		}
-		log.Debug().Msg(fmt.Sprintf("Logged stats to database"))
+		log.Debug().Msgf("Logged stats to database")
 	}
 	format.WriteResponse(&w, r, format.JSONResponse{Output: formattedName, OK: true})
 }

@@ -51,7 +51,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	componentName := format.Name(params["component"])
 
-	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting component %s", componentName))
+	log.Debug().Msgf("Responding to GET request for setting component %s", componentName)
 
 	Settings.mutex.RLock()
 	responseVal, ok := Settings.Data[componentName]
@@ -71,7 +71,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	componentName := format.Name(params["component"])
 	settingName := format.Name(params["name"])
 
-	log.Debug().Msg(fmt.Sprintf("Responding to GET request for setting %s on component %s", settingName, componentName))
+	log.Debug().Msgf("Responding to GET request for setting %s on component %s", settingName, componentName)
 
 	Settings.mutex.RLock()
 	responseVal, ok := Settings.Data[componentName][settingName]
@@ -87,7 +87,7 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 
 // GetAll returns all the values of known settings
 func GetAll() map[string]map[string]string {
-	log.Debug().Msg(fmt.Sprintf("Responding to request for all settings"))
+	log.Debug().Msgf("Responding to request for all settings")
 
 	newData := map[string]map[string]string{}
 
@@ -103,7 +103,7 @@ func GetAll() map[string]map[string]string {
 // GetComponent returns all the values of a specific component
 func GetComponent(componentName string) (map[string]string, error) {
 	componentName = format.Name(componentName)
-	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
+	log.Debug().Msgf("Responding to request for setting component %s", componentName)
 
 	Settings.mutex.RLock()
 	defer Settings.mutex.RUnlock()
@@ -117,7 +117,7 @@ func GetComponent(componentName string) (map[string]string, error) {
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
 	componentName = format.Name(componentName)
-	log.Debug().Msg(fmt.Sprintf("Responding to request for setting component %s", componentName))
+	log.Debug().Msgf("Responding to request for setting component %s", componentName)
 
 	Settings.mutex.RLock()
 	defer Settings.mutex.RUnlock()
@@ -155,7 +155,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	settingValue := params["value"]
 
 	// Log if requested
-	log.Debug().Msg(fmt.Sprintf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue))
+	log.Debug().Msgf("Responding to POST request for setting %s on component %s to be value %s", settingName, componentName, settingValue)
 
 	// Do the dirty work elsewhere
 	Set(componentName, settingName, settingValue)
@@ -183,7 +183,7 @@ func Set(componentName string, settingName string, settingValue string) bool {
 	Settings.mutex.Unlock()
 
 	// Log our success
-	log.Info().Msg(fmt.Sprintf("Updated setting %s[%s] to %s", componentName, settingName, settingValue))
+	log.Info().Msgf("Updated setting %s[%s] to %s", componentName, settingName, settingValue)
 
 	// Write out all settings to a file
 	writeFile(Settings.File)

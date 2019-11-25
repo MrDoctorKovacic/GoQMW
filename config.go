@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -83,19 +82,19 @@ func setupDatabase(configAddr *map[string]string) {
 		return
 	}
 	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
-	log.Info().Msg(fmt.Sprintf("Using InfluxDB at %s", databaseHost))
+	log.Info().Msgf("Using InfluxDB at %s", databaseHost)
 }
 
 func setupSerial() {
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error()))
+		log.Error().Msgf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error())
 		return
 	}
 
 	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	if !usingHardwareSerial {
-		log.Error().Msg(fmt.Sprintf("No hardware serial port. Not setting up serial devices.\n%s", err.Error()))
+		log.Error().Msgf("No hardware serial port. Not setting up serial devices.\n%s", err.Error())
 		return
 	}
 
@@ -115,7 +114,7 @@ func setupSerial() {
 	}
 
 	// Start initial reader / writer
-	log.Info().Msg(fmt.Sprintf("Registering %s as serial writer", hardwareSerialPort))
+	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
 	go sessions.StartSerialComms(hardwareSerialPort, 9600)
 
 	// Setup other devices

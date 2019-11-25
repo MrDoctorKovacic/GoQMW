@@ -88,7 +88,7 @@ func lightSensorOn(hook *sessions.Data) {
 func voltage(hook *sessions.Data) {
 	voltageFloat, err := strconv.ParseFloat(hook.Value, 64)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Value))
+		log.Error().Msgf("Failed to convert string %s to float", hook.Value)
 		return
 	}
 
@@ -99,7 +99,7 @@ func voltage(hook *sessions.Data) {
 func auxCurrent(hook *sessions.Data) {
 	currentFloat, err := strconv.ParseFloat(hook.Value, 32)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to convert string %s to float", hook.Value))
+		log.Error().Msgf("Failed to convert string %s to float", hook.Value)
 		return
 	}
 
@@ -125,7 +125,7 @@ func accPower(hook *sessions.Data) {
 	case "FALSE":
 		accOn = false
 	default:
-		log.Error().Msg(fmt.Sprintf("ACC Power Trigger unexpected value: %s", hook.Value))
+		log.Error().Msgf("ACC Power Trigger unexpected value: %s", hook.Value)
 		return
 	}
 

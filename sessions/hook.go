@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -21,7 +20,7 @@ func init() {
 
 // RegisterHook adds a new hook into a settings change
 func RegisterHook(componentName string, hook func(triggerPackage *Data)) {
-	log.Info().Msg(fmt.Sprintf("Adding new hook for %s", componentName))
+	log.Info().Msgf("Adding new hook for %s", componentName)
 	hookList.mutex.Lock()
 	defer hookList.mutex.Unlock()
 	hookList.list[componentName] = append(hookList.list[componentName], hook)

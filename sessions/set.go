@@ -25,7 +25,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	response := format.JSONResponse{OK: false}
 
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
+		log.Error().Msgf("Error reading body: %v", err)
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
@@ -44,7 +44,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	var newdata Data
 
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
-		log.Error().Msg(fmt.Sprintf("Error decoding incoming JSON:\n%s", err.Error()))
+		log.Error().Msgf("Error decoding incoming JSON:\n%s", err.Error())
 		response.Output = err.Error()
 		format.WriteResponse(&w, r, response)
 		return
@@ -89,7 +89,7 @@ func Set(newPackage Data) error {
 	newPackage.Value = strings.TrimSpace(newPackage.Value)
 
 	// Log if requested
-	log.Debug().Msg(fmt.Sprintf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Value))
+	log.Debug().Msgf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Value)
 
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
@@ -122,7 +122,7 @@ func Set(newPackage Data) error {
 			}
 			return fmt.Errorf(errorText)
 		}
-		log.Debug().Msg(fmt.Sprintf("Logged %s=%s to database", newPackage.Name, newPackage.Value))
+		log.Debug().Msgf("Logged %s=%s to database", newPackage.Name, newPackage.Value)
 	}
 
 	return nil

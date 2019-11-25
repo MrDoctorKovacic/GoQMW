@@ -69,7 +69,7 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 func Get(name string) (data Data, err error) {
 
 	// Log if requested
-	log.Debug().Msg(fmt.Sprintf("Responding to request for session value %s", name))
+	log.Debug().Msgf("Responding to request for session value %s", name)
 
 	session.Mutex.RLock()
 	defer session.Mutex.RUnlock()
@@ -99,7 +99,7 @@ func GetBool(name string) (value bool, err error) {
 func GetStringDefault(name string, def string) string {
 	v, err := Get(name)
 	if err != nil {
-		log.Debug().Msg(fmt.Sprintf("%s could not be determined, defaulting to FALSE", name))
+		log.Debug().Msgf("%s could not be determined, defaulting to FALSE", name)
 		v.Value = def
 	}
 	return v.Value
@@ -109,7 +109,7 @@ func GetStringDefault(name string, def string) string {
 func GetBoolDefault(name string, def bool) bool {
 	v, err := GetBool(name)
 	if err != nil {
-		log.Debug().Msg(fmt.Sprintf("%s could not be determined, defaulting to false", name))
+		log.Debug().Msgf("%s could not be determined, defaulting to false", name)
 		v = def
 	}
 	return v
