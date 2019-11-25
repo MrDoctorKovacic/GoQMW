@@ -121,7 +121,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	shouldTrigger := !accOn && wifiOn && keyIsIn == "FALSE" && isTimeToSleep
 
 	if shouldTrigger {
-		log.Info().Msgf("Going to sleep now, for %d minutes", msToSleep.Minutes())
+		log.Info().Msgf("Going to sleep now, for %f minutes", msToSleep.Minutes())
 		//mserial.Push(mserial.Writer, fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
 	}
 }
