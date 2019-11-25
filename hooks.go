@@ -13,6 +13,7 @@ import (
 )
 
 func setupHooks() {
+	settings.RegisterHook("AUTO_SLEEP", autoSleepSettings)
 	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
 	settings.RegisterHook("WIRELESS", wirelessSettings)
@@ -45,6 +46,15 @@ func autoLockSettings(settingName string, settingValue string) {
 
 	// Determine state of auto lock
 	evalAutoLock(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
+}
+
+// When auto Sleep setting is changed
+func autoSleepSettings(settingName string, settingValue string) {
+	accOn := sessions.GetBoolDefault("ACC_POWER", false)
+	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
+
+	// Determine state of auto Sleep
+	evalAutoSleep(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
 }
 
 // When wireless setting is changed
