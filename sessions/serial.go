@@ -44,7 +44,7 @@ func StartSerialComms(deviceName string, baudrate int) {
 
 	// Continually read from serial port
 	log.Info().Msg(fmt.Sprintf("Starting new serial reader on device %s", deviceName))
-	ReadFromSerial(s, isWriter) // this will block until abrubtly ended
+	SerialLoop(s, isWriter) // this will block until abrubtly ended
 	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
 
 	// Replace main serial writer
@@ -58,25 +58,34 @@ func StartSerialComms(deviceName string, baudrate int) {
 	go StartSerialComms(deviceName, baudrate)
 }
 
-// ReadFromSerial reads serial data into the session
-func ReadFromSerial(device *serial.Port, isWriter bool) {
+// SerialLoop reads serial data into the session
+func SerialLoop(device *serial.Port, isWriter bool) {
 	for {
 		// Write to device if is necessary
 		if isWriter {
 			mserial.Pop(device)
 		}
 
-		response, err := mserial.Read(device)
+		err := ReadSerial(device)
 		if err != nil {
 			// The device is nil, break out of this read loop
 			log.Error().Msg("Failed to read from serial port")
 			log.Error().Msg(err.Error())
 			return
 		}
-
-		// Parse serial data
-		parseJSON(response)
 	}
+}
+
+// ReadSerial takes one line from the serial device and parses it into the session
+func ReadSerial(device *serial.Port) error {
+	response, err := mserial.Read(device)
+	if err != nil {
+		return err
+	}
+
+	// Parse serial data
+	parseJSON(response)
+	return nil
 }
 
 func parseJSON(marshalledJSON interface{}) {
