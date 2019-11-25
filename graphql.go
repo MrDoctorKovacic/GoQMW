@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions/stat"
@@ -46,7 +44,7 @@ func executeQuery(query string, schema graphql.Schema) *graphql.Result {
 		RequestString: query,
 	})
 	if len(result.Errors) > 0 {
-		log.Error().Msg(fmt.Sprintf("Unexpected errors: %v", result.Errors))
+		log.Error().Msgf("Unexpected errors: %v", result.Errors)
 	}
 	return result
 }

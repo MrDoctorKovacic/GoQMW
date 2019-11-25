@@ -13,7 +13,7 @@ import (
 
 // OpenSerialPort will return a *serial.Port with the given arguments
 func OpenSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
-	log.Info().Msg(fmt.Sprintf("Opening serial device %s at baud %d", deviceName, baudrate))
+	log.Info().Msgf("Opening serial device %s at baud %d", deviceName, baudrate)
 	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
 	s, err := serial.OpenPort(c)
 	defer s.Close()
@@ -28,7 +28,7 @@ func OpenSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
 func StartSerialComms(deviceName string, baudrate int) {
 	s, err := OpenSerialPort(deviceName, baudrate)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to open serial port %s", deviceName))
+		log.Error().Msgf("Failed to open serial port %s", deviceName)
 		log.Error().Msg(err.Error())
 		return
 	}
@@ -39,11 +39,11 @@ func StartSerialComms(deviceName string, baudrate int) {
 	if mserial.Writer == nil {
 		mserial.Writer = s
 		isWriter = true
-		log.Info().Msg(fmt.Sprintf("Using serial device %s as default writer", deviceName))
+		log.Info().Msgf("Using serial device %s as default writer", deviceName)
 	}
 
 	// Continually read from serial port
-	log.Info().Msg(fmt.Sprintf("Starting new serial reader on device %s", deviceName))
+	log.Info().Msgf("Starting new serial reader on device %s", deviceName)
 	SerialLoop(s, isWriter) // this will block until abrubtly ended
 	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
 
@@ -121,7 +121,7 @@ func parseJSON(marshalledJSON interface{}) {
 		case nil:
 			break
 		default:
-			log.Error().Msg(fmt.Sprintf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value))
+			log.Error().Msgf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value)
 		}
 	}
 }

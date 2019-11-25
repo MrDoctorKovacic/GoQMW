@@ -38,12 +38,12 @@ func PushQueue(command string) {
 	// Send request to pybus server
 	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/%s", command))
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to request %s from pybus: \n %s", command, err.Error()))
+		log.Error().Msgf("Failed to request %s from pybus: \n %s", command, err.Error())
 		return
 	}
 	defer resp.Body.Close()
 
-	log.Debug().Msg(fmt.Sprintf("Added %s to the Pybus Queue", command))
+	log.Debug().Msgf("Added %s to the Pybus Queue", command)
 }
 
 // StartRoutine handles incoming requests to the pybus program, will add routines to the queue
@@ -68,7 +68,7 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 
 // repeatCommand endlessly, helps with request functions
 func repeatCommand(command string, sleepSeconds int) {
-	log.Info().Msg(fmt.Sprintf("Running Pybus command %s every %d seconds", command, sleepSeconds))
+	log.Info().Msgf("Running Pybus command %s every %d seconds", command, sleepSeconds)
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
 		if hasPower, err := sessions.Get("ACC_POWER"); err == nil && hasPower.Value == "TRUE" {
@@ -112,7 +112,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log if requested
-	log.Info().Msg(fmt.Sprintf("Attempting to send command %s to device %s", command, device))
+	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
 	// All I wanted was a moment or two to
 	// See if you could do that switch-a-roo
@@ -219,7 +219,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			mserial.Push(mserial.Writer, "powerOffWireless")
 		}
 	default:
-		log.Error().Msg(fmt.Sprintf("Invalid device %s", device))
+		log.Error().Msgf("Invalid device %s", device)
 		response := format.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
 		format.WriteResponse(&w, r, response)
 		return

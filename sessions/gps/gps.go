@@ -94,10 +94,10 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	if postingString != "" && influx.DB != nil {
 		err := influx.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
 		if err != nil && influx.DB.Started {
-			log.Error().Msg(fmt.Sprintf("Error writing string %s to influx DB: %s", postingString, err.Error()))
+			log.Error().Msgf("Error writing string %s to influx DB: %s", postingString, err.Error())
 			return
 		}
-		log.Debug().Msg(fmt.Sprintf("Logged %s to database", postingString))
+		log.Debug().Msgf("Logged %s to database", postingString)
 	}
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
@@ -161,18 +161,18 @@ func processTimezone() {
 	Location.Mutex.Unlock()
 
 	if err1 != nil {
-		log.Error().Msg(fmt.Sprintf("Error converting lat into float64: %s", err1.Error()))
+		log.Error().Msgf("Error converting lat into float64: %s", err1.Error())
 		return
 	}
 	if err2 != nil {
-		log.Error().Msg(fmt.Sprintf("Error converting long into float64: %s", err2.Error()))
+		log.Error().Msgf("Error converting long into float64: %s", err2.Error())
 		return
 	}
 
 	timezoneName := latlong.LookupZoneName(latFloat, longFloat)
 	newTimezone, err := time.LoadLocation(timezoneName)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Error parsing lat long into location: %s", err.Error()))
+		log.Error().Msgf("Error parsing lat long into location: %s", err.Error())
 		return
 	}
 
@@ -198,5 +198,5 @@ func SetupTimezone(configAddr *map[string]string) {
 
 	// Timezone is not set in config
 	Location.Timezone, _ = time.LoadLocation("UTC")
-	log.Info().Msg(fmt.Sprintf("Set timezone to %s", Location.Timezone.String()))
+	log.Info().Msgf("Set timezone to %s", Location.Timezone.String())
 }

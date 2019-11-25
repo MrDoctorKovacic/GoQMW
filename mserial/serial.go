@@ -3,7 +3,6 @@ package mserial
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -35,7 +34,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 		for deviceName, baudrateString := range serialDevices {
 			deviceBaud, err := strconv.Atoi(baudrateString)
 			if err != nil {
-				log.Error().Msg(fmt.Sprintf("Failed to convert given baudrate string to int. Found values: %s: %s", deviceName, baudrateString))
+				log.Error().Msgf("Failed to convert given baudrate string to int. Found values: %s: %s", deviceName, baudrateString)
 			} else {
 				devices[deviceName] = deviceBaud
 			}
@@ -121,5 +120,5 @@ func write(device *serial.Port, msg string) {
 		return
 	}
 
-	log.Info().Msg(fmt.Sprintf("Successfully wrote %s (%d bytes) to serial.", msg, n))
+	log.Info().Msgf("Successfully wrote %s (%d bytes) to serial.", msg, n)
 }

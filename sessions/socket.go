@@ -27,20 +27,20 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Error().Msg("Error upgrading webstream: " + err.Error())
+		log.Error().Msgf("Error upgrading webstream: %s", err.Error())
 		return
 	}
 	defer c.Close()
 	for {
 		if _, _, err := c.ReadMessage(); err != nil {
-			log.Error().Msg("Error reading from webstream: " + err.Error())
+			log.Error().Msgf("Error reading from webstream: %s", err.Error())
 			break
 		}
 
 		// Pass through lock first
 		writeSession := GetAllMin()
 		if err = c.WriteJSON(writeSession); err != nil {
-			log.Error().Msg("Error writing to webstream: " + err.Error())
+			log.Error().Msgf("Error writing to webstream: %s", err.Error())
 			break
 		}
 	}
@@ -66,7 +66,7 @@ func SetupTokens(configAddr *map[string]string) {
 // and will open a websocket as a client if so
 func CheckServer(host string, token string) {
 	var failedOnce bool
-	log.Info().Msg(fmt.Sprintf("Starting pings to main server at %s", host))
+	log.Info().Msgf("Starting pings to main server at %s", host)
 
 	for {
 		// Start by assuming we're not on LTE, lower the wait time
@@ -89,7 +89,7 @@ func CheckServer(host string, token string) {
 			if !failedOnce {
 				failedOnce = true
 			} else {
-				log.Error().Msg(fmt.Sprintf("Error when pinging the central server.\n%s", err.Error()))
+				log.Error().Msgf("Error when pinging the central server.\n%s", err.Error())
 			}
 		} else {
 			SetValue("LAST_SERVER_RESPONSE", resp.Status)
@@ -108,7 +108,7 @@ func parseMessage(message []byte) *format.JSONResponse {
 	response := format.JSONResponse{}
 	err := json.Unmarshal(message, &response)
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error()))
+		log.Error().Msgf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error())
 		return nil
 	}
 
@@ -120,18 +120,18 @@ func parseMessage(message []byte) *format.JSONResponse {
 			return nil
 		}
 
-		log.Info().Msg(fmt.Sprintf("Websocket read request:  %s", output))
+		log.Info().Msgf("Websocket read request:  %s", output)
 		internalResponse, path, err := getAPIResponse(output)
 		if err != nil {
-			log.Error().Msg("Error from forwarded request websocket: " + err.Error())
+			log.Error().Msgf("Error from forwarded request websocket: %s", err.Error())
 			return nil
 		}
 
-		log.Info().Msg(fmt.Sprintf("API response:  %s", string(internalResponse)))
+		log.Info().Msgf("API response:  %s", string(internalResponse))
 		response := format.JSONResponse{}
 		err = json.Unmarshal(internalResponse, &response)
 		if err != nil {
-			log.Error().Msg("Error marshalling response to websocket: " + err.Error())
+			log.Error().Msgf("Error marshalling response to websocket: %s", err.Error())
 			return nil
 		}
 		response.Method = "response"
@@ -145,7 +145,7 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 	dataArray := strings.Split(dataString, ";")
 	if len(dataArray) != 3 {
 		const errMsg = "Could not break response into core components. Got response: %s"
-		log.Error().Msg(fmt.Sprintf(errMsg, dataString))
+		log.Error().Msgf(errMsg, dataString)
 		return nil, "", fmt.Errorf(errMsg, dataString)
 	}
 
@@ -163,7 +163,7 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 		jsonStr := []byte(postingString)
 		req, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:5353%s", path), bytes.NewBuffer(jsonStr))
 		if err != nil {
-			log.Error().Msg(fmt.Sprintf(errMsg, err.Error()))
+			log.Error().Msgf(errMsg, err.Error())
 			return nil, "", fmt.Errorf(errMsg, err.Error())
 		}
 		req.Header.Set("Content-Type", "application/json")
@@ -174,7 +174,7 @@ func getAPIResponse(dataString string) ([]byte, string, error) {
 	}
 
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf(errMsg, err.Error()))
+		log.Error().Msgf(errMsg, err.Error())
 		return nil, "", fmt.Errorf(errMsg, err.Error())
 	}
 
@@ -188,11 +188,11 @@ func runServerSocket(host string, token string) {
 	// Use of this source code is governed by a BSD-style
 	// license that can be found in the LICENSE file.
 	u := url.URL{Scheme: "ws", Host: host, Path: fmt.Sprintf("/ws/%s", token)}
-	log.Info().Msg(fmt.Sprintf("connecting to %s", u.String()))
+	log.Info().Msgf("connecting to %s", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Error().Msg("Error dialing websocket: " + err.Error())
+		log.Error().Msgf("Error dialing websocket: %s", err.Error())
 		return
 	}
 	defer c.Close()
@@ -203,14 +203,14 @@ func runServerSocket(host string, token string) {
 		defer close(done)
 		err = c.WriteJSON(format.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
 		if err != nil {
-			log.Error().Msg("Error writing to websocket: " + err.Error())
+			log.Error().Msgf("Error writing to websocket: %s", err.Error())
 			return
 		}
 
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Error().Msg(fmt.Sprintf("Error reading from websocket.\nMessage: %s\nError:%s", message, err.Error()))
+				log.Error().Msgf("Error reading from websocket.\nMessage: %s\nError:%s", message, err.Error())
 				return
 			}
 
@@ -223,10 +223,10 @@ func runServerSocket(host string, token string) {
 				log.Printf(fmt.Sprintf("Sending message %s", m))
 				response := parseMessage(m)
 				if response != nil {
-					log.Info().Msg(fmt.Sprintf("Responding with %v", *response))
+					log.Info().Msgf("Responding with %v", *response)
 					err = c.WriteJSON(*response)
 					if err != nil {
-						log.Error().Msg("Error writing to websocket: " + err.Error())
+						log.Error().Msgf("Error writing to websocket: %s", err.Error())
 						return
 					}
 				}

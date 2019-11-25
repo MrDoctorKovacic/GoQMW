@@ -78,13 +78,13 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 func sendServiceCommand(name string, command string) {
 	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
 	if machineServiceAddress == "" {
-		log.Error().Msg(fmt.Sprintf("Device %s address not found, not issuing %s", name, command))
+		log.Error().Msgf("Device %s address not found, not issuing %s", name, command)
 		return
 	}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error()))
+		log.Error().Msgf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
 		return
 	}
 	defer resp.Body.Close()
@@ -253,13 +253,13 @@ func checksumMiddleware(next http.Handler) http.Handler {
 			body, err := ioutil.ReadAll(r.Body)
 			defer r.Body.Close() //  must close
 			if err != nil {
-				log.Error().Msg(fmt.Sprintf("Error reading body: %v", err))
+				log.Error().Msgf("Error reading body: %v", err)
 				format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
 				break
 			}
 
 			if md5.Sum(body) != md5.Sum([]byte(checksum)) {
-				log.Error().Msg(fmt.Sprintf("Invalid checksum %s", checksum))
+				log.Error().Msgf("Invalid checksum %s", checksum)
 				format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
 				break
 			}

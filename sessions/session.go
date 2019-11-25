@@ -63,13 +63,13 @@ func SlackAlert(message string) error {
 	}
 	defer resp.Body.Close()
 
-	log.Info().Msg(fmt.Sprintf("response Status: %s", resp.Status))
-	log.Info().Msg(fmt.Sprintf("response Headers: %s", resp.Header))
+	log.Info().Msgf("response Status: %s", resp.Status)
+	log.Info().Msgf("response Headers: %s", resp.Header)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	log.Info().Msg(fmt.Sprintf("response Body: %s", string(body)))
+	log.Info().Msgf("response Body: %s", string(body))
 	return nil
 }

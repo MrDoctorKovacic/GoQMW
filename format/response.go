@@ -85,7 +85,7 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 				log.Error().Msg(errorText)
 			}
 		}
-		log.Debug().Msg(fmt.Sprintf("Logged request to %s in DB", r.URL.Path))
+		log.Debug().Msgf("Logged request to %s in DB", r.URL.Path)
 	}
 
 	// Log this to debug

@@ -55,7 +55,7 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 	if _lock.errors.target != nil {
-		log.Error().Msg(fmt.Sprintf("Setting Error: %s", _lock.errors.target.Error()))
+		log.Error().Msgf("Setting Error: %s", _lock.errors.target.Error())
 		if _lock.settings.component != "" && _lock.settings.name != "" {
 			log.Error().Msg("Setting read error for AUTOLOCK. Resetting to AUTO")
 			settings.Set(_lock.settings.component, _lock.settings.name, "AUTO")
@@ -93,7 +93,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	sleepEnabled, err := settings.Get("MDROID", "SLEEP")
 
 	if err != nil {
-		log.Error().Msg(fmt.Sprintf("Setting Error: %s", err.Error()))
+		log.Error().Msgf("Setting Error: %s", err.Error())
 		log.Error().Msg("Setting read error for SLEEP. Resetting to AUTO")
 		settings.Set("MDROID", "SLEEP", "AUTO")
 		return
@@ -179,21 +179,21 @@ func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 	// Handle error in fetches
 	if module.errors.target != nil {
-		log.Error().Msg(fmt.Sprintf("Setting Error: %s", module.errors.target.Error()))
+		log.Error().Msgf("Setting Error: %s", module.errors.target.Error())
 		if module.settings.component != "" && module.settings.name != "" {
-			log.Error().Msg(fmt.Sprintf("Setting read error for %s. Resetting to AUTO", name))
+			log.Error().Msgf("Setting read error for %s. Resetting to AUTO", name)
 			settings.Set(module.settings.component, module.settings.name, "AUTO")
 		}
 		return
 	}
 	if module.errors.on != nil {
-		log.Debug().Msg(fmt.Sprintf("Session Error: %s", module.errors.on.Error()))
+		log.Debug().Msgf("Session Error: %s", module.errors.on.Error())
 		return
 	}
 
 	// Add a limit to how many checks can occur
 	if module.lastCheck.target != module.target && time.Since(module.lastCheck.time) < time.Second*3 {
-		log.Info().Msg(fmt.Sprintf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target))
+		log.Info().Msgf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target)
 		return
 	}
 
@@ -207,7 +207,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 	}
 
 	// Log and set next time threshold
-	log.Info().Msg(fmt.Sprintf("Powering off %s, because target is %s", name, module.target))
+	log.Info().Msgf("Powering off %s, because target is %s", name, module.target)
 	module.lastCheck = triggerType{time: time.Now(), target: module.target}
 }
 
