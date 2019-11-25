@@ -111,6 +111,7 @@ func setupSerial() {
 	}
 
 	// Check if serial is required for startup
+	// This allows setting an initial state without incorrectly triggering hooks
 	serialRequiredSetting, ok := configMap["SERIAL_STARTUP"]
 	if ok && serialRequiredSetting == "TRUE" {
 		// Serial is required for setup.
