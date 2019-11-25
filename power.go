@@ -88,6 +88,44 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 	}
 }
 
+// Evaluates if the board should be put to sleep
+func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
+	sleepEnabled, err := settings.Get("MDROID", "SLEEP")
+
+	if err != nil {
+		log.Error().Msg(fmt.Sprintf("Setting Error: %s", err.Error()))
+		log.Error().Msg("Setting read error for SLEEP. Resetting to AUTO")
+		settings.Set("MDROID", "SLEEP", "AUTO")
+		return
+	}
+
+	if sleepEnabled != "AUTO" {
+		return
+	}
+
+	// Instead of power trigger, evaluate here. Sleep every so often
+	now := time.Now().Local()
+	var (
+		isTimeToSleep = false
+		msToSleep     time.Duration
+	)
+	if now.Hour() >= 20 {
+		isTimeToSleep = true
+		msToSleep = (time.Duration(30-now.Hour()) * time.Hour)
+	} else if now.Hour() <= 5 {
+		isTimeToSleep = true
+		msToSleep = (time.Duration(6-now.Hour()) * time.Hour)
+	}
+	msToSleep = msToSleep + time.Duration(60-now.Minute())*time.Minute
+	msToSleep = msToSleep + time.Duration(60-now.Second())*time.Second
+	shouldTrigger := !accOn && wifiOn && keyIsIn == "FALSE" && isTimeToSleep
+
+	if shouldTrigger {
+		log.Info().Msgf("Going to sleep now, for %d minutes", msToSleep.Minutes())
+		//mserial.Push(mserial.Writer, fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
+	}
+}
+
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower(keyIsIn string) {
 	_angel.isOn, _angel.errors.on = sessions.GetBool("ANGEL_EYES_POWER")
