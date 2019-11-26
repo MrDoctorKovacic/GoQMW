@@ -65,7 +65,7 @@ func parseConfig() {
 		// Get status of door locks by quickly toggling them
 		go func() {
 			mserial.Push(mserial.Writer, "toggleDoorLocks")
-			time.Sleep(time.Second * 1)
+			time.Sleep(time.Second * 2)
 			mserial.Push(mserial.Writer, "toggleDoorLocks")
 		}()
 	}
