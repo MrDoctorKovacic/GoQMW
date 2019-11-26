@@ -16,7 +16,6 @@ func OpenSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
 	log.Info().Msgf("Opening serial device %s at baud %d", deviceName, baudrate)
 	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
 	s, err := serial.OpenPort(c)
-	defer s.Close()
 	if err != nil {
 		return nil, err
 	}
