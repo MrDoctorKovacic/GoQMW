@@ -67,11 +67,13 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 	if _lock.target == "AUTO" && shouldTrigger {
 		lastLock, err := sessions.Get("DOORS_LOCKED")
 		if err != nil {
-			log.Error().Msg(err.Error())
+			// Don't log, likely just doesn't exist in session yet
+			return
 		}
 		lockToggleTime, err := time.Parse("", lastLock.LastUpdate)
 		if err != nil {
 			log.Error().Msg(err.Error())
+			return
 		}
 
 		// For debugging
