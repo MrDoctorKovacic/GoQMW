@@ -127,7 +127,7 @@ func parseMessage(message []byte) *format.JSONResponse {
 			return nil
 		}
 
-		log.Info().Msgf("API response:  %s", string(internalResponse))
+		log.Debug().Msgf("API response:  %s", string(internalResponse))
 		response := format.JSONResponse{}
 		err = json.Unmarshal(internalResponse, &response)
 		if err != nil {
