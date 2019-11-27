@@ -112,17 +112,16 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
+	// If the car's ACC power isn't on, it won't be ready for requests. Wake it up first
+	/*if !sessions.GetBoolDefault("ACC_POWER", false) {
+		PushQueue("requestVehicleStatus") // this will be swallowed
+	}*/
+
 	// All I wanted was a moment or two to
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
 		doorStatus, _ := sessions.Get("DOORS_LOCKED")
-
-		// Since this toggles, we should only do lock/unlock the doors if there's a known state
-		/*if err != nil && !isPositive {
-			log.Info().Msg("Door status is unknown, but we're locking. Go through the pybus")
-			PushQueue("lockDoors")
-		} else*/
 		if mserial.Writer != nil && isPositive && doorStatus.Value == "FALSE" ||
 			mserial.Writer != nil && !isPositive && doorStatus.Value == "TRUE" {
 			mserial.PushText("toggleDoorLocks")
