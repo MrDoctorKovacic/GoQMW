@@ -127,7 +127,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		} else*/
 		if mserial.Writer != nil && isPositive && doorStatus.Value == "FALSE" ||
 			mserial.Writer != nil && !isPositive && doorStatus.Value == "TRUE" {
-			mserial.Push(mserial.Writer, "toggleDoorLocks")
+			mserial.PushText("toggleDoorLocks")
 		}
 	case "WINDOW":
 		if command == "POPDOWN" {
@@ -203,20 +203,20 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			settings.Set("BOARD", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("BOARD", "POWER", "ON")
-			mserial.Push(mserial.Writer, "powerOnBoard")
+			mserial.PushText("powerOnBoard")
 		} else {
 			settings.Set("BOARD", "POWER", "OFF")
-			mserial.Push(mserial.Writer, "powerOffBoard")
+			mserial.PushText("powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
 		if format.Name(command) == "AUTO" {
 			settings.Set("WIRELESS", "POWER", "AUTO")
 		} else if isPositive {
 			settings.Set("WIRELESS", "POWER", "ON")
-			mserial.Push(mserial.Writer, "powerOnWireless")
+			mserial.PushText("powerOnWireless")
 		} else {
 			settings.Set("WIRELESS", "POWER", "OFF")
-			mserial.Push(mserial.Writer, "powerOffWireless")
+			mserial.PushText("powerOffWireless")
 		}
 	default:
 		log.Error().Msgf("Invalid device %s", device)
