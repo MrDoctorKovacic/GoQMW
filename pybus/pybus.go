@@ -110,8 +110,6 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		log.Error().Msg(err.Error())
 		return
 	}
-
-	// Log if requested
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
 	// All I wanted was a moment or two to
@@ -128,6 +126,8 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		if mserial.Writer != nil && isPositive && doorStatus.Value == "FALSE" ||
 			mserial.Writer != nil && !isPositive && doorStatus.Value == "TRUE" {
 			mserial.PushText("toggleDoorLocks")
+		} else {
+			log.Info().Msgf("Request to %s doors denied, door status is %s", command, doorStatus.Value)
 		}
 	case "WINDOW":
 		if command == "POPDOWN" {
