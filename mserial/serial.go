@@ -57,7 +57,7 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if params["command"] != "" {
-		PushText(params["command"])
+		AwaitText(params["command"])
 	}
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 }
