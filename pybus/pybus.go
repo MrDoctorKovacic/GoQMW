@@ -81,9 +81,7 @@ func repeatCommand(command string, sleepSeconds int) {
 func waitUntilOnline() {
 	log.Info().Msg("Waiting for pybus to come online...")
 	for {
-		resp, _ := http.Get("http://localhost:8080/")
-		if resp != nil && resp.StatusCode == 404 {
-			log.Info().Msg("Pybus is now online")
+		if _, err := http.Get("http://localhost:8080/"); err == nil {
 			break
 		}
 		time.Sleep(time.Millisecond * 100)
