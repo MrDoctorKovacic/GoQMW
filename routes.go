@@ -57,7 +57,10 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
-	sendServiceCommand(format.Name(machine), "reboot")
+	err := sendServiceCommand(format.Name(machine), "reboot")
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
 }
 
 // Shutdown the current machine
@@ -71,23 +74,29 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	}
 
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
-	sendServiceCommand(machine, "shutdown")
+	err := sendServiceCommand(machine, "shutdown")
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
 }
 
 // sendServiceCommand sends a command to a network machine, using a simple python server to recieve
-func sendServiceCommand(name string, command string) {
+func sendServiceCommand(name string, command string) error {
 	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
 	if machineServiceAddress == "" {
-		log.Error().Msgf("Device %s address not found, not issuing %s", name, command)
-		return
+		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
+		//log.Error().Msgf("Device %s address not found, not issuing %s", name, command)
+		//return
 	}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
-		log.Error().Msgf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
-		return
+		return fmt.Errorf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
+		//log.Error().Msgf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
+		//return
 	}
-	defer resp.Body.Close()
+
+	return resp.Body.Close()
 }
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
