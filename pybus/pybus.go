@@ -197,7 +197,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		default:
 			PushQueue("pressStereoPower")
 		}
-	case "LUCIO", "CAMERA", "BOARD":
+	case "AZMODAN", "CAMERA", "BOARD":
 		if format.Name(command) == "AUTO" {
 			settings.Set("BOARD", "POWER", "AUTO")
 		} else if isPositive {
