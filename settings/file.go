@@ -64,7 +64,7 @@ func parseFile(filename string) (map[string]map[string]string, error) {
 // writeFile to given file, TODO: create one if it doesn't exist
 func writeFile(file string) error {
 	Settings.mutex.Lock()
-	settingsJSON, err := json.Marshal(Settings.Data)
+	settingsJSON, err := json.MarshalIndent(Settings.Data, "", "\t")
 	Settings.mutex.Unlock()
 
 	if err != nil {
