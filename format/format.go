@@ -82,3 +82,13 @@ func NewUUID() (string, error) {
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 	return uuid, nil
 }
+
+// NewShortUUID is similar to NewUUID, but only the first chunk
+func NewShortUUID() (string, error) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", b[0:4]), nil
+}

@@ -96,7 +96,7 @@ func PushText(message string) {
 
 // Await queues a message for writing, and waits for it to be sent
 func Await(m *Message) error {
-	m.UUID, _ = format.NewUUID()
+	m.UUID, _ = format.NewShortUUID()
 	m.isComplete = make(chan error)
 	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
 	Push(m)
@@ -107,7 +107,7 @@ func Await(m *Message) error {
 
 // AwaitText creates a new message with the default writer, appends it for sending, and waits for it to be sent
 func AwaitText(message string) error {
-	uuid, _ := format.NewUUID()
+	uuid, _ := format.NewShortUUID()
 	m := &Message{Device: Writer, Text: message, isComplete: make(chan error), UUID: uuid}
 	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
 	Push(m)
