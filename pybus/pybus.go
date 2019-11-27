@@ -78,6 +78,20 @@ func repeatCommand(command string, sleepSeconds int) {
 	}
 }
 
+func waitUntilOnline() {
+	log.Info().Msg("Waiting for pybus to come online...")
+	for {
+		resp, err := http.Get("http://localhost:8080/")
+		if err != nil {
+			if resp.StatusCode == 404 {
+				log.Info().Msg("Pybus is now online")
+				break
+			}
+		}
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
 // StartRepeats that will send a command only on ACC power
 func StartRepeats() {
 	go repeatCommand("requestIgnitionStatus", 10)
@@ -90,6 +104,7 @@ func StartRepeats() {
 
 // RunStartup queues the startup scripts to gather initial data from PyBus
 func RunStartup() {
+	waitUntilOnline()
 	go PushQueue("requestIgnitionStatus")
 	go PushQueue("requestLampStatus")
 	go PushQueue("requestVehicleStatus")
