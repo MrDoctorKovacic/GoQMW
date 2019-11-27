@@ -193,10 +193,8 @@ func startRouter() {
 	//
 	// Serial routes
 	//
-	router.HandleFunc("/serial/{command}/{checksum}", mserial.WriteSerialHandler).Methods("POST")
-	router.HandleFunc("/serial/{command}", mserial.WriteSerialHandler).Methods("POST")
-	router.HandleFunc("/serial/{command}/{checksum}", mserial.WriteSerialHandler).Methods("GET")
-	router.HandleFunc("/serial/{command}", mserial.WriteSerialHandler).Methods("GET")
+	router.HandleFunc("/serial/{command}/{checksum}", mserial.WriteSerialHandler).Methods("POST", "GET")
+	router.HandleFunc("/serial/{command}", mserial.WriteSerialHandler).Methods("POST", "GET")
 
 	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
