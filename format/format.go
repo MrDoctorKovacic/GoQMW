@@ -2,6 +2,7 @@
 package format
 
 import (
+	"crypto/rand"
 	"fmt"
 	"regexp"
 	"strings"
@@ -67,4 +68,17 @@ func StringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+// NewUUID generates an ID (not RFC 4122 compliant)
+// https://yourbasic.org/golang/generate-uuid-guid/
+func NewUUID() (string, error) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	uuid := fmt.Sprintf("%x-%x-%x-%x-%x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return uuid, nil
 }
