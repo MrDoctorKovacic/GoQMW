@@ -76,9 +76,7 @@ func Push(device *serial.Port, msg string) {
 		writeQueue[device] = []string{}
 	}
 
-	if !format.StringInSlice(msg, writeQueue[device]) {
-		writeQueue[device] = append(writeQueue[device], msg)
-	}
+	writeQueue[device] = append(writeQueue[device], msg)
 }
 
 // Pop the last message off the queue and write it to the respective serial
