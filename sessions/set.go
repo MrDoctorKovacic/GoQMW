@@ -88,9 +88,6 @@ func Set(newPackage Data) error {
 	// Trim off whitespace
 	newPackage.Value = strings.TrimSpace(newPackage.Value)
 
-	// Log if requested
-	log.Debug().Msgf("Responding to request for session key %s = %s", newPackage.Name, newPackage.Value)
-
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
 	// Update number of session values

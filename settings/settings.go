@@ -116,12 +116,10 @@ func GetComponent(componentName string) (map[string]string, error) {
 
 // Get returns all the values of a specific setting
 func Get(componentName string, settingName string) (string, error) {
-	componentName = format.Name(componentName)
-	log.Debug().Msgf("Responding to request for setting component %s", componentName)
-
 	Settings.mutex.RLock()
 	defer Settings.mutex.RUnlock()
-	component, ok := Settings.Data[componentName]
+
+	component, ok := Settings.Data[format.Name(componentName)]
 	if ok {
 		setting, ok := component[settingName]
 		if ok {

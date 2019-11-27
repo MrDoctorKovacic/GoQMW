@@ -67,10 +67,6 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 
 // Get returns the named session, if it exists. Nil otherwise
 func Get(name string) (data Data, err error) {
-
-	// Log if requested
-	log.Debug().Msgf("Responding to request for session value %s", name)
-
 	session.Mutex.RLock()
 	defer session.Mutex.RUnlock()
 	sessionValue, ok := session.data[name]
