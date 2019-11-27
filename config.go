@@ -52,6 +52,11 @@ func parseConfig() {
 		return // abort config
 	}
 
+	// Enable debugging from settings
+	if debuggingEnabled, ok := configMap["DEBUG"]; ok && debuggingEnabled == "TRUE" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
 	sessions.SetupTokens(&configMap)
