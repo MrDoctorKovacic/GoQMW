@@ -119,7 +119,6 @@ func Set(newPackage Data) error {
 			}
 			return fmt.Errorf(errorText)
 		}
-		log.Debug().Msgf("Logged %s=%s to database", newPackage.Name, newPackage.Value)
 	}
 
 	return nil
