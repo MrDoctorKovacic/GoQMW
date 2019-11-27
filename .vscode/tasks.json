@@ -22,6 +22,14 @@
                 "isDefault": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Build All",
+            "dependsOn": ["Build MUSL", "x86"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
         }
     ]
 }
