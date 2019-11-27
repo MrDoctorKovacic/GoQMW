@@ -25,11 +25,15 @@
         },
         {
             "label": "Build All",
-            "dependsOn": ["Build MUSL", "x86"],
+            "dependsOn": [
+                "Build MUSL",
+                "Build x86"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
+            "problemMatcher": []
         }
     ]
 }
