@@ -109,7 +109,10 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 		}
 
 		//_lock.lastCheck = triggerType{time: time.Now(), target: _lock.target}
-		mserial.AwaitText("toggleDoorLocks")
+		err = mserial.AwaitText("toggleDoorLocks")
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
 	}
 }
 
@@ -258,8 +261,14 @@ func gracefulShutdown(name string) {
 			log.Error().Msg(err.Error())
 		}
 		time.Sleep(time.Second * 10)
-		mserial.AwaitText(serialCommand)
+		err = mserial.AwaitText(serialCommand)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
 	} else {
-		mserial.AwaitText(serialCommand)
+		err := mserial.AwaitText(serialCommand)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
 	}
 }
