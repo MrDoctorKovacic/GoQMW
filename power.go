@@ -31,8 +31,14 @@ type errorType struct {
 }
 
 type powerStats struct {
-	time   time.Time
+	powerOnTime      time.Time
+	lastTrigger      powerTrigger
+	workingOnRequest bool
+}
+
+type powerTrigger struct {
 	target string
+	time   time.Time
 }
 
 // Read the target action based on current ACC Power value
@@ -44,8 +50,25 @@ var (
 	_board    = device{settings: settingDef{component: "BOARD", name: "POWER"}}
 )
 
+func (ps *powerStats) startRequest() {
+	ps.workingOnRequest = true
+}
+
+func (ps *powerStats) endRequest() {
+	ps.workingOnRequest = false
+}
+
 // Evaluates if the doors should be locked
 func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
+	// Check if request is already being made
+	if _lock.powerStats.workingOnRequest {
+		return
+	}
+
+	// Very dumb lock to shoot down spam requests
+	_lock.powerStats.startRequest()
+	defer _lock.powerStats.endRequest()
+
 	_lock.isOn, _lock.errors.on = sessions.GetBool("DOORS_LOCKED")
 	_lock.target, _lock.errors.target = settings.Get(_lock.settings.component, _lock.settings.name)
 	shouldTrigger := !_lock.isOn && !accOn && !wifiOn && keyIsIn == "FALSE"
@@ -86,7 +109,7 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 		}
 
 		//_lock.lastCheck = triggerType{time: time.Now(), target: _lock.target}
-		mserial.Push(mserial.Writer, "toggleDoorLocks")
+		mserial.AwaitText("toggleDoorLocks")
 	}
 }
 
@@ -125,6 +148,8 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	if shouldTrigger {
 		log.Info().Msgf("Going to sleep now, for %f minutes", msToSleep.Minutes())
 		//mserial.Push(mserial.Writer, fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
+		// shutdown now
+		//sendServiceCommand("MDROID", "shutdown")
 	}
 }
 
@@ -179,6 +204,15 @@ func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 
 // Error check against module's status fetches, then check if we're powering on or off
 func genericPowerTrigger(shouldBeOn bool, name string, module *device) {
+	// Check if request is already being made
+	if module.powerStats.workingOnRequest {
+		return
+	}
+
+	// Very dumb lock to shoot down spam requests
+	module.powerStats.startRequest()
+	defer module.powerStats.endRequest()
+
 	// Handle error in fetches
 	if module.errors.target != nil {
 		log.Error().Msgf("Setting Error: %s", module.errors.target.Error())
@@ -194,23 +228,24 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *device) {
 	}
 
 	// Add a limit to how many checks can occur
-	if module.powerStats.target != module.target && time.Since(module.powerStats.time) < time.Second*3 {
+	if module.powerStats.lastTrigger.target != module.target && time.Since(module.powerStats.lastTrigger.time) < time.Second*3 {
 		log.Info().Msgf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target)
 		return
 	}
 
 	// Evaluate power target with trigger and settings info
 	if (module.target == "AUTO" && !module.isOn && shouldBeOn) || (module.target == "ON" && !module.isOn) {
-		mserial.Push(mserial.Writer, fmt.Sprintf("powerOn%s", name))
+		message := mserial.Message{Device: mserial.Writer, Text: fmt.Sprintf("powerOn%s", name)}
+		mserial.Await(&message)
 	} else if (module.target == "AUTO" && module.isOn && !shouldBeOn) || (module.target == "OFF" && module.isOn) {
-		go gracefulShutdown(name)
+		gracefulShutdown(name)
 	} else {
 		return
 	}
 
 	// Log and set next time threshold
 	log.Info().Msgf("Powering off %s, because target is %s", name, module.target)
-	module.powerStats = powerStats{time: time.Now(), target: module.target}
+	module.powerStats.lastTrigger = powerTrigger{time: time.Now(), target: module.target}
 }
 
 // Some shutdowns are more complicated than others, ensure we shut down safely
@@ -218,10 +253,13 @@ func gracefulShutdown(name string) {
 	serialCommand := fmt.Sprintf("powerOff%s", name)
 
 	if name == "Board" || name == "Wireless" {
-		sendServiceCommand(format.Name(name), "shutdown")
+		err := sendServiceCommand(format.Name(name), "shutdown")
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
 		time.Sleep(time.Second * 10)
-		mserial.Push(mserial.Writer, serialCommand)
+		mserial.AwaitText(serialCommand)
 	} else {
-		mserial.Push(mserial.Writer, serialCommand)
+		mserial.AwaitText(serialCommand)
 	}
 }
