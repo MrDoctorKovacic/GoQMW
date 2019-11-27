@@ -11,16 +11,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Define temporary holding struct for power values
-type power struct {
-	isOn      bool
-	target    string
-	lastCheck triggerType
-	settings  settingType
-	errors    errorType
+// Define temporary holding struct for device values
+type device struct {
+	isOn       bool
+	target     string
+	settings   settingDef
+	errors     errorType
+	powerStats powerStats
 }
 
-type settingType struct {
+type settingDef struct {
 	component string
 	name      string
 }
@@ -30,18 +30,18 @@ type errorType struct {
 	on     error
 }
 
-type triggerType struct {
+type powerStats struct {
 	time   time.Time
 	target string
 }
 
 // Read the target action based on current ACC Power value
 var (
-	_lock     = power{settings: settingType{component: "MDROID", name: "AUTOLOCK"}}
-	_wireless = power{settings: settingType{component: "WIRELESS", name: "POWER"}}
-	_angel    = power{settings: settingType{component: "ANGEL_EYES", name: "POWER"}}
-	_tablet   = power{settings: settingType{component: "TABLET", name: "POWER"}}
-	_board    = power{settings: settingType{component: "BOARD", name: "POWER"}}
+	_lock     = device{settings: settingDef{component: "MDROID", name: "AUTOLOCK"}}
+	_wireless = device{settings: settingDef{component: "WIRELESS", name: "POWER"}}
+	_angel    = device{settings: settingDef{component: "ANGEL_EYES", name: "POWER"}}
+	_tablet   = device{settings: settingDef{component: "TABLET", name: "POWER"}}
+	_board    = device{settings: settingDef{component: "BOARD", name: "POWER"}}
 )
 
 // Evaluates if the doors should be locked
@@ -178,7 +178,7 @@ func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
-func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
+func genericPowerTrigger(shouldBeOn bool, name string, module *device) {
 	// Handle error in fetches
 	if module.errors.target != nil {
 		log.Error().Msgf("Setting Error: %s", module.errors.target.Error())
@@ -194,7 +194,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 	}
 
 	// Add a limit to how many checks can occur
-	if module.lastCheck.target != module.target && time.Since(module.lastCheck.time) < time.Second*3 {
+	if module.powerStats.target != module.target && time.Since(module.powerStats.time) < time.Second*3 {
 		log.Info().Msgf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target)
 		return
 	}
@@ -210,7 +210,7 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *power) {
 
 	// Log and set next time threshold
 	log.Info().Msgf("Powering off %s, because target is %s", name, module.target)
-	module.lastCheck = triggerType{time: time.Now(), target: module.target}
+	module.powerStats = powerStats{time: time.Now(), target: module.target}
 }
 
 // Some shutdowns are more complicated than others, ensure we shut down safely
