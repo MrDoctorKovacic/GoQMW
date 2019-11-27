@@ -88,6 +88,29 @@ func StartRepeats() {
 	go repeatCommand("requestTemperatureStatus", 120)
 }
 
+// RunStartup queues the startup scripts to gather initial data from PyBus
+func RunStartup() {
+	go PushQueue("requestIgnitionStatus")
+	go PushQueue("requestLampStatus")
+	go PushQueue("requestVehicleStatus")
+	go PushQueue("requestOdometer")
+	go PushQueue("requestTimeStatus")
+	go PushQueue("requestTemperatureStatus")
+
+	// Get status of door locks by quickly toggling them
+	/*
+		go func() {
+			err := mserial.AwaitText("toggleDoorLocks")
+			if err != nil {
+				log.Error().Msg(err.Error())
+			}
+			err = mserial.AwaitText("toggleDoorLocks")
+			if err != nil {
+				log.Error().Msg(err.Error())
+			}
+		}()*/
+}
+
 // ParseCommand is a list of pre-approved routes to PyBus for easier routing
 // These GET requests can be used instead of knowing the implementation function in pybus
 // and are actually preferred, since we can handle strange cases
