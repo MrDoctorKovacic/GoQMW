@@ -64,9 +64,8 @@ func parseConfig() {
 		pybus.StartRepeats()
 		// Get status of door locks by quickly toggling them
 		go func() {
-			mserial.PushText("toggleDoorLocks")
-			time.Sleep(time.Second * 2)
-			mserial.PushText("toggleDoorLocks")
+			mserial.AwaitText("toggleDoorLocks")
+			mserial.AwaitText("toggleDoorLocks")
 		}()
 	}
 	log.Info().Msg("Configuration complete, starting server...")
