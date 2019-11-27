@@ -94,7 +94,7 @@ func (db *Influx) Write(msg string) error {
 			if err != nil {
 				return err
 			}
-			return fmt.Errorf("Database is not online")
+			return nil
 		}
 		db.Started = true
 	}
