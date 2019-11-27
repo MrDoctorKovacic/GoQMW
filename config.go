@@ -61,18 +61,8 @@ func parseConfig() {
 
 	// Set up pybus repeat commands
 	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
+		pybus.RunStartup()
 		pybus.StartRepeats()
-		// Get status of door locks by quickly toggling them
-		go func() {
-			err := mserial.AwaitText("toggleDoorLocks")
-			if err != nil {
-				log.Error().Msg(err.Error())
-			}
-			err = mserial.AwaitText("toggleDoorLocks")
-			if err != nil {
-				log.Error().Msg(err.Error())
-			}
-		}()
 	}
 	log.Info().Msg("Configuration complete, starting server...")
 }
