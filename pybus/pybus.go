@@ -71,7 +71,7 @@ func repeatCommand(command string, sleepSeconds int) {
 	log.Info().Msgf("Running Pybus command %s every %d seconds", command, sleepSeconds)
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
-		if hasPower, err := sessions.Get("ACC_POWER"); err == nil && hasPower.Value == "TRUE" {
+		if sessions.GetBoolDefault("ACC_POWER", false) {
 			PushQueue(command)
 		}
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
