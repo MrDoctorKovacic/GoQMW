@@ -19,6 +19,7 @@ type Message struct {
 	Device     *serial.Port
 	Text       string
 	isComplete chan error
+	UUID       string
 }
 
 var (
@@ -95,17 +96,23 @@ func PushText(message string) {
 
 // Await queues a message for writing, and waits for it to be sent
 func Await(m *Message) error {
+	m.UUID, _ = format.NewUUID()
 	m.isComplete = make(chan error)
+	log.Info().Msgf("Awaiting serial message write %s", m.UUID)
 	Push(m)
 	err := <-m.isComplete
+	log.Info().Msgf("Message write %s is complete", m.UUID)
 	return err
 }
 
 // AwaitText creates a new message with the default writer, appends it for sending, and waits for it to be sent
 func AwaitText(message string) error {
-	m := &Message{Device: Writer, Text: message, isComplete: make(chan error)}
+	uuid, _ := format.NewUUID()
+	m := &Message{Device: Writer, Text: message, isComplete: make(chan error), UUID: uuid}
+	log.Info().Msgf("Awaiting serial message write %s", m.UUID)
 	Push(m)
 	err := <-m.isComplete
+	log.Info().Msgf("Message write %s is complete", m.UUID)
 	return err
 }
 
