@@ -98,10 +98,10 @@ func PushText(message string) {
 func Await(m *Message) error {
 	m.UUID, _ = format.NewUUID()
 	m.isComplete = make(chan error)
-	log.Info().Msgf("Awaiting serial message write %s", m.UUID)
+	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
 	Push(m)
 	err := <-m.isComplete
-	log.Info().Msgf("Message write %s is complete", m.UUID)
+	log.Info().Msgf("[%s] Message write is complete", m.UUID)
 	return err
 }
 
@@ -109,10 +109,10 @@ func Await(m *Message) error {
 func AwaitText(message string) error {
 	uuid, _ := format.NewUUID()
 	m := &Message{Device: Writer, Text: message, isComplete: make(chan error), UUID: uuid}
-	log.Info().Msgf("Awaiting serial message write %s", m.UUID)
+	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
 	Push(m)
 	err := <-m.isComplete
-	log.Info().Msgf("Message write %s is complete", m.UUID)
+	log.Info().Msgf("[%s] Message write is complete", m.UUID)
 	return err
 }
 
@@ -133,25 +133,29 @@ func Pop(device *serial.Port) {
 	var msg *Message
 	msg, writeQueue[device] = writeQueue[device][len(writeQueue[device])-1], writeQueue[device][:len(writeQueue[device])-1]
 
-	err := write(msg.Device, msg.Text)
+	err := write(msg)
 	msg.isComplete <- err
 }
 
 // write pushes out a message to the open serial port
-func write(device *serial.Port, msg string) error {
-	if device == nil {
+func write(msg *Message) error {
+	if msg.Device == nil {
 		return fmt.Errorf("Serial port is not set, nothing to write to")
 	}
 
-	if len(msg) == 0 {
+	if len(msg.Text) == 0 {
 		return fmt.Errorf("Empty message, not writing to serial")
 	}
 
-	n, err := device.Write([]byte(msg))
+	n, err := msg.Device.Write([]byte(msg.Text))
 	if err != nil {
 		return fmt.Errorf("Failed to write to serial port: %s", err.Error())
 	}
 
-	log.Info().Msgf("Successfully wrote %s (%d bytes) to serial.", msg, n)
+	if msg.UUID == "" {
+		log.Info().Msgf("Successfully wrote %s (%d bytes) to serial.", msg.Text, n)
+	} else {
+		log.Info().Msgf("[%s] Successfully wrote %s (%d bytes) to serial.", msg.UUID, msg.Text, n)
+	}
 	return nil
 }
