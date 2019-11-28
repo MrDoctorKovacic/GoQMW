@@ -36,15 +36,14 @@ func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error 
 	for key, value := range *data {
 		switch vv := value.(type) {
 		case bool:
-			stmt.WriteString(fmt.Sprintf("%s=%v", key, vv))
+			stmt.WriteString(fmt.Sprintf("%v=%v,", key, vv))
 		case string:
-			stmt.WriteString(fmt.Sprintf("%s=\"%v\"", key, vv))
+			stmt.WriteString(fmt.Sprintf("%v=\"%v\",", key, vv))
 		case int, int64, float32, float64:
-			stmt.WriteString(fmt.Sprintf("%s=%f", key, value))
+			stmt.WriteString(fmt.Sprintf("%v=%f,", key, value))
 		default:
 			return fmt.Errorf("Cannot process type of %v", vv)
 		}
-
 	}
 	return nil
 }
