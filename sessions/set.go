@@ -105,7 +105,7 @@ func Set(newPackage Data) error {
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		valueString := fmt.Sprintf("value=%s", newPackage.Value)
 		if _, err := strconv.ParseFloat(newPackage.Value, 32); err != nil {
-			valueString = fmt.Sprintf("value_string=\"%s\"", newPackage.Value)
+			valueString = fmt.Sprintf("value=\"%s\"", newPackage.Value)
 		}
 
 		// In Sessions, all values come in and out as strings regardless,

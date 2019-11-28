@@ -33,12 +33,14 @@ func (db *Influx) Ping() (bool, error) {
 
 // Helper function to parse interfaces as an influx string
 func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error {
-	for name, value := range *data {
+	for key, value := range *data {
 		switch vv := value.(type) {
-		case string, bool:
-			stmt.WriteString(fmt.Sprintf("%s=\"%v\"", name, vv))
+		case bool:
+			stmt.WriteString(fmt.Sprintf("%s=%v", key, vv))
+		case string:
+			stmt.WriteString(fmt.Sprintf("%s=\"%v\"", key, vv))
 		case int, int64, float32, float64:
-			stmt.WriteString(fmt.Sprintf("%s=%f", name, value))
+			stmt.WriteString(fmt.Sprintf("%s=%f", key, value))
 		default:
 			return fmt.Errorf("Cannot process type of %v", vv)
 		}
