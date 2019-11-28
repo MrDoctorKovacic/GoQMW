@@ -3,6 +3,7 @@ package influx
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/parnurzeal/gorequest"
@@ -76,9 +77,11 @@ func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields
 		return err
 	}
 
+	writeString := stmt.String()
+
 	// Pass string we've built to write function
-	if err := db.Write(stmt.String()); err != nil {
-		return fmt.Errorf("Error writing %s to influx DB:\n%s", stmt.String(), err.Error())
+	if err := db.Write(writeString); err != nil {
+		return fmt.Errorf("Error writing %s to influx DB:\n%s", writeString, err.Error())
 	}
 
 	// Debug log and return
@@ -100,9 +103,17 @@ func (db *Influx) Write(msg string) error {
 	}
 
 	request := gorequest.New()
-	_, _, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
+	resp, _, errs := request.Post(db.Host + "/write?db=" + db.Database).Type("text").Send(msg).End()
 	if errs != nil {
 		return errs[0]
+	}
+
+	if resp.StatusCode != 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("InfluxDB write failed. Response code %d, body: %s", resp.StatusCode, body)
 	}
 
 	return nil
