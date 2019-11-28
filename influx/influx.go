@@ -38,6 +38,7 @@ func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error 
 		if counter > 0 {
 			stmt.WriteString(",")
 		}
+		counter++
 
 		// Parse based on data type
 		switch vv := value.(type) {
