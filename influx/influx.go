@@ -110,7 +110,7 @@ func (db *Influx) Write(msg string) error {
 		return errs[0]
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
