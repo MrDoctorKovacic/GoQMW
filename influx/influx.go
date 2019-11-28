@@ -113,7 +113,7 @@ func (db *Influx) Write(msg string) error {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("InfluxDB write failed. Response code %d, body: %s", resp.StatusCode, body)
+		return fmt.Errorf("InfluxDB write failed with code %d. Request: %s \nResponse body: %s", resp.StatusCode, request.Data, body)
 	}
 
 	return nil
