@@ -33,20 +33,26 @@ func (db *Influx) Ping() (bool, error) {
 
 // Helper function to parse interfaces as an influx string
 func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error {
+	counter := 0
 	for key, value := range *data {
+		if counter > 0 {
+			stmt.WriteString(",")
+		}
+
+		// Parse based on data type
 		switch vv := value.(type) {
 		case bool:
-			stmt.WriteString(fmt.Sprintf("%s=%v,", key, vv))
+			stmt.WriteString(fmt.Sprintf("%s=%v", key, vv))
 		case string:
-			stmt.WriteString(fmt.Sprintf("%s=\"%v\",", key, vv))
+			stmt.WriteString(fmt.Sprintf("%s=\"%v\"", key, vv))
 		case int:
-			stmt.WriteString(fmt.Sprintf("%s=%d,", key, int(vv)))
+			stmt.WriteString(fmt.Sprintf("%s=%d", key, int(vv)))
 		case int64:
-			stmt.WriteString(fmt.Sprintf("%s=%d,", key, int(vv)))
+			stmt.WriteString(fmt.Sprintf("%s=%d", key, int(vv)))
 		case float32:
-			stmt.WriteString(fmt.Sprintf("%s=%f,", key, float64(vv)))
+			stmt.WriteString(fmt.Sprintf("%s=%f", key, float64(vv)))
 		case float64:
-			stmt.WriteString(fmt.Sprintf("%s=%f,", key, float64(vv)))
+			stmt.WriteString(fmt.Sprintf("%s=%f", key, float64(vv)))
 		default:
 			return fmt.Errorf("Cannot process type of %v", vv)
 		}
@@ -72,7 +78,7 @@ func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields
 
 	// Check if any tags were added. If not, remove the trailing comma
 	if tagstring.String() != "" {
-		stmt.WriteRune(',')
+		//stmt.WriteRune(',')
 	}
 
 	// Space between tags and fields
