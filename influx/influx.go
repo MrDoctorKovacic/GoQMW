@@ -70,7 +70,6 @@ func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields
 	// Prepare new insert statement
 	var stmt strings.Builder
 	stmt.WriteString(measurement)
-	stmt.WriteRune(',')
 
 	// Write tags first
 	var tagstring strings.Builder
@@ -80,7 +79,7 @@ func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields
 
 	// Check if any tags were added. If not, remove the trailing comma
 	if tagstring.String() != "" {
-		//stmt.WriteRune(',')
+		stmt.WriteRune(',')
 	}
 
 	// Space between tags and fields
