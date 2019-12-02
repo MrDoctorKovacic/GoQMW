@@ -70,7 +70,7 @@ func (db *Influx) Insert(measurement string, tags map[string]interface{}, fields
 	// Prepare new insert statement
 	var stmt strings.Builder
 	stmt.WriteString(measurement)
-	stmt.WriteRune(' ')
+	stmt.WriteRune(',')
 
 	// Write tags first
 	var tagstring strings.Builder
