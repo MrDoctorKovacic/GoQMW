@@ -139,6 +139,7 @@ func accPower(hook *sessions.Data) {
 	go evalVideoPower(keyIsIn, accOn, wifiOn)
 	go evalTabletPower(keyIsIn, accOn, wifiOn)
 	go evalAutoLock(keyIsIn, accOn, wifiOn)
+	go evalAutoSleep(keyIsIn, accOn, wifiOn)
 }
 
 // When wireless is turned off, we can infer that LTE is also off
