@@ -85,15 +85,11 @@ func sendServiceCommand(name string, command string) error {
 	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
 	if machineServiceAddress == "" {
 		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
-		//log.Error().Msgf("Device %s address not found, not issuing %s", name, command)
-		//return
 	}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
 		return fmt.Errorf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
-		//log.Error().Msgf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
-		//return
 	}
 
 	return resp.Body.Close()

@@ -150,9 +150,8 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 
 	if shouldTrigger {
 		log.Info().Msgf("Going to sleep now, for %f minutes", msToSleep.Minutes())
-		//mserial.Push(mserial.Writer, fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
-		// shutdown now
-		//sendServiceCommand("MDROID", "shutdown")
+		mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
+		sendServiceCommand("MDROID", "shutdown")
 	}
 }
 
