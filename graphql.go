@@ -23,9 +23,6 @@ var queryType = graphql.NewObject(
 var mutationType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Mutation",
 	Fields: graphql.Fields{
-		/* Create new product item
-		http://localhost:8080/product?query=mutation+_{create(name:"Inca Kola",info:"Inca Kola is a soft drink that was created in Peru in 1935 by British immigrant Joseph Robinson Lindley using lemon verbena (wiki)",price:1.99){id,name,info,price}}
-		*/
 		"setSession": sessions.SessionMutation,
 		"setSetting": settings.SettingMutation,
 	},
