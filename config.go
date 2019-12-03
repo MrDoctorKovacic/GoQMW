@@ -65,10 +65,14 @@ func parseConfig() {
 	setupHooks()
 
 	// Set up pybus repeat commands
-	if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
-		pybus.RunStartup()
-		pybus.StartRepeats()
-	}
+	go func() {
+		time.Sleep(500)
+		if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
+			pybus.RunStartup()
+			pybus.StartRepeats()
+		}
+	}()
+
 	log.Info().Msg("Configuration complete, starting server...")
 }
 
