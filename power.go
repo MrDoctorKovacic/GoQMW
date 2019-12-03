@@ -139,8 +139,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	)
 	if now.Hour() >= 20 {
 		isTimeToSleep = true
-		msToSleep = (time.Duration(30-now.Hour()) * time.Hour)
-		log.Info().Msgf("Sleeping for %d hours, or %dms", 30-now.Hour(), msToSleep)
+		msToSleep = (time.Duration(29-now.Hour()) * time.Hour)
 	} else if now.Hour() <= 5 {
 		isTimeToSleep = true
 		msToSleep = (time.Duration(6-now.Hour()) * time.Hour)
