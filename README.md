@@ -29,7 +29,7 @@ I wanted a hub to ingest different kinds of data from sources on my car, as well
 
 ## Requirements
 
-* Go v1.11 at a minimum ([Raspberry Pi Install](https://gist.github.com/kbeflo/9d981573aad107da6fa7ac0603259b3b))
+* Golang 1.13+ ([Raspberry Pi Install](https://gist.github.com/kbeflo/9d981573aad107da6fa7ac0603259b3b))
 
 ## Installation
 
