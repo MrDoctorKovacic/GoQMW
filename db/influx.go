@@ -4,10 +4,8 @@ package db
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/parnurzeal/gorequest"
-	"github.com/rs/zerolog/log"
 )
 
 // InfluxPing database server for connectivity
@@ -19,48 +17,6 @@ func (database *Database) InfluxPing() (bool, error) {
 		return false, errs[0]
 	}
 	return resp.StatusCode == 204, nil
-}
-
-// InfluxInsert will prepare a new write statement and pass it along
-func (database *Database) InfluxInsert(measurement string, tags map[string]interface{}, fields map[string]interface{}) error {
-	if database == nil {
-		return fmt.Errorf("Database is nil")
-	}
-
-	// Prepare new insert statement
-	var stmt strings.Builder
-	stmt.WriteString(measurement)
-
-	// Write tags first
-	var tagstring strings.Builder
-	if err := parseWriterData(&tagstring, &tags); err != nil {
-		return err
-	}
-
-	// Check if any tags were added. If not, remove the trailing comma
-	if tagstring.String() != "" {
-		stmt.WriteRune(',')
-	}
-
-	// Space between tags and fields
-	stmt.WriteString(tagstring.String())
-	stmt.WriteRune(' ')
-
-	// Write fields next
-	if err := parseWriterData(&stmt, &fields); err != nil {
-		return err
-	}
-
-	writeString := stmt.String()
-
-	// Pass string we've built to write function
-	if err := database.Write(writeString); err != nil {
-		return fmt.Errorf("Error writing %s to influx database:\n%s", writeString, err.Error())
-	}
-
-	// Debug log and return
-	log.Debug().Msgf("Logged %s to database", stmt.String())
-	return nil
 }
 
 // InfluxWrite to influx database server with data pairs
@@ -91,17 +47,6 @@ func (database *Database) InfluxWrite(msg string) error {
 	}
 
 	return nil
-}
-
-// InfluxQuery to influx database server with data pairs
-func (database *Database) InfluxQuery(msg string) (string, error) {
-	request := gorequest.New()
-	_, body, errs := request.Post(database.Host + "/query?database=" + database.DatabaseName).Type("text").Send("q=" + msg).End()
-	if errs != nil {
-		return "", errs[0]
-	}
-
-	return body, nil
 }
 
 // Query to influx database server with data pairs
