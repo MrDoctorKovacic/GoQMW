@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/db"
 	"github.com/bradfitz/latlong"
 	"github.com/rs/zerolog/log"
 )
@@ -91,9 +91,9 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	postingString := Set(newdata)
 
 	// Insert into database
-	if postingString != "" && influx.DB != nil {
-		err := influx.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
-		if err != nil && influx.DB.Started {
+	if postingString != "" && db.DB != nil {
+		err := db.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
+		if err != nil && db.DB.Started {
 			log.Error().Msgf("Error writing string %s to influx DB: %s", postingString, err.Error())
 			return
 		}

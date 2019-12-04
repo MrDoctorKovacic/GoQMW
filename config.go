@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/db"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
@@ -76,16 +76,16 @@ func parseConfig() {
 	log.Info().Msg("Configuration complete, starting server...")
 }
 
-// Set up InfluxDB time series logging
+// Set up time series logging
 func setupDatabase(configAddr *map[string]string) {
 	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
-		influx.DB = nil
-		log.Warn().Msg("InfluxDB is disabled")
+		db.DB = nil
+		log.Warn().Msg("Databases are disabled")
 		return
 	}
-	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
+	db.DB = &db.Database{Host: databaseHost, DatabaseName: configMap["DATABASE_NAME"], Type: db.InfluxDB}
 	log.Info().Msgf("Using InfluxDB at %s", databaseHost)
 }
 
