@@ -95,7 +95,7 @@ func (database *Database) Insert(measurement string, tags map[string]interface{}
 
 	// Pass string we've built to write function
 	if err := database.Write(writeString); err != nil {
-		return fmt.Errorf("Error writing %s to SQLite database:\n%s", writeString, err.Error())
+		return fmt.Errorf("Error writing %s to database:\n%s", writeString, err.Error())
 	}
 
 	// Debug log and return
