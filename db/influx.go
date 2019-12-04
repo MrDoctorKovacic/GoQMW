@@ -23,7 +23,7 @@ func (database *Database) InfluxPing() (bool, error) {
 func (database *Database) InfluxWrite(msg string) error {
 	// Check for positive ping response first.
 	if !database.Started {
-		if isOnline, err := database.Ping(); !isOnline {
+		if isOnline, err := database.InfluxPing(); !isOnline {
 			if err != nil {
 				return err
 			}
@@ -33,7 +33,7 @@ func (database *Database) InfluxWrite(msg string) error {
 	}
 
 	request := gorequest.New()
-	url := database.Host + "/write?database=" + database.DatabaseName
+	url := fmt.Sprintf("%s/write?db=%s", database.Host, database.DatabaseName)
 	resp, _, errs := request.Post(url).Type("text").Send(msg).End()
 	if errs != nil {
 		return errs[0]
@@ -53,7 +53,7 @@ func (database *Database) InfluxWrite(msg string) error {
 // Query to influx database server with data pairs
 func (database *Database) Query(msg string) (string, error) {
 	request := gorequest.New()
-	_, body, errs := request.Post(database.Host + "/query?database=" + database.DatabaseName).Type("text").Send("q=" + msg).End()
+	_, body, errs := request.Post(database.Host + "/query?db=" + database.DatabaseName).Type("text").Send("q=" + msg).End()
 	if errs != nil {
 		return "", errs[0]
 	}
