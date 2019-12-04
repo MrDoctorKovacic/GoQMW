@@ -43,7 +43,7 @@ func (database *Database) InfluxWrite(msg string) error {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("Influxdatabase write failed with code %d. Request: %s \nResponse body: %s", resp.StatusCode, request.Data, body)
+		return fmt.Errorf("Write to database %s failed with code %d.\nRequest: %s\nResponse body: %s", database.DatabaseName, resp.StatusCode, msg, body)
 	}
 
 	return nil
