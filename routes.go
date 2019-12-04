@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
@@ -32,6 +33,30 @@ func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
+}
+
+func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	msToSleepString, ok := params["millis"]
+	if !ok {
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Time to sleep required", OK: false})
+		return
+	}
+
+	msToSleep, err := strconv.ParseInt(msToSleepString, 10, 64)
+	if err != nil {
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Invalid time to sleep", OK: false})
+		return
+	}
+
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	sleepMDroid(time.Duration(msToSleep) * time.Millisecond)
+}
+
+func sleepMDroid(msToSleep time.Duration) {
+	log.Info().Msgf("Going to sleep now, for %f hours (%d ms)", msToSleep.Hours(), msToSleep.Milliseconds())
+	mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
+	sendServiceCommand("MDROID", "shutdown")
 }
 
 // Reset network entirely
@@ -142,6 +167,7 @@ func startRouter() {
 	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
 	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
+	router.HandleFunc("/sleep/{millis}", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 	router.HandleFunc("/stats", format.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
