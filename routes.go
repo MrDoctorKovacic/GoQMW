@@ -55,7 +55,7 @@ func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
 
 func sleepMDroid(msToSleep time.Duration) {
 	log.Info().Msgf("Going to sleep now, for %f hours (%d ms)", msToSleep.Hours(), msToSleep.Milliseconds())
-	mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
+	go func() { mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds())) }()
 	sendServiceCommand("MDROID", "shutdown")
 }
 
