@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/db"
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/bradfitz/latlong"
 	"github.com/rs/zerolog/log"
 )
@@ -185,7 +185,7 @@ func processTimezone() {
 func SetupTimezone(configAddr *map[string]string) {
 	configMap := *configAddr
 
-	if timezoneLocation, usingTimezone := configMap["Timezone"]; usingTimezone {
+	if timezoneLocation, usingTimezone := configMap["TIMEZONE"]; usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
 		if err != nil {
 			Location.Timezone, _ = time.LoadLocation("UTC")
