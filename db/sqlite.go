@@ -1,25 +1,51 @@
 package db
 
 import (
-    "database/sql"
-    "fmt"
-    "strconv"
+	"database/sql"
+	"fmt"
+	"time"
 
-    _ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog/log"
 )
 
-func sqlDemo() {
-    database, _ := sql.Open("sqlite3", "./nraboy.db")
-    statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT)")
-    statement.Exec()
-    statement, _ = database.Prepare("INSERT INTO people (firstname, lastname) VALUES (?, ?)")
-    statement.Exec("Nic", "Raboy")
-    rows, _ := database.Query("SELECT id, firstname, lastname FROM people")
-    var id int
-    var firstname string
-    var lastname string
-    for rows.Next() {
-        rows.Scan(&id, &firstname, &lastname)
-        fmt.Println(strconv.Itoa(id) + ": " + firstname + " " + lastname)
-    }
+// SQLiteInit creates a new SQLite connection
+func (database *Database) SQLiteInit() (string, error) {
+	var err error
+	filename := fmt.Sprintf("/root/MDroid/logs/core/dbs/%s.db", time.Now().Local().String())
+	database.sqlconn, err = sql.Open("sqlite3", filename)
+	if err != nil {
+		return filename, err
+	}
+	statement, err := database.sqlconn.Prepare("CREATE TABLE IF NOT EXISTS vehicle (id INTEGER PRIMARY KEY, timestamp INTEGER, msg TEXT)")
+	if err != nil {
+		return filename, err
+	}
+	statement.Exec()
+	statement.Close()
+	database.Started = true
+
+	database.sqlinsert, err = database.sqlconn.Prepare("INSERT INTO vehicle (timestamp, msg) VALUES (?, ?)")
+	return filename, nil
+}
+
+// SQLitePing database server for connectivity
+func (database *Database) SQLitePing() (bool, error) {
+	// Ping database instance
+	return database.sqlconn != nil, nil
+}
+
+// SQLiteWrite to SQLite database server with data pairs
+func (database *Database) SQLiteWrite(msg string) error {
+	// Check for positive ping response first.
+	if !database.Started {
+		log.Info().Msg("DB is closed, reopening...")
+		database.SQLiteInit()
+	}
+
+	_, err := database.sqlinsert.Exec(time.Now().Local().Nanosecond(), msg)
+	if err != nil {
+		return err
+	}
+	return nil
 }
