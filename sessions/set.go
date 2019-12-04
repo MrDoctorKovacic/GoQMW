@@ -112,7 +112,7 @@ func Set(newPackage Data) error {
 		// but this conversion alows Influx queries on the floats to be executed
 		err := db.DB.Write(fmt.Sprintf("%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
 		if err != nil {
-			errorText := fmt.Sprintf("Error writing %s to influx DB: %s", valueString, err.Error())
+			errorText := fmt.Sprintf("Error writing %s to database:\n%s", valueString, err.Error())
 			// Only spam our log if Influx is online
 			if db.DB.Started {
 				log.Error().Msg(errorText)
