@@ -33,7 +33,8 @@ func (database *Database) InfluxWrite(msg string) error {
 	}
 
 	request := gorequest.New()
-	resp, _, errs := request.Post(database.Host + "/write?database=" + database.DatabaseName).Type("text").Send(msg).End()
+	url := database.Host + "/write?database=" + database.DatabaseName
+	resp, _, errs := request.Post(url).Type("text").Send(msg).End()
 	if errs != nil {
 		return errs[0]
 	}
@@ -43,7 +44,7 @@ func (database *Database) InfluxWrite(msg string) error {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("Write to database %s failed with code %d.\nRequest: %s\nResponse body: %s", database.DatabaseName, resp.StatusCode, msg, body)
+		return fmt.Errorf("Write to database %s failed with code %d.\nRequest: %s\nRequest Body: %s\nResponse body: %s", database.DatabaseName, resp.StatusCode, url, msg, body)
 	}
 
 	return nil
