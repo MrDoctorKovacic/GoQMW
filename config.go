@@ -99,7 +99,7 @@ func setupDatabase(configAddr *map[string]string) {
 
 	// Setup InfluxDB as normal
 	db.DB = &db.Database{Host: databaseHost, DatabaseName: configMap["DATABASE_NAME"], Type: db.InfluxDB}
-	log.Info().Msgf("Using InfluxDB at %s", databaseHost)
+	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, configMap["DATABASE_NAME"])
 }
 
 func setupSerial() {
