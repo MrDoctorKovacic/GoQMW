@@ -159,11 +159,16 @@ func wirelessPower(hook *sessions.Data) {
 
 // Alert me when it's raining and windows are down
 func lightSensorReason(hook *sessions.Data) {
-	keyPosition, _ := sessions.Get("KEY_POSITION")
-	doorsLocked, _ := sessions.Get("DOORS_LOCKED")
-	windowsOpen, _ := sessions.Get("WINDOWS_OPEN")
-	delta, err := format.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
+	keyPosition, kerr := sessions.Get("KEY_POSITION")
+	doorsLocked, derr := sessions.Get("DOORS_LOCKED")
+	windowsOpen, werr := sessions.Get("WINDOWS_OPEN")
 
+	// Check if any of the above aren't set yet
+	if kerr != nil || derr != nil || werr != nil {
+		return
+	}
+
+	delta, err := format.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
