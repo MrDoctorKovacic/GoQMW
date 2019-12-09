@@ -112,7 +112,10 @@ func sendServiceCommand(name string, command string) error {
 		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
 	}
 
-	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
+	client := http.Client{
+		Timeout: 2 * time.Second,
+	}
+	resp, err := client.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
 		return fmt.Errorf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
 	}
