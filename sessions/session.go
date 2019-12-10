@@ -81,7 +81,7 @@ func addStat(d Data) {
 		session.stats.calcThroughput()
 		if session.stats.throughput < 20 {
 			session.stats.DipsBelowMinimum++
-			SlackAlert("Throughput has fallen below 20 sets/second")
+			//SlackAlert("Throughput has fallen below 20 sets/second")
 		}
 	}
 }
