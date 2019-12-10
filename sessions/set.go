@@ -80,7 +80,8 @@ func Set(newPackage Data) error {
 	}
 
 	// Set last updated time to now
-	newPackage.LastUpdate = time.Now().In(gps.GetTimezone()).Format("2006-01-02 15:04:05.999")
+	newPackage.date = time.Now().In(gps.GetTimezone())
+	newPackage.LastUpdate = newPackage.date.Format("2006-01-02 15:04:05.999")
 
 	// Correct name
 	newPackage.Name = format.Name(newPackage.Name)
@@ -95,6 +96,7 @@ func Set(newPackage Data) error {
 		format.Statistics.SessionValues++
 	}
 	session.data[newPackage.Name] = newPackage
+	session.stats.Sets++
 	session.Mutex.Unlock()
 
 	// Finish post processing

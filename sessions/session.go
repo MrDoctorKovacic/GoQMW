@@ -2,11 +2,14 @@ package sessions
 
 import (
 	"bytes"
+	"container/list"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 )
@@ -16,12 +19,22 @@ type Data struct {
 	Name       string `json:"name,omitempty"`
 	Value      string `json:"value,omitempty"`
 	LastUpdate string `json:"lastUpdate,omitempty"`
-	Quiet      bool   `json:"quiet,omitempty"`
+	date       time.Time
+	Quiet      bool `json:"quiet,omitempty"`
+}
+
+// Stats hold simple metrics for the session as a whole
+type Stats struct {
+	dataSample *list.List
+	Throughput string `json:"Throughput"`
+	Sets       int    `json:"Sets"`
+	Gets       int    `json:"Gets"`
 }
 
 // Session is a mapping of Datas, which contain session values
 type Session struct {
 	data  map[string]Data
+	stats Stats
 	Mutex sync.RWMutex
 	file  string
 }
@@ -30,12 +43,31 @@ var session Session
 
 func init() {
 	session.data = make(map[string]Data)
+	session.stats.dataSample = list.New()
 
 }
 
 // InitializeDefaults sets default session values here
 func InitializeDefaults() {
 	SetValue("VIDEO_ON", "TRUE")
+}
+
+// HandleGetStats will return various statistics on this Session
+func HandleGetStats(w http.ResponseWriter, r *http.Request) {
+	session.Mutex.RLock()
+	defer session.Mutex.RUnlock()
+	d := session.stats.dataSample.Front()
+	data := d.Value.(*Data)
+	session.stats.Throughput = fmt.Sprintf("%f sets per second", float64(session.stats.dataSample.Len())/time.Since(data.date).Seconds())
+
+	format.WriteResponse(&w, r, format.JSONResponse{Output: session.stats, OK: true})
+}
+
+func addStat(d *Data) {
+	session.stats.dataSample.PushBack(d)
+	if session.stats.dataSample.Len() > 300 {
+		session.stats.dataSample.Remove(session.stats.dataSample.Front())
+	}
 }
 
 // SlackAlert sends a message to a slack channel webhook

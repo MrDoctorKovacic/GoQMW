@@ -70,6 +70,7 @@ func Get(name string) (data Data, err error) {
 	session.Mutex.RLock()
 	defer session.Mutex.RUnlock()
 	sessionValue, ok := session.data[name]
+	session.stats.Gets++
 
 	if !ok {
 		return sessionValue, fmt.Errorf("%s does not exist in Session", name)
