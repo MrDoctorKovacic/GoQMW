@@ -25,10 +25,12 @@ type Data struct {
 
 // Stats hold simple metrics for the session as a whole
 type Stats struct {
-	dataSample *list.List
-	Throughput string `json:"Throughput"`
-	Sets       int    `json:"Sets"`
-	Gets       int    `json:"Gets"`
+	dataSample       *list.List
+	throughput       float64
+	ThroughputString string `json:"Throughput"`
+	Sets             uint32 `json:"Sets"`
+	Gets             uint32 `json:"Gets"`
+	DipsBelowMinimum int    `json:"DipsBelowMinimum"`
 }
 
 // Session is a mapping of Datas, which contain session values
@@ -56,17 +58,31 @@ func InitializeDefaults() {
 func HandleGetStats(w http.ResponseWriter, r *http.Request) {
 	session.Mutex.RLock()
 	defer session.Mutex.RUnlock()
-	d := session.stats.dataSample.Front()
-	data := d.Value.(Data)
-	session.stats.Throughput = fmt.Sprintf("%f sets per second", float64(session.stats.dataSample.Len())/time.Since(data.date).Seconds())
+	session.stats.calcThroughput()
 
 	format.WriteResponse(&w, r, format.JSONResponse{Output: session.stats, OK: true})
+}
+
+func (s *Stats) calcThroughput() {
+	d := session.stats.dataSample.Front()
+	data := d.Value.(Data)
+	s.throughput = float64(session.stats.dataSample.Len()) / time.Since(data.date).Seconds()
+	s.ThroughputString = fmt.Sprintf("%f sets per second", s.throughput)
 }
 
 func addStat(d Data) {
 	session.stats.dataSample.PushBack(d)
 	if session.stats.dataSample.Len() > 300 {
 		session.stats.dataSample.Remove(session.stats.dataSample.Front())
+	}
+
+	// Check throughput every 100 sets
+	if session.stats.Sets%100 == 0 {
+		session.stats.calcThroughput()
+		if session.stats.throughput < 20 {
+			session.stats.DipsBelowMinimum++
+			SlackAlert("Throughput has fallen below 20 sets/second")
+		}
 	}
 }
 
