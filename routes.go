@@ -172,7 +172,7 @@ func startRouter() {
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 	router.HandleFunc("/sleep/{millis}", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
-	router.HandleFunc("/stats", format.HandleGetStats).Methods("GET")
+	router.HandleFunc("/responses/stats", format.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
 
 	//
@@ -190,6 +190,7 @@ func startRouter() {
 	//
 	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
 	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
+	router.HandleFunc("/session/stats", sessions.HandleGetStats).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")
