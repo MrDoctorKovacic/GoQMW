@@ -97,6 +97,7 @@ func Set(newPackage Data) error {
 	}
 	session.data[newPackage.Name] = newPackage
 	session.stats.Sets++
+	addStat(newPackage)
 	session.Mutex.Unlock()
 
 	// Finish post processing
