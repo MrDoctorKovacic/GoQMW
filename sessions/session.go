@@ -39,6 +39,7 @@ type Session struct {
 	stats Stats
 	Mutex sync.RWMutex
 	file  string
+	startTime time.Time
 }
 
 var session Session
@@ -46,12 +47,17 @@ var session Session
 func init() {
 	session.data = make(map[string]Data)
 	session.stats.dataSample = list.New()
-
+	session.startTime = time.Now()
 }
 
 // InitializeDefaults sets default session values here
 func InitializeDefaults() {
 	SetValue("VIDEO_ON", "TRUE")
+}
+
+// GetStartTime will give the time the session started
+func GetStartTime() time.Time {
+	return session.startTime
 }
 
 // HandleGetStats will return various statistics on this Session

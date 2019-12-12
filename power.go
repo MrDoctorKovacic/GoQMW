@@ -131,6 +131,11 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 
+	// Don't fall asleep if the board was recently started
+	if time.Since(sessions.GetStartTime()) < time.Minute*15 {
+		return
+	}
+
 	// Instead of power trigger, evaluate here. Sleep every so often
 	now := time.Now().Local()
 	var (
