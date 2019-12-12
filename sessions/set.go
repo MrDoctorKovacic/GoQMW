@@ -91,10 +91,20 @@ func Set(newPackage Data) error {
 
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
+
 	// Update number of session values
-	if _, exists := session.data[newPackage.Name]; !exists {
+	shouldUpdateDB := true
+	oldPackage, exists := session.data[newPackage.Name]
+	if !exists {
 		format.Statistics.SessionValues++
+	} else {
+		// Check if this is a new value we should insert into the DB
+		if oldPackage.Value == newPackage.Value {
+			shouldUpdateDB = false
+		}
 	}
+
+	// Add new package to session
 	session.data[newPackage.Name] = newPackage
 	session.stats.Sets++
 	addStat(newPackage)
@@ -104,7 +114,7 @@ func Set(newPackage Data) error {
 	go runHooks(newPackage)
 
 	// Insert into database
-	if db.DB != nil {
+	if db.DB != nil && shouldUpdateDB {
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		valueString := fmt.Sprintf("value=%s", newPackage.Value)
 		if _, err := strconv.ParseFloat(newPackage.Value, 32); err != nil {
