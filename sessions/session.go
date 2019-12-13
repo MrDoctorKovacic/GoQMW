@@ -35,10 +35,10 @@ type Stats struct {
 
 // Session is a mapping of Datas, which contain session values
 type Session struct {
-	data  map[string]Data
-	stats Stats
-	Mutex sync.RWMutex
-	file  string
+	data      map[string]Data
+	stats     Stats
+	Mutex     sync.RWMutex
+	file      string
 	startTime time.Time
 }
 
@@ -74,6 +74,11 @@ func (s *Stats) calcThroughput() {
 	data := d.Value.(Data)
 	s.throughput = float64(session.stats.dataSample.Len()) / time.Since(data.date).Seconds()
 	s.ThroughputString = fmt.Sprintf("%f sets per second", s.throughput)
+
+	if session.stats.throughput < 20 {
+		session.stats.DipsBelowMinimum++
+		SlackAlert("Throughput has fallen below 20 sets/second")
+	}
 }
 
 func addStat(d Data) {
@@ -82,13 +87,9 @@ func addStat(d Data) {
 		session.stats.dataSample.Remove(session.stats.dataSample.Front())
 	}
 
-	// Check throughput every 100 sets
-	if session.stats.Sets%100 == 0 {
+	// Check throughput every so often
+	if session.stats.Sets%500 == 0 {
 		session.stats.calcThroughput()
-		if session.stats.throughput < 20 {
-			session.stats.DipsBelowMinimum++
-			//SlackAlert("Throughput has fallen below 20 sets/second")
-		}
 	}
 }
 
