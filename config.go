@@ -118,7 +118,7 @@ func setupSerial() {
 
 	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	if !usingHardwareSerial {
-		log.Error().Msgf("No hardware serial port. Not setting up serial devices.\n%s", err.Error())
+		log.Error().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
 	}
 
