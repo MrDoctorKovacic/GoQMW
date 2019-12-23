@@ -25,6 +25,7 @@ func setupHooks() {
 	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
 	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
 	sessions.RegisterHookSlice(&[]string{"SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3"}, voltage)
+	log.Info().Msg("Enabled session hooks")
 }
 
 //
