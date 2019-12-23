@@ -60,8 +60,11 @@ func parseConfig() {
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
 	sessions.Setup(&configMap)
-	setupSerial()
-	setupHooks()
+	setupSerial(&configMap)
+
+	if useHooks, ok := configMap["USE_HOOKS"]; ok && useHooks == "TRUE" {
+		setupHooks()
+	}
 
 	// Set up pybus repeat commands
 	go func() {
@@ -108,12 +111,8 @@ func setupDatabase(configAddr *map[string]string) {
 	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, databaseName)
 }
 
-func setupSerial() {
-	configMap, err := settings.GetComponent("MDROID")
-	if err != nil {
-		log.Error().Msgf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error())
-		return
-	}
+func setupSerial(configAddr *map[string]string) {
+	configMap := *configAddr
 
 	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	if !usingHardwareSerial {
