@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/db"
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -80,7 +80,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	statsLock.Unlock()
 
 	// Insert into database
-	if influx.DB != nil {
+	if db.DB != nil {
 
 		fields := map[string]interface{}{
 			"cpu":     newdata.UsedCPU,
@@ -90,8 +90,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 			"temp":    newdata.TempCPU,
 		}
 
-		err := influx.DB.Insert("stats", map[string]interface{}{"name": formattedName}, fields)
-		if err != nil && influx.DB.Started {
+		err := db.DB.Insert("stats", map[string]interface{}{"name": formattedName}, fields)
+		if err != nil && db.DB.Started {
 			log.Error().Msgf("Error writing string stats to influx DB: %s", err.Error())
 			return
 		}

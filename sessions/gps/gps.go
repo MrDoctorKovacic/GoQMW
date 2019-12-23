@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/db"
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
 	"github.com/bradfitz/latlong"
 	"github.com/rs/zerolog/log"
 )
@@ -91,9 +91,9 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	postingString := Set(newdata)
 
 	// Insert into database
-	if postingString != "" && influx.DB != nil {
-		err := influx.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
-		if err != nil && influx.DB.Started {
+	if postingString != "" && db.DB != nil {
+		err := db.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
+		if err != nil && db.DB.Started {
 			log.Error().Msgf("Error writing string %s to influx DB: %s", postingString, err.Error())
 			return
 		}
@@ -185,7 +185,7 @@ func processTimezone() {
 func SetupTimezone(configAddr *map[string]string) {
 	configMap := *configAddr
 
-	if timezoneLocation, usingTimezone := configMap["Timezone"]; usingTimezone {
+	if timezoneLocation, usingTimezone := configMap["TIMEZONE"]; usingTimezone {
 		loc, err := time.LoadLocation(timezoneLocation)
 		if err != nil {
 			Location.Timezone, _ = time.LoadLocation("UTC")

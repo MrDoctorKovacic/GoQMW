@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/influx"
+	"github.com/MrDoctorKovacic/MDroid-Core/db"
 	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
 	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
@@ -59,10 +59,12 @@ func parseConfig() {
 
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
-	sessions.SetupTokens(&configMap)
-	sessions.InitializeDefaults()
-	setupSerial()
-	setupHooks()
+	sessions.Setup(&configMap)
+	setupSerial(&configMap)
+
+	if useHooks, ok := configMap["USE_HOOKS"]; ok && useHooks == "TRUE" {
+		setupHooks()
+	}
 
 	// Set up pybus repeat commands
 	go func() {
@@ -76,29 +78,45 @@ func parseConfig() {
 	log.Info().Msg("Configuration complete, starting server...")
 }
 
-// Set up InfluxDB time series logging
+// Set up time series logging
 func setupDatabase(configAddr *map[string]string) {
 	configMap := *configAddr
 	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
 	if !usingDatabase {
-		influx.DB = nil
-		log.Warn().Msg("InfluxDB is disabled")
+		db.DB = nil
+		log.Warn().Msg("Databases are disabled")
 		return
 	}
-	influx.DB = &influx.Influx{Host: databaseHost, Database: configMap["DATABASE_NAME"]}
-	log.Info().Msgf("Using InfluxDB at %s", databaseHost)
+
+	databaseName, usingDatabase := configMap["DATABASE_NAME"]
+	if !usingDatabase {
+		db.DB = nil
+		log.Warn().Msg("Databases are disabled")
+		return
+	}
+
+	// Request to use SQLITE
+	if databaseHost == "SQLITE" {
+		db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.SQLite}
+		dbname, err := db.DB.SQLiteInit()
+		if err != nil {
+			panic(err)
+		}
+		log.Info().Msgf("Using SQLite DB at %s", dbname)
+		return
+	}
+
+	// Setup InfluxDB as normal
+	db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.InfluxDB}
+	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, databaseName)
 }
 
-func setupSerial() {
-	configMap, err := settings.GetComponent("MDROID")
-	if err != nil {
-		log.Error().Msgf("Failed to read MDROID settings. Not setting up serial devices.\n%s", err.Error())
-		return
-	}
+func setupSerial(configAddr *map[string]string) {
+	configMap := *configAddr
 
 	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
 	if !usingHardwareSerial {
-		log.Error().Msgf("No hardware serial port. Not setting up serial devices.\n%s", err.Error())
+		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
 	}
 
