@@ -59,8 +59,7 @@ func parseConfig() {
 
 	gps.SetupTimezone(&configMap)
 	setupDatabase(&configMap)
-	sessions.SetupTokens(&configMap)
-	sessions.InitializeDefaults()
+	sessions.Setup(&configMap)
 	setupSerial()
 	setupHooks()
 

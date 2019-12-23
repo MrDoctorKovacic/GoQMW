@@ -46,22 +46,6 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SetupTokens prepares valid tokens from settings file
-func SetupTokens(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	// Set up Auth tokens
-	token, usingTokens := configMap["AUTH_TOKEN"]
-	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
-	if !usingTokens || !usingCentralHost {
-		log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
-		return
-	}
-
-	log.Info().Msg("Successfully set up auth tokens")
-	go CheckServer(serverHost, token)
-}
-
 // CheckServer will continiously ping a central server for waiting packets,
 // and will open a websocket as a client if so
 func CheckServer(host string, token string) {

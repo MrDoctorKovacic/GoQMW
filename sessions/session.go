@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -35,11 +36,12 @@ type Stats struct {
 
 // Session is a mapping of Datas, which contain session values
 type Session struct {
-	data      map[string]Data
-	stats     Stats
-	Mutex     sync.RWMutex
-	file      string
-	startTime time.Time
+	data              map[string]Data
+	stats             Stats
+	Mutex             sync.RWMutex
+	file              string
+	startTime         time.Time
+	throughputWarning int
 }
 
 var session Session
@@ -48,6 +50,34 @@ func init() {
 	session.data = make(map[string]Data)
 	session.stats.dataSample = list.New()
 	session.startTime = time.Now()
+	session.throughputWarning = -1
+}
+
+// Setup prepares valid tokens from settings file
+func Setup(configAddr *map[string]string) {
+	configMap := *configAddr
+
+	InitializeDefaults()
+
+	// Set up Auth tokens
+	token, usingTokens := configMap["AUTH_TOKEN"]
+	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
+	if !usingTokens || !usingCentralHost {
+		log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
+	} else {
+		log.Info().Msg("Successfully set up auth tokens")
+	}
+
+	// Setup throughput warnings
+	throughputString, usingThroughputCheck := configMap["THROUGHPUT_WARN_THRESHOLD"]
+	if usingThroughputCheck {
+		throughput, err := strconv.Atoi(throughputString)
+		if err == nil {
+			session.throughputWarning = throughput
+		}
+	}
+
+	go CheckServer(serverHost, token)
 }
 
 // InitializeDefaults sets default session values here
@@ -75,7 +105,7 @@ func (s *Stats) calcThroughput() {
 	s.throughput = float64(session.stats.dataSample.Len()) / time.Since(data.date).Seconds()
 	s.ThroughputString = fmt.Sprintf("%f sets per second", s.throughput)
 
-	if session.stats.throughput < 20 {
+	if session.throughputWarning >= 0 && session.stats.throughput < float64(session.throughputWarning) {
 		session.stats.DipsBelowMinimum++
 		SlackAlert("Throughput has fallen below 20 sets/second")
 	}
