@@ -86,9 +86,16 @@ func setupDatabase(configAddr *map[string]string) {
 		return
 	}
 
+	databaseName, usingDatabase := configMap["DATABASE_NAME"]
+	if !usingDatabase {
+		db.DB = nil
+		log.Warn().Msg("Databases are disabled")
+		return
+	}
+
 	// Request to use SQLITE
 	if databaseHost == "SQLITE" {
-		db.DB = &db.Database{Host: databaseHost, DatabaseName: configMap["DATABASE_NAME"], Type: db.SQLite}
+		db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.SQLite}
 		dbname, err := db.DB.SQLiteInit()
 		if err != nil {
 			panic(err)
@@ -98,8 +105,8 @@ func setupDatabase(configAddr *map[string]string) {
 	}
 
 	// Setup InfluxDB as normal
-	db.DB = &db.Database{Host: databaseHost, DatabaseName: configMap["DATABASE_NAME"], Type: db.InfluxDB}
-	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, configMap["DATABASE_NAME"])
+	db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.InfluxDB}
+	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, databaseName)
 }
 
 func setupSerial() {
