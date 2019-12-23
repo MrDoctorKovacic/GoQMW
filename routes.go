@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/MrDoctorKovacic/MDroid-Core/format"
@@ -32,6 +33,30 @@ func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
 	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
+}
+
+func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	msToSleepString, ok := params["millis"]
+	if !ok {
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Time to sleep required", OK: false})
+		return
+	}
+
+	msToSleep, err := strconv.ParseInt(msToSleepString, 10, 64)
+	if err != nil {
+		format.WriteResponse(&w, r, format.JSONResponse{Output: "Invalid time to sleep", OK: false})
+		return
+	}
+
+	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	sleepMDroid(time.Duration(msToSleep) * time.Millisecond)
+}
+
+func sleepMDroid(msToSleep time.Duration) {
+	log.Info().Msgf("Going to sleep now, for %f hours (%d ms)", msToSleep.Hours(), msToSleep.Milliseconds())
+	go func() { mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds())) }()
+	sendServiceCommand("MDROID", "shutdown")
 }
 
 // Reset network entirely
@@ -87,7 +112,10 @@ func sendServiceCommand(name string, command string) error {
 		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
 	}
 
-	resp, err := http.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
+	client := http.Client{
+		Timeout: 2 * time.Second,
+	}
+	resp, err := client.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
 	if err != nil {
 		return fmt.Errorf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
 	}
@@ -142,8 +170,9 @@ func startRouter() {
 	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
 	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
+	router.HandleFunc("/sleep/{millis}", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
-	router.HandleFunc("/stats", format.HandleGetStats).Methods("GET")
+	router.HandleFunc("/responses/stats", format.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
 
 	//
@@ -161,6 +190,7 @@ func startRouter() {
 	//
 	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
 	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
+	router.HandleFunc("/session/stats", sessions.HandleGetStats).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")

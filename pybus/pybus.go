@@ -140,10 +140,8 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 
 	// Parse command into a bool, make either "on" or "off" effectively
 	isPositive, err := format.IsPositiveRequest(command)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
+	isPosErr := err != nil
+
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
 	// If the car's ACC power isn't on, it won't be ready for requests. Wake it up first
@@ -155,6 +153,10 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	// See if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
+		if isPosErr {
+			log.Error().Msg(err.Error())
+			return
+		}
 		doorStatus, _ := sessions.Get("DOORS_LOCKED")
 		if mserial.Writer != nil && isPositive && doorStatus.Value == "FALSE" ||
 			mserial.Writer != nil && !isPositive && doorStatus.Value == "TRUE" {
@@ -173,6 +175,10 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			PushQueue("rollWindowsDown")
 		}
 	case "TOP", "CONVERTIBLE_TOP":
+		if isPosErr {
+			log.Error().Msg(err.Error())
+			return
+		}
 		if isPositive {
 			PushQueue("convertibleTopUp")
 		} else {
@@ -181,18 +187,30 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	case "TRUNK":
 		PushQueue("openTrunk")
 	case "HAZARD":
+		if isPosErr {
+			log.Error().Msg(err.Error())
+			return
+		}
 		if isPositive {
 			PushQueue("turnOnHazards")
 		} else {
 			PushQueue("turnOffAllExteriorLights")
 		}
 	case "FLASHER":
+		if isPosErr {
+			log.Error().Msg(err.Error())
+			return
+		}
 		if isPositive {
 			PushQueue("flashAllExteriorLights")
 		} else {
 			PushQueue("turnOffAllExteriorLights")
 		}
 	case "INTERIOR":
+		if isPosErr {
+			log.Error().Msg(err.Error())
+			return
+		}
 		if isPositive {
 			PushQueue("interiorLightsOff")
 		} else {
@@ -234,20 +252,20 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	case "AZMODAN", "CAMERA", "BOARD":
 		if format.Name(command) == "AUTO" {
 			settings.Set("BOARD", "POWER", "AUTO")
-		} else if isPositive {
+		} else if isPositive && !isPosErr {
 			settings.Set("BOARD", "POWER", "ON")
 			mserial.PushText("powerOnBoard")
-		} else {
+		} else if !isPosErr {
 			settings.Set("BOARD", "POWER", "OFF")
 			mserial.PushText("powerOffBoard")
 		}
 	case "BRIGHTWING", "LTE":
 		if format.Name(command) == "AUTO" {
 			settings.Set("WIRELESS", "POWER", "AUTO")
-		} else if isPositive {
+		} else if isPositive && !isPosErr {
 			settings.Set("WIRELESS", "POWER", "ON")
 			mserial.PushText("powerOnWireless")
-		} else {
+		} else if !isPosErr {
 			settings.Set("WIRELESS", "POWER", "OFF")
 			mserial.PushText("powerOffWireless")
 		}

@@ -31,7 +31,7 @@ func IsPositiveRequest(request string) (bool, error) {
 	}
 
 	// Command didn't match any of the above, get out of here
-	return false, fmt.Errorf("Error: %s in an invalid command", request)
+	return false, fmt.Errorf("Error: %s is an invalid command", request)
 }
 
 // CompareTimestamps assuming both timezones are the same

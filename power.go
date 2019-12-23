@@ -131,6 +131,11 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 
+	// Don't fall asleep if the board was recently started
+	if time.Since(sessions.GetStartTime()) < time.Minute*15 {
+		return
+	}
+
 	// Instead of power trigger, evaluate here. Sleep every so often
 	now := time.Now().Local()
 	var (
@@ -149,9 +154,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	shouldTrigger := !accOn && wifiOn && keyIsIn == "FALSE" && isTimeToSleep
 
 	if shouldTrigger {
-		log.Info().Msgf("Going to sleep now, for %f hours (%d ms)", msToSleep.Hours(), msToSleep.Milliseconds())
-		mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds()))
-		sendServiceCommand("MDROID", "shutdown")
+		sleepMDroid(msToSleep)
 	}
 }
 
