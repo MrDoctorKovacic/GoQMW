@@ -126,7 +126,7 @@ func setupSerial(configAddr *map[string]string) {
 	if ok && serialRequiredSetting == "TRUE" {
 		// Serial is required for setup.
 		// Open a port, set state to the output and immediately close for later concurrent reading
-		s, err := sessions.OpenSerialPort(hardwareSerialPort, 9600)
+		s, err := sessions.OpenSerialPort(hardwareSerialPort, 115200)
 		if err != nil {
 			log.Error().Msg(err.Error())
 		}
@@ -137,7 +137,7 @@ func setupSerial(configAddr *map[string]string) {
 
 	// Start initial reader / writer
 	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
-	go sessions.StartSerialComms(hardwareSerialPort, 9600)
+	go sessions.StartSerialComms(hardwareSerialPort, 115200)
 
 	// Setup other devices
 	for device, baudrate := range mserial.ParseSerialDevices(settings.GetAll()) {
