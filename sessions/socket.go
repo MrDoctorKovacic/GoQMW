@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 )

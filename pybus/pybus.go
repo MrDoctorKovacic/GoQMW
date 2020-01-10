@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/mserial"
+	"github.com/qcasey/MDroid-Core/sessions"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )

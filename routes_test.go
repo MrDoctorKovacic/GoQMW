@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format"
 )
 
 func TestSlackAlert(t *testing.T) {
