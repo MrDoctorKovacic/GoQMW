@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/db"
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/format"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )

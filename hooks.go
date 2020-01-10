@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
+	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/sessions"
+	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/settings"
 )
 
 func setupHooks() {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
+	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )

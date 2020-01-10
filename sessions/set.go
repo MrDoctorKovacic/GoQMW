@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/db"
-	"github.com/MrDoctorKovacic/MDroid-Core/format"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
+	"github.com/qcasey/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )

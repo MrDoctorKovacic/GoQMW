@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/stat"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/sessions"
+	"github.com/qcasey/MDroid-Core/sessions/gps"
+	"github.com/qcasey/MDroid-Core/sessions/stat"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/graphql-go/graphql"
 	"github.com/rs/zerolog/log"
 )

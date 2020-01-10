@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/db"
 	"github.com/rs/zerolog/log"
 )
 
