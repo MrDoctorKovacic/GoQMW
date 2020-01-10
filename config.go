@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/db"
-	"github.com/MrDoctorKovacic/MDroid-Core/mserial"
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/gps"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/mserial"
+	"github.com/qcasey/MDroid-Core/pybus"
+	"github.com/qcasey/MDroid-Core/sessions"
+	"github.com/qcasey/MDroid-Core/sessions/gps"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
