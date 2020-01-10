@@ -13,6 +13,7 @@ import (
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Bluetooth"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -61,6 +62,9 @@ func parseConfig() {
 	setupDatabase(&configMap)
 	sessions.Setup(&configMap)
 	setupSerial(&configMap)
+
+	// Setup modules
+	bluetooth.Setup(&configMap)
 
 	if useHooks, ok := configMap["USE_HOOKS"]; ok && useHooks == "TRUE" {
 		setupHooks()

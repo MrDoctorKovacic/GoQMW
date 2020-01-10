@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
+	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
@@ -19,7 +21,6 @@ import (
 	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/qcasey/MDroid-Core/sessions/stat"
 	"github.com/qcasey/MDroid-Core/settings"
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -246,6 +247,10 @@ func startRouter() {
 
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
+
+	// Handle module routes
+	// TODO: More modular handling
+	bluetooth.SetRoutes(router)
 
 	log.Info().Msg("MDroid Core successfully started")
 
