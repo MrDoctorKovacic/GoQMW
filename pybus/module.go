@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/pybus"
 )
 
 // Module begins module init
