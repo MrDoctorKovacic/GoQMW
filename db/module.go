@@ -45,5 +45,5 @@ func (*Module) Setup(configAddr *map[string]string) {
 }
 
 // SetRoutes implements MDroid module functions
-func SetRoutes(router *mux.Router) {
+func (*Module) SetRoutes(router *mux.Router) {
 }
