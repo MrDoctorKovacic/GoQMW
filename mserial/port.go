@@ -1,4 +1,4 @@
-package sessions
+package mserial
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/mserial"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
@@ -35,8 +35,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 
 	// Use first Serial device as a R/W, all others will only be read from
 	isWriter := false
-	if mserial.Writer == nil {
-		mserial.Writer = s
+	if Writer == nil {
+		Writer = s
 		isWriter = true
 		log.Info().Msgf("Using serial device %s as default writer", deviceName)
 	}
@@ -47,8 +47,8 @@ func StartSerialComms(deviceName string, baudrate int) {
 	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
 
 	// Replace main serial writer
-	if mserial.Writer == s {
-		mserial.Writer = nil
+	if Writer == s {
+		Writer = nil
 	}
 
 	s.Close()
@@ -62,7 +62,7 @@ func SerialLoop(device *serial.Port, isWriter bool) {
 	for {
 		// Write to device if is necessary
 		if isWriter {
-			mserial.Pop(device)
+			Pop(device)
 		}
 
 		err := ReadSerial(device)
@@ -77,7 +77,7 @@ func SerialLoop(device *serial.Port, isWriter bool) {
 
 // ReadSerial takes one line from the serial device and parses it into the session
 func ReadSerial(device *serial.Port) error {
-	response, err := mserial.Read(device)
+	response, err := Read(device)
 	if err != nil {
 		return err
 	}
@@ -99,18 +99,18 @@ func parseJSON(marshalledJSON interface{}) {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			SetValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+			sessions.SetValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
 		case string:
-			SetValue(strings.ToUpper(key), strings.ToUpper(vv))
+			sessions.SetValue(strings.ToUpper(key), strings.ToUpper(vv))
 		case int:
-			SetValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
+			sessions.SetValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
 			if floatValue, ok := value.(float32); ok {
-				SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
 		case float64:
 			if floatValue, ok := value.(float64); ok {
-				SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
 		case []interface{}:
 			log.Error().Msg(key + " is an array. Data: ")

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
@@ -56,22 +55,22 @@ func (*Module) Setup(configAddr *map[string]string) {
 	if ok && serialRequiredSetting == "TRUE" {
 		// Serial is required for setup.
 		// Open a port, set state to the output and immediately close for later concurrent reading
-		s, err := sessions.OpenSerialPort(hardwareSerialPort, 115200)
+		s, err := OpenSerialPort(hardwareSerialPort, 115200)
 		if err != nil {
 			log.Error().Msg(err.Error())
 		}
-		sessions.ReadSerial(s)
+		ReadSerial(s)
 		log.Info().Msg("Closing port for later reading")
 		s.Close()
 	}
 
 	// Start initial reader / writer
 	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
-	go sessions.StartSerialComms(hardwareSerialPort, 115200)
+	go StartSerialComms(hardwareSerialPort, 115200)
 
 	// Setup other devices
 	for device, baudrate := range ParseSerialDevices(settings.GetAll()) {
-		go sessions.StartSerialComms(device, baudrate)
+		go StartSerialComms(device, baudrate)
 	}
 }
 
