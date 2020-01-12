@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/rs/zerolog/log"
@@ -67,9 +66,10 @@ func (*Module) Setup(configAddr *map[string]string) {
 	go startSerialComms(hardwareSerialPort, 115200)
 
 	// Setup other devices
-	for device, baudrate := range parseSerialDevices(settings.GetAll()) {
-		go startSerialComms(device, baudrate)
-	}
+	/*
+		for device, baudrate := range parseSerialDevices(settings.GetAll()) {
+			go startSerialComms(device, baudrate)
+		}*/
 }
 
 // SetRoutes inits module routes
