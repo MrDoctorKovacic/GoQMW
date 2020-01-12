@@ -32,16 +32,16 @@ func SetRoutes(router *mux.Router) {
 	//
 	// PyBus Routes
 	//
-	router.HandleFunc("/pybus/{src}/{dest}/{data}/{checksum}", pybus.StartRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}/{checksum}", pybus.StartRoutine).Methods("GET")
-	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
+	router.HandleFunc("/pybus/{src}/{dest}/{data}/{checksum}", StartRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{src}/{dest}/{data}", StartRoutine).Methods("POST")
+	router.HandleFunc("/pybus/{command}/{checksum}", StartRoutine).Methods("GET")
+	router.HandleFunc("/pybus/{command}", StartRoutine).Methods("GET")
 
 	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
-	router.HandleFunc("/{device}/{command}", pybus.ParseCommand).Methods("GET")
+	router.HandleFunc("/{device}/{command}", ParseCommand).Methods("GET")
 }
 
 // startRepeats that will send a command only on ACC power
