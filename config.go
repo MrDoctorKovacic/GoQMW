@@ -70,8 +70,8 @@ func parseConfig() *mux.Router {
 	// Setup conventional modules
 	bluetooth.Mod.Setup(&configMap)
 	bluetooth.Mod.SetRoutes(router)
-	gps.Loc.Setup(&configMap)
-	gps.Loc.SetRoutes(router)
+	gps.Mod.Setup(&configMap)
+	gps.Mod.SetRoutes(router)
 
 	setupHooks()
 
