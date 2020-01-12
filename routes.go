@@ -17,7 +17,6 @@ import (
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/qcasey/MDroid-Core/sessions/stat"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog"
@@ -171,16 +170,6 @@ func startRouter(router *mux.Router) {
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 	router.HandleFunc("/responses/stats", format.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
-
-	//
-	// GPS Routes
-	//
-	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
-	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		response := format.JSONResponse{Output: gps.GetTimezone(), OK: true}
-		format.WriteResponse(&w, r, response)
-	}).Methods("GET")
 
 	//
 	// Session routes
