@@ -10,9 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bradfitz/latlong"
+	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
-	"github.com/bradfitz/latlong"
+	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
 )
 
@@ -37,10 +39,8 @@ type Fix struct {
 	Course    string `json:"course,omitempty"`
 }
 
-// status will control logging and reporting of status / warnings / errors
-var (
-	Location *Loc
-)
+// Location is the module implementation
+var Location *Loc
 
 func init() {
 	timezone, err := time.LoadLocation("America/Los_Angeles")
@@ -49,6 +49,39 @@ func init() {
 		return
 	}
 	Location = &Loc{Timezone: timezone} // use logging default timezone
+}
+
+// Setup timezone as per module standards
+func (*Loc) Setup(configAddr *map[string]string) {
+	configMap := *configAddr
+
+	if timezoneLocation, usingTimezone := configMap["TIMEZONE"]; usingTimezone {
+		loc, err := time.LoadLocation(timezoneLocation)
+		if err != nil {
+			Location.Timezone, _ = time.LoadLocation("UTC")
+			return
+		}
+
+		Location.Timezone = loc
+		return
+	}
+
+	// Timezone is not set in config
+	Location.Timezone, _ = time.LoadLocation("UTC")
+	log.Info().Msgf("Set timezone to %s", Location.Timezone.String())
+}
+
+// SetRoutes implements router aggregate function
+func (*Loc) SetRoutes(router *mux.Router) {
+	//
+	// GPS Routes
+	//
+	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
+	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
+	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
+		response := format.JSONResponse{Output: gps.GetTimezone(), OK: true}
+		format.WriteResponse(&w, r, response)
+	}).Methods("GET")
 }
 
 //
@@ -179,24 +212,4 @@ func processTimezone() {
 	Location.Mutex.Lock()
 	Location.Timezone = newTimezone
 	Location.Mutex.Unlock()
-}
-
-// SetupTimezone loads settings data into timezone
-func SetupTimezone(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	if timezoneLocation, usingTimezone := configMap["TIMEZONE"]; usingTimezone {
-		loc, err := time.LoadLocation(timezoneLocation)
-		if err != nil {
-			Location.Timezone, _ = time.LoadLocation("UTC")
-			return
-		}
-
-		Location.Timezone = loc
-		return
-	}
-
-	// Timezone is not set in config
-	Location.Timezone, _ = time.LoadLocation("UTC")
-	log.Info().Msgf("Set timezone to %s", Location.Timezone.String())
 }
