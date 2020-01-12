@@ -65,9 +65,10 @@ func parseConfig() *mux.Router {
 
 	setupDatabase(&configMap)
 	sessions.Setup(&configMap)
-	setupSerial(&configMap)
 
 	// Setup conventional modules
+	mserial.Mod.Setup(&configMap)
+	mserial.Mod.SetRoutes(router)
 	bluetooth.Mod.Setup(&configMap)
 	bluetooth.Mod.SetRoutes(router)
 	gps.Mod.Setup(&configMap)
@@ -119,38 +120,4 @@ func setupDatabase(configAddr *map[string]string) {
 	// Setup InfluxDB as normal
 	db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.InfluxDB}
 	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, databaseName)
-}
-
-func setupSerial(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
-	if !usingHardwareSerial {
-		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
-		return
-	}
-
-	// Check if serial is required for startup
-	// This allows setting an initial state without incorrectly triggering hooks
-	serialRequiredSetting, ok := configMap["SERIAL_STARTUP"]
-	if ok && serialRequiredSetting == "TRUE" {
-		// Serial is required for setup.
-		// Open a port, set state to the output and immediately close for later concurrent reading
-		s, err := sessions.OpenSerialPort(hardwareSerialPort, 115200)
-		if err != nil {
-			log.Error().Msg(err.Error())
-		}
-		sessions.ReadSerial(s)
-		log.Info().Msg("Closing port for later reading")
-		s.Close()
-	}
-
-	// Start initial reader / writer
-	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
-	go sessions.StartSerialComms(hardwareSerialPort, 115200)
-
-	// Setup other devices
-	for device, baudrate := range mserial.ParseSerialDevices(settings.GetAll()) {
-		go sessions.StartSerialComms(device, baudrate)
-	}
 }
