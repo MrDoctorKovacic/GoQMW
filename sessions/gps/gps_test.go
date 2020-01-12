@@ -12,19 +12,19 @@ func TestProcessTimezone(t *testing.T) {
 	eaTime, _ := time.LoadLocation("America/New_York")
 
 	tables := []struct {
-		input  *Loc
+		input  *Location
 		output *time.Location
 	}{
-		{&Loc{CurrentFix: Fix{Latitude: "34.0522", Longitude: "-118.2437"}}, laTime},
-		{&Loc{CurrentFix: Fix{Latitude: "39.7392", Longitude: "-104.9903"}}, ceTime},
-		{&Loc{CurrentFix: Fix{Latitude: "25.7617", Longitude: "-80.1918"}}, eaTime},
+		{&Location{CurrentFix: Fix{Latitude: "34.0522", Longitude: "-118.2437"}}, laTime},
+		{&Location{CurrentFix: Fix{Latitude: "39.7392", Longitude: "-104.9903"}}, ceTime},
+		{&Location{CurrentFix: Fix{Latitude: "25.7617", Longitude: "-80.1918"}}, eaTime},
 	}
 
 	for _, table := range tables {
-		Location.CurrentFix.Latitude = table.input.CurrentFix.Latitude
-		Location.CurrentFix.Longitude = table.input.CurrentFix.Longitude
+		Mod.CurrentFix.Latitude = table.input.CurrentFix.Latitude
+		Mod.CurrentFix.Longitude = table.input.CurrentFix.Longitude
 		processTimezone()
-		if Location.Timezone.String() != table.output.String() {
+		if Mod.Timezone.String() != table.output.String() {
 			t.Errorf("processTimezone() = %s; want %s", table.input.Timezone.String(), table.output.String())
 		}
 	}
