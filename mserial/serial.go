@@ -12,6 +12,7 @@ import (
 )
 
 // parseSerialDevices parses through other serial devices, if enabled
+/*
 func parseSerialDevices(settingsData map[string]map[string]string) map[string]int {
 
 	serialDevices, additionalSerialDevices := settingsData["Serial Devices"]
@@ -29,7 +30,7 @@ func parseSerialDevices(settingsData map[string]map[string]string) map[string]in
 	}
 
 	return devices
-}
+}*/
 
 // openSerialPort will return a *serial.Port with the given arguments
 func openSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
