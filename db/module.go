@@ -1,7 +1,6 @@
 package db
 
 import (
-	"github.com/MrDoctorKovacic/MDroid-Core/pybus"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -47,11 +46,4 @@ func (*Module) Setup(configAddr *map[string]string) {
 
 // SetRoutes implements MDroid module functions
 func SetRoutes(router *mux.Router) {
-	//
-	// PyBus Routes
-	//
-	router.HandleFunc("/pybus/{src}/{dest}/{data}/{checksum}", pybus.StartRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}/{checksum}", pybus.StartRoutine).Methods("GET")
-	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
 }
