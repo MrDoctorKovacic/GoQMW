@@ -1,4 +1,4 @@
-// Package gps implements session values regarding GPS and timezone locations
+// Package gps implements session values regarding GPS and timezone Mods
 package gps
 
 import (
@@ -17,8 +17,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Loc contains GPS meta data and other location information
-type Loc struct {
+// Location contains GPS meta data and other Mod information
+type Location struct {
 	Timezone   *time.Location
 	CurrentFix Fix
 	LastFix    Fix
@@ -38,8 +38,8 @@ type Fix struct {
 	Course    string `json:"course,omitempty"`
 }
 
-// Location is the module implementation
-var Location *Loc
+// Mod is the module implementation
+var Mod *Location
 
 func init() {
 	timezone, err := time.LoadLocation("America/Los_Angeles")
@@ -47,31 +47,31 @@ func init() {
 		log.Error().Msg("Could not load default timezone")
 		return
 	}
-	Location = &Loc{Timezone: timezone} // use logging default timezone
+	Mod = &Location{Timezone: timezone} // use logging default timezone
 }
 
 // Setup timezone as per module standards
-func (*Loc) Setup(configAddr *map[string]string) {
+func (*Location) Setup(configAddr *map[string]string) {
 	configMap := *configAddr
 
-	if timezoneLocation, usingTimezone := configMap["TIMEZONE"]; usingTimezone {
-		loc, err := time.LoadLocation(timezoneLocation)
+	if timezoneMod, usingTimezone := configMap["TIMEZONE"]; usingTimezone {
+		loc, err := time.LoadLocation(timezoneMod)
 		if err != nil {
-			Location.Timezone, _ = time.LoadLocation("UTC")
+			Mod.Timezone, _ = time.LoadLocation("UTC")
 			return
 		}
 
-		Location.Timezone = loc
+		Mod.Timezone = loc
 		return
 	}
 
 	// Timezone is not set in config
-	Location.Timezone, _ = time.LoadLocation("UTC")
-	log.Info().Msgf("Set timezone to %s", Location.Timezone.String())
+	Mod.Timezone, _ = time.LoadLocation("UTC")
+	log.Info().Msgf("Set timezone to %s", Mod.Timezone.String())
 }
 
 // SetRoutes implements router aggregate function
-func (*Loc) SetRoutes(router *mux.Router) {
+func (*Location) SetRoutes(router *mux.Router) {
 	//
 	// GPS Routes
 	//
@@ -96,9 +96,9 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 // Get returns the latest GPS fix
 func Get() Fix {
 	// Log if requested
-	Location.Mutex.Lock()
-	gpsFix := Location.CurrentFix
-	Location.Mutex.Unlock()
+	Mod.Mutex.Lock()
+	gpsFix := Mod.CurrentFix
+	Mod.Mutex.Unlock()
 
 	return gpsFix
 }
@@ -106,9 +106,9 @@ func Get() Fix {
 // GetTimezone returns the latest GPS timezone recorded
 func GetTimezone() *time.Location {
 	// Log if requested
-	Location.Mutex.Lock()
-	timezone := Location.Timezone
-	Location.Mutex.Unlock()
+	Mod.Mutex.Lock()
+	timezone := Mod.Timezone
+	Mod.Mutex.Unlock()
 
 	return timezone
 }
@@ -145,11 +145,11 @@ func Set(newdata Fix) string {
 	// Prepare new value
 	var postingString strings.Builder
 
-	Location.Mutex.Lock()
-	// Update Loc fixes
-	Location.LastFix = Location.CurrentFix
-	Location.CurrentFix = newdata
-	Location.Mutex.Unlock()
+	Mod.Mutex.Lock()
+	// Update Location fixes
+	Mod.LastFix = Mod.CurrentFix
+	Mod.CurrentFix = newdata
+	Mod.Mutex.Unlock()
 
 	// Update timezone information with new GPS fix
 	processTimezone()
@@ -184,13 +184,13 @@ func Set(newdata Fix) string {
 	return postingString.String()
 }
 
-// Parses GPS coordinates into a time.Location timezone
-// On OpenWRT, this requires the zoneinfo-core and zoneinfo-northamerica (or other relevant locations) packages
+// Parses GPS coordinates into a time.Mod timezone
+// On OpenWRT, this requires the zoneinfo-core and zoneinfo-northamerica (or other relevant Mods) packages
 func processTimezone() {
-	Location.Mutex.Lock()
-	latFloat, err1 := strconv.ParseFloat(Location.CurrentFix.Latitude, 64)
-	longFloat, err2 := strconv.ParseFloat(Location.CurrentFix.Longitude, 64)
-	Location.Mutex.Unlock()
+	Mod.Mutex.Lock()
+	latFloat, err1 := strconv.ParseFloat(Mod.CurrentFix.Latitude, 64)
+	longFloat, err2 := strconv.ParseFloat(Mod.CurrentFix.Longitude, 64)
+	Mod.Mutex.Unlock()
 
 	if err1 != nil {
 		log.Error().Msgf("Error converting lat into float64: %s", err1.Error())
@@ -204,11 +204,11 @@ func processTimezone() {
 	timezoneName := latlong.LookupZoneName(latFloat, longFloat)
 	newTimezone, err := time.LoadLocation(timezoneName)
 	if err != nil {
-		log.Error().Msgf("Error parsing lat long into location: %s", err.Error())
+		log.Error().Msgf("Error parsing lat long into Mod: %s", err.Error())
 		return
 	}
 
-	Location.Mutex.Lock()
-	Location.Timezone = newTimezone
-	Location.Mutex.Unlock()
+	Mod.Mutex.Lock()
+	Mod.Timezone = newTimezone
+	Mod.Mutex.Unlock()
 }
