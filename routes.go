@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
@@ -159,10 +158,7 @@ func changeLogLevel(level zerolog.Level) {
 // **
 
 // settings.Configures routes, starts router with optional middleware if configured
-func startRouter() {
-	// Init router
-	router := mux.NewRouter()
-
+func startRouter(router *mux.Router) {
 	//
 	// Main routes
 	//
@@ -247,10 +243,6 @@ func startRouter() {
 
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
-
-	// Handle module routes
-	// TODO: More modular handling
-	bluetooth.SetRoutes(router)
 
 	log.Info().Msg("MDroid Core successfully started")
 

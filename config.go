@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
+	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/qcasey/MDroid-Core/settings"
-	"github.com/qcasey/MDroid-Bluetooth"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -33,8 +34,12 @@ func init() {
 }
 
 // Main config parsing
-func parseConfig() {
+func parseConfig() *mux.Router {
 	log.Info().Msg("Starting MDroid Core")
+
+	// Init router
+	router := mux.NewRouter()
+
 	flag.StringVar(&settings.Settings.File, "settings-file", "", "File to recover the persistent settings.")
 	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
@@ -50,7 +55,7 @@ func parseConfig() {
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
 		log.Warn().Msg("MDROID settings not found, aborting config")
-		return // abort config
+		return router // abort config
 	}
 
 	// Enable debugging from settings
@@ -63,12 +68,11 @@ func parseConfig() {
 	sessions.Setup(&configMap)
 	setupSerial(&configMap)
 
-	// Setup modules
+	// Setup conventional modules
 	bluetooth.Setup(&configMap)
+	bluetooth.SetRoutes(router)
 
-	if useHooks, ok := configMap["USE_HOOKS"]; ok && useHooks == "TRUE" {
-		setupHooks()
-	}
+	setupHooks()
 
 	// Set up pybus repeat commands
 	go func() {
@@ -80,6 +84,7 @@ func parseConfig() {
 	}()
 
 	log.Info().Msg("Configuration complete, starting server...")
+	return router
 }
 
 // Set up time series logging
