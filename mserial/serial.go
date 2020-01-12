@@ -8,11 +8,16 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
+
+// Module exports MDroid module
+type Module struct{}
 
 // Message for the serial writer, and a channel to await it
 type Message struct {
@@ -24,13 +29,59 @@ type Message struct {
 
 var (
 	// Writer is our one main port to default to
-	Writer         *serial.Port
+	Writer *serial.Port
+	// Mod exports our module functionality
+	Mod            Module
 	writeQueue     map[*serial.Port][]*Message
 	writeQueueLock sync.Mutex
 )
 
 func init() {
 	writeQueue = make(map[*serial.Port][]*Message, 0)
+}
+
+// Setup handles module init
+func (*Module) Setup(configAddr *map[string]string) {
+	configMap := *configAddr
+
+	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
+	if !usingHardwareSerial {
+		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
+		return
+	}
+
+	// Check if serial is required for startup
+	// This allows setting an initial state without incorrectly triggering hooks
+	serialRequiredSetting, ok := configMap["SERIAL_STARTUP"]
+	if ok && serialRequiredSetting == "TRUE" {
+		// Serial is required for setup.
+		// Open a port, set state to the output and immediately close for later concurrent reading
+		s, err := sessions.OpenSerialPort(hardwareSerialPort, 115200)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+		sessions.ReadSerial(s)
+		log.Info().Msg("Closing port for later reading")
+		s.Close()
+	}
+
+	// Start initial reader / writer
+	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
+	go sessions.StartSerialComms(hardwareSerialPort, 115200)
+
+	// Setup other devices
+	for device, baudrate := range ParseSerialDevices(settings.GetAll()) {
+		go sessions.StartSerialComms(device, baudrate)
+	}
+}
+
+// SetRoutes inits module routes
+func (*Module) SetRoutes(router *mux.Router) {
+	//
+	// Serial routes
+	//
+	router.HandleFunc("/serial/{command}/{checksum}", WriteSerialHandler).Methods("POST", "GET")
+	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST", "GET")
 }
 
 // ParseSerialDevices parses through other serial devices, if enabled

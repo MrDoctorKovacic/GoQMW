@@ -203,12 +203,6 @@ func startRouter(router *mux.Router) {
 	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
 
 	//
-	// Serial routes
-	//
-	router.HandleFunc("/serial/{command}/{checksum}", mserial.WriteSerialHandler).Methods("POST", "GET")
-	router.HandleFunc("/serial/{command}", mserial.WriteSerialHandler).Methods("POST", "GET")
-
-	//
 	// Catch-Alls for (hopefully) a pre-approved pybus function
 	// i.e. /doors/lock
 	//
