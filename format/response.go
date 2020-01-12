@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/db"
 	"github.com/rs/zerolog/log"
 )
 
@@ -70,23 +69,24 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 	requestSize := int64(len(strResponse)) + r.ContentLength
 	Statistics.TotalSize += requestSize
 
-	intOK := 0
+	/*intOK := 0
 	if response.OK {
 		intOK = 1
-	}
+	}*/
 
 	// Log this to our DB
-	if db.DB != nil {
-		err := db.DB.Insert("requests", map[string]interface{}{"method": r.Method, "path": r.URL.Path}, map[string]interface{}{"ok": intOK, "size": requestSize})
-		if err != nil {
-			errorText := fmt.Sprintf("Error writing method=%s, path=%s to influx DB: %s", r.Method, r.URL.Path, err.Error())
-			// Only spam our log if Influx is online
-			if db.DB.Started {
-				log.Error().Msg(errorText)
+	/*
+		if db.DB != nil {
+			err := db.DB.Insert("requests", map[string]interface{}{"method": r.Method, "path": r.URL.Path}, map[string]interface{}{"ok": intOK, "size": requestSize})
+			if err != nil {
+				errorText := fmt.Sprintf("Error writing method=%s, path=%s to influx DB: %s", r.Method, r.URL.Path, err.Error())
+				// Only spam our log if Influx is online
+				if db.DB.Started {
+					log.Error().Msg(errorText)
+				}
 			}
-		}
-		log.Debug().Msgf("Logged request to %s in DB", r.URL.Path)
-	}
+			log.Debug().Msgf("Logged request to %s in DB", r.URL.Path)
+		}*/
 
 	// Log this to debug
 	log.Debug().
