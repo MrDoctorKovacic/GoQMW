@@ -6,25 +6,23 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type hooks struct {
-	list  map[string][]func(triggerPackage *Data)
-	count int
-	mutex sync.Mutex
+type hook struct {
+	componentName string
+	function      func(triggerPackage *Data)
 }
 
-var hookList hooks
+var hookList []hook
+var hookLock sync.Mutex
 
 func init() {
-	hookList = hooks{list: make(map[string][]func(triggerPackage *Data), 0), count: 0}
 }
 
-// RegisterHook adds a new hook into a settings change
-func RegisterHook(componentName string, hook func(triggerPackage *Data)) {
+// RegisterHook adds a new hook, watching for componentName (or all components if name is "")
+func RegisterHook(componentName string, function func(triggerPackage *Data)) {
 	log.Info().Msgf("Adding new hook for %s", componentName)
-	hookList.mutex.Lock()
-	defer hookList.mutex.Unlock()
-	hookList.list[componentName] = append(hookList.list[componentName], hook)
-	hookList.count++
+	hookLock.Lock()
+	defer hookLock.Unlock()
+	hookList = append(hookList, hook{componentName: componentName, function: function})
 }
 
 // RegisterHookSlice takes a list of componentNames to apply the same hook to
@@ -36,16 +34,17 @@ func RegisterHookSlice(componentNames *[]string, hook func(triggerPackage *Data)
 
 // Runs all hooks registered with a specific component name
 func runHooks(triggerPackage Data) {
-	hookList.mutex.Lock()
-	defer hookList.mutex.Unlock()
-	allHooks, ok := hookList.list[triggerPackage.Name]
+	hookLock.Lock()
+	defer hookLock.Unlock()
 
-	if !ok || len(allHooks) == 0 {
-		// No hooks registered for component
+	if len(hookList) == 0 {
+		// No hooks registered
 		return
 	}
 
-	for _, h := range allHooks {
-		go h(&triggerPackage)
+	for _, h := range hookList {
+		if h.componentName == triggerPackage.Name || h.componentName == "" {
+			go h.function(&triggerPackage)
+		}
 	}
 }
