@@ -1,90 +1,18 @@
 package mserial
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
-	"sync"
+	"strings"
+	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
-	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/format"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
 
-// Module exports MDroid module
-type Module struct{}
-
-// Message for the serial writer, and a channel to await it
-type Message struct {
-	Device     *serial.Port
-	Text       string
-	isComplete chan error
-	UUID       string
-}
-
-var (
-	// Writer is our one main port to default to
-	Writer *serial.Port
-	// Mod exports our module functionality
-	Mod            Module
-	writeQueue     map[*serial.Port][]*Message
-	writeQueueLock sync.Mutex
-)
-
-func init() {
-	writeQueue = make(map[*serial.Port][]*Message, 0)
-}
-
-// Setup handles module init
-func (*Module) Setup(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
-	if !usingHardwareSerial {
-		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
-		return
-	}
-
-	// Check if serial is required for startup
-	// This allows setting an initial state without incorrectly triggering hooks
-	serialRequiredSetting, ok := configMap["SERIAL_STARTUP"]
-	if ok && serialRequiredSetting == "TRUE" {
-		// Serial is required for setup.
-		// Open a port, set state to the output and immediately close for later concurrent reading
-		s, err := OpenSerialPort(hardwareSerialPort, 115200)
-		if err != nil {
-			log.Error().Msg(err.Error())
-		}
-		ReadSerial(s)
-		log.Info().Msg("Closing port for later reading")
-		s.Close()
-	}
-
-	// Start initial reader / writer
-	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
-	go StartSerialComms(hardwareSerialPort, 115200)
-
-	// Setup other devices
-	for device, baudrate := range ParseSerialDevices(settings.GetAll()) {
-		go StartSerialComms(device, baudrate)
-	}
-}
-
-// SetRoutes inits module routes
-func (*Module) SetRoutes(router *mux.Router) {
-	//
-	// Serial routes
-	//
-	router.HandleFunc("/serial/{command}/{checksum}", WriteSerialHandler).Methods("POST", "GET")
-	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST", "GET")
-}
-
-// ParseSerialDevices parses through other serial devices, if enabled
-func ParseSerialDevices(settingsData map[string]map[string]string) map[string]int {
+// parseSerialDevices parses through other serial devices, if enabled
+func parseSerialDevices(settingsData map[string]map[string]string) map[string]int {
 
 	serialDevices, additionalSerialDevices := settingsData["Serial Devices"]
 	var devices map[string]int
@@ -103,88 +31,80 @@ func ParseSerialDevices(settingsData map[string]map[string]string) map[string]in
 	return devices
 }
 
-// WriteSerialHandler handles messages sent through the server
-func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	if params["command"] != "" {
-		AwaitText(params["command"])
-	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
-}
-
-// Read will continuously pull data from incoming serial
-func Read(serialDevice *serial.Port) (interface{}, error) {
-	reader := bufio.NewReader(serialDevice)
-	msg, err := reader.ReadBytes('}')
+// openSerialPort will return a *serial.Port with the given arguments
+func openSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
+	log.Info().Msgf("Opening serial device %s at baud %d", deviceName, baudrate)
+	c := &serial.Config{Name: deviceName, Baud: baudrate, ReadTimeout: time.Second * 10}
+	s, err := serial.OpenPort(c)
 	if err != nil {
 		return nil, err
 	}
+	return s, nil
+}
+
+// startSerialComms will set up the serial port,
+// and start the ReadSerial goroutine
+func startSerialComms(deviceName string, baudrate int) {
+	s, err := openSerialPort(deviceName, baudrate)
+	if err != nil {
+		log.Error().Msgf("Failed to open serial port %s", deviceName)
+		log.Error().Msg(err.Error())
+		return
+	}
+	defer s.Close()
+
+	// Use first Serial device as a R/W, all others will only be read from
+	isWriter := false
+	if Writer == nil {
+		Writer = s
+		isWriter = true
+		log.Info().Msgf("Using serial device %s as default writer", deviceName)
+	}
+
+	// Continually read from serial port
+	log.Info().Msgf("Starting new serial reader on device %s", deviceName)
+	loop(s, isWriter) // this will block until abrubtly ended
+	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
+
+	// Replace main serial writer
+	if Writer == s {
+		Writer = nil
+	}
+
+	s.Close()
+	time.Sleep(time.Second * 10)
+	log.Error().Msg("Reopening serial port...")
+	go startSerialComms(deviceName, baudrate)
+}
+
+// loop reads serial data into the session
+func loop(device *serial.Port, isWriter bool) {
+	for {
+		// Write to device if is necessary
+		if isWriter {
+			Pop(device)
+		}
+
+		err := readSerial(device)
+		if err != nil {
+			// The device is nil, break out of this read loop
+			log.Error().Msg("Failed to read from serial port")
+			log.Error().Msg(err.Error())
+			return
+		}
+	}
+}
+
+// readSerial takes one line from the serial device and parses it into the session
+func readSerial(device *serial.Port) error {
+	response, err := Read(device)
+	if err != nil {
+		return err
+	}
 
 	// Parse serial data
-	var data interface{}
-	json.Unmarshal(msg, &data)
-	return data, nil
-}
-
-// Push queues a message for writing
-func Push(m *Message) {
-	writeQueueLock.Lock()
-	defer writeQueueLock.Unlock()
-	_, ok := writeQueue[m.Device]
-	if !ok {
-		writeQueue[m.Device] = []*Message{}
-	}
-
-	writeQueue[m.Device] = append(writeQueue[m.Device], m)
-}
-
-// PushText creates a new message with the default writer, and appends it for sending
-func PushText(message string) {
-	m := &Message{Device: Writer, Text: message}
-	Push(m)
-}
-
-// Await queues a message for writing, and waits for it to be sent
-func Await(m *Message) error {
-	m.UUID, _ = format.NewShortUUID()
-	m.isComplete = make(chan error)
-	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
-	Push(m)
-	err := <-m.isComplete
-	log.Info().Msgf("[%s] Message write is complete", m.UUID)
-	return err
-}
-
-// AwaitText creates a new message with the default writer, appends it for sending, and waits for it to be sent
-func AwaitText(message string) error {
-	uuid, _ := format.NewShortUUID()
-	m := &Message{Device: Writer, Text: message, isComplete: make(chan error), UUID: uuid}
-	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
-	Push(m)
-	err := <-m.isComplete
-	log.Info().Msgf("[%s] Message write is complete", m.UUID)
-	return err
-}
-
-// Pop the last message off the queue and write it to the respective serial
-func Pop(device *serial.Port) {
-	if device == nil {
-		log.Error().Msg("Serial port is not set, nothing to write to.")
-		return
-	}
-
-	writeQueueLock.Lock()
-	defer writeQueueLock.Unlock()
-	queue, ok := writeQueue[device]
-	if !ok || len(queue) == 0 {
-		return
-	}
-
-	var msg *Message
-	msg, writeQueue[device] = writeQueue[device][len(writeQueue[device])-1], writeQueue[device][:len(writeQueue[device])-1]
-
-	err := write(msg)
-	msg.isComplete <- err
+	parseJSON(response)
+	return nil
 }
 
 // write pushes out a message to the open serial port
@@ -208,4 +128,42 @@ func write(msg *Message) error {
 		log.Info().Msgf("[%s] Successfully wrote %s (%d bytes) to serial.", msg.UUID, msg.Text, n)
 	}
 	return nil
+}
+
+func parseJSON(marshalledJSON interface{}) {
+	if marshalledJSON == nil {
+		log.Debug().Msg("Marshalled JSON is nil.")
+		return
+	}
+
+	data := marshalledJSON.(map[string]interface{})
+
+	// Switch through various types of JSON data
+	for key, value := range data {
+		switch vv := value.(type) {
+		case bool:
+			sessions.SetValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+		case string:
+			sessions.SetValue(strings.ToUpper(key), strings.ToUpper(vv))
+		case int:
+			sessions.SetValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
+		case float32:
+			if floatValue, ok := value.(float32); ok {
+				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			}
+		case float64:
+			if floatValue, ok := value.(float64); ok {
+				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			}
+		case []interface{}:
+			log.Error().Msg(key + " is an array. Data: ")
+			for i, u := range vv {
+				fmt.Println(i, u)
+			}
+		case nil:
+			break
+		default:
+			log.Error().Msgf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value)
+		}
+	}
 }
