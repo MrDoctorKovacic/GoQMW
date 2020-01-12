@@ -15,7 +15,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/mserial"
-	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/sessions/stat"
 	"github.com/qcasey/MDroid-Core/settings"
@@ -193,20 +192,6 @@ func startRouter(router *mux.Router) {
 	router.HandleFunc("/settings/{component}/{name}", settings.HandleGetValue).Methods("GET")
 	router.HandleFunc("/settings/{component}/{name}/{value}/{checksum}", settings.HandleSet).Methods("POST")
 	router.HandleFunc("/settings/{component}/{name}/{value}", settings.HandleSet).Methods("POST")
-
-	//
-	// PyBus Routes
-	//
-	router.HandleFunc("/pybus/{src}/{dest}/{data}/{checksum}", pybus.StartRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{src}/{dest}/{data}", pybus.StartRoutine).Methods("POST")
-	router.HandleFunc("/pybus/{command}/{checksum}", pybus.StartRoutine).Methods("GET")
-	router.HandleFunc("/pybus/{command}", pybus.StartRoutine).Methods("GET")
-
-	//
-	// Catch-Alls for (hopefully) a pre-approved pybus function
-	// i.e. /doors/lock
-	//
-	router.HandleFunc("/{device}/{command}", pybus.ParseCommand).Methods("GET")
 
 	//
 	// GraphQL Implementation

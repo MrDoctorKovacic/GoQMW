@@ -62,8 +62,6 @@ func parseConfig() *mux.Router {
 	if debuggingEnabled, ok := configMap["DEBUG"]; ok && debuggingEnabled == "TRUE" {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
-
-	setupDatabase(&configMap)
 	sessions.Setup(&configMap)
 
 	// Setup conventional modules
@@ -73,51 +71,12 @@ func parseConfig() *mux.Router {
 	bluetooth.Mod.SetRoutes(router)
 	gps.Mod.Setup(&configMap)
 	gps.Mod.SetRoutes(router)
+	pybus.Mod.Setup(&configMap)
+	pybus.Mod.SetRoutes(router)
+	db.Mod.Setup(&configMap)
 
 	setupHooks()
 
-	// Set up pybus repeat commands
-	go func() {
-		time.Sleep(500)
-		if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
-			pybus.RunStartup()
-			pybus.StartRepeats()
-		}
-	}()
-
 	log.Info().Msg("Configuration complete, starting server...")
 	return router
-}
-
-// Set up time series logging
-func setupDatabase(configAddr *map[string]string) {
-	configMap := *configAddr
-	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
-	if !usingDatabase {
-		db.DB = nil
-		log.Warn().Msg("Databases are disabled")
-		return
-	}
-
-	databaseName, usingDatabase := configMap["DATABASE_NAME"]
-	if !usingDatabase {
-		db.DB = nil
-		log.Warn().Msg("Databases are disabled")
-		return
-	}
-
-	// Request to use SQLITE
-	if databaseHost == "SQLITE" {
-		db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.SQLite}
-		dbname, err := db.DB.SQLiteInit()
-		if err != nil {
-			panic(err)
-		}
-		log.Info().Msgf("Using SQLite DB at %s", dbname)
-		return
-	}
-
-	// Setup InfluxDB as normal
-	db.DB = &db.Database{Host: databaseHost, DatabaseName: databaseName, Type: db.InfluxDB}
-	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, databaseName)
 }

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/settings"
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
@@ -86,40 +86,6 @@ func waitUntilOnline() {
 		}
 		time.Sleep(time.Millisecond * 100)
 	}
-}
-
-// StartRepeats that will send a command only on ACC power
-func StartRepeats() {
-	go repeatCommand("requestIgnitionStatus", 10)
-	go repeatCommand("requestLampStatus", 20)
-	go repeatCommand("requestVehicleStatus", 30)
-	go repeatCommand("requestOdometer", 45)
-	go repeatCommand("requestTimeStatus", 60)
-	go repeatCommand("requestTemperatureStatus", 120)
-}
-
-// RunStartup queues the startup scripts to gather initial data from PyBus
-func RunStartup() {
-	waitUntilOnline()
-	go PushQueue("requestIgnitionStatus")
-	go PushQueue("requestLampStatus")
-	go PushQueue("requestVehicleStatus")
-	go PushQueue("requestOdometer")
-	go PushQueue("requestTimeStatus")
-	go PushQueue("requestTemperatureStatus")
-
-	// Get status of door locks by quickly toggling them
-	/*
-		go func() {
-			err := mserial.AwaitText("toggleDoorLocks")
-			if err != nil {
-				log.Error().Msg(err.Error())
-			}
-			err = mserial.AwaitText("toggleDoorLocks")
-			if err != nil {
-				log.Error().Msg(err.Error())
-			}
-		}()*/
 }
 
 // ParseCommand is a list of pre-approved routes to PyBus for easier routing
