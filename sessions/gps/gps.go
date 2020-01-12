@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
-	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
 )
 
@@ -76,10 +75,10 @@ func (*Loc) SetRoutes(router *mux.Router) {
 	//
 	// GPS Routes
 	//
-	router.HandleFunc("/session/gps", gps.HandleGet).Methods("GET")
-	router.HandleFunc("/session/gps", gps.HandleSet).Methods("POST")
+	router.HandleFunc("/session/gps", HandleGet).Methods("GET")
+	router.HandleFunc("/session/gps", HandleSet).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		response := format.JSONResponse{Output: gps.GetTimezone(), OK: true}
+		response := format.JSONResponse{Output: GetTimezone(), OK: true}
 		format.WriteResponse(&w, r, response)
 	}).Methods("GET")
 }
