@@ -1,4 +1,4 @@
-package format
+package response
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ type JSONResponse struct {
 	ID     int         `json:"id,omitempty"`
 }
 
-// stat for requests, provided they go through our WriteResponse
+// stat for requests, provided they go through our Write
 type stat struct {
 	Failures      int       `json:"failures,omitempty"`
 	Successes     int       `json:"successes,omitempty"`
@@ -36,8 +36,8 @@ func init() {
 	Statistics = stat{TimeStarted: time.Now()}
 }
 
-// WriteResponse to an http writer, adding extra info and HTTP status as needed
-func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONResponse) {
+// Write to an http writer, adding extra info and HTTP status as needed
+func (response *JSONResponse) Write(w *http.ResponseWriter, r *http.Request) {
 	// Deref writer
 	writer := *w
 
@@ -101,11 +101,17 @@ func WriteResponse(w *http.ResponseWriter, r *http.Request, response JSONRespons
 	json.NewEncoder(writer).Encode(response)
 }
 
+// WriteNew exports all known stat requests
+func WriteNew(w *http.ResponseWriter, r *http.Request, response JSONResponse) {
+	// Echo back message
+	response.Write(w, r)
+}
+
 // HandleGetStats exports all known stat requests
 func HandleGetStats(w http.ResponseWriter, r *http.Request) {
 	// Calculate time running
 	Statistics.TimeRunning = time.Since(Statistics.TimeStarted).Seconds()
 
 	// Echo back message
-	WriteResponse(&w, r, JSONResponse{Output: Statistics, OK: true})
+	WriteNew(&w, r, JSONResponse{Output: Statistics, OK: true})
 }
