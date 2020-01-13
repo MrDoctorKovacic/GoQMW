@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/rs/zerolog/log"
