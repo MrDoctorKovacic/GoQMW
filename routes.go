@@ -155,8 +155,10 @@ func changeLogLevel(level zerolog.Level) {
 // end router functions
 // **
 
-// settings.Configures routes, starts router with optional middleware if configured
-func startRouter(router *mux.Router) {
+// Start configures default MDroid routes, starts router with optional middleware if configured
+func Start(router *mux.Router) {
+	log.Info().Msg("Configuring default routes...")
+
 	//
 	// Main routes
 	//
@@ -208,7 +210,7 @@ func startRouter(router *mux.Router) {
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
 
-	log.Info().Msg("MDroid Core successfully started")
+	log.Info().Msg("Starting server...")
 
 	// Start the router in an endless loop
 	for {

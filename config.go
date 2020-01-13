@@ -7,12 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/system"
-	"github.com/gorilla/mux"
-	bluetooth "github.com/qcasey/MDroid-Bluetooth"
-	"github.com/qcasey/MDroid-Core/db"
-	"github.com/qcasey/MDroid-Core/mserial"
-	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/qcasey/MDroid-Core/settings"
@@ -35,11 +29,8 @@ func init() {
 }
 
 // Main config parsing
-func parseConfig() *mux.Router {
+func parseConfig() *map[string]string {
 	log.Info().Msg("Starting MDroid Core")
-
-	// Init router
-	router := mux.NewRouter()
 
 	flag.StringVar(&settings.Settings.File, "settings-file", "", "File to recover the persistent settings.")
 	debug := flag.Bool("debug", false, "sets log level to debug")
@@ -56,7 +47,7 @@ func parseConfig() *mux.Router {
 	configMap, err := settings.GetComponent("MDROID")
 	if err != nil {
 		log.Warn().Msg("MDROID settings not found, aborting config")
-		return router // abort config
+		return &configMap // abort config
 	}
 
 	// Enable debugging from settings
@@ -64,22 +55,8 @@ func parseConfig() *mux.Router {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 	sessions.Setup(&configMap)
-
-	// Setup conventional modules
-	mserial.Mod.Setup(&configMap)
-	mserial.Mod.SetRoutes(router)
-	bluetooth.Mod.Setup(&configMap)
-	bluetooth.Mod.SetRoutes(router)
-	gps.Mod.Setup(&configMap)
-	gps.Mod.SetRoutes(router)
-	pybus.Mod.Setup(&configMap)
-	pybus.Mod.SetRoutes(router)
-	system.Mod.Setup(&configMap)
-	system.Mod.SetRoutes(router)
-	db.Mod.Setup(&configMap)
-
 	setupHooks()
 
-	log.Info().Msg("Configuration complete, starting server...")
-	return router
+	log.Info().Msg("Configuration complete.")
+	return &configMap
 }
