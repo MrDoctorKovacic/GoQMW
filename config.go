@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions/system"
 	"github.com/gorilla/mux"
 	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
@@ -73,6 +74,8 @@ func parseConfig() *mux.Router {
 	gps.Mod.SetRoutes(router)
 	pybus.Mod.Setup(&configMap)
 	pybus.Mod.SetRoutes(router)
+	system.Mod.Setup(&configMap)
+	system.Mod.SetRoutes(router)
 	db.Mod.Setup(&configMap)
 
 	setupHooks()

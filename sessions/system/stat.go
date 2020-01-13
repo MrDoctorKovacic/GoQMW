@@ -1,15 +1,15 @@
-// Package stat implements session values regarding system stats, including CPU, RAM, Disk usage and temps
-package stat
+// Package system implements session values regarding system stats, including CPU, RAM, Disk usage and temps
+package system
 
 import (
 	"encoding/json"
 	"net/http"
 	"sync"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,20 +33,6 @@ func init() {
 	stats = make(map[string]stat, 0)
 }
 
-// HandleGetAll returns all the latest stats
-func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	statsLock.Lock()
-	defer statsLock.Unlock()
-	response.WriteNew(&w, r, response.JSONResponse{Output: stats, OK: true})
-}
-
-// HandleGet returns the latest stat
-func HandleGet(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	statResponse, ok := get(params["name"])
-	response.WriteNew(&w, r, response.JSONResponse{Output: statResponse, OK: ok})
-}
-
 func get(name string) (stat, bool) {
 	statsLock.Lock()
 	defer statsLock.Unlock()
@@ -63,6 +49,20 @@ func getAll() map[string]stat {
 	}
 
 	return newData
+}
+
+// HandleGet returns the latest stat
+func HandleGet(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	statResponse, ok := get(params["name"])
+	response.WriteNew(&w, r, response.JSONResponse{Output: statResponse, OK: ok})
+}
+
+// HandleGetAll returns all the latest stats
+func HandleGetAll(w http.ResponseWriter, r *http.Request) {
+	statsLock.Lock()
+	defer statsLock.Unlock()
+	response.WriteNew(&w, r, response.JSONResponse{Output: stats, OK: true})
 }
 
 // HandleSet posts a new stat

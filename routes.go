@@ -12,12 +12,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/sessions/stat"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -180,10 +179,6 @@ func startRouter(router *mux.Router) {
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
 	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")
-
-	router.HandleFunc("/stat/", stat.HandleGetAll).Methods("GET")
-	router.HandleFunc("/stat/{name}", stat.HandleGet).Methods("GET")
-	router.HandleFunc("/stat/{name}", stat.HandleSet).Methods("POST")
 
 	//
 	// Settings routes
