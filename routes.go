@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/mserial"
@@ -29,7 +30,7 @@ import (
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
 }
 
@@ -37,17 +38,17 @@ func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	msToSleepString, ok := params["millis"]
 	if !ok {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Time to sleep required", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Time to sleep required", OK: false})
 		return
 	}
 
 	msToSleep, err := strconv.ParseInt(msToSleepString, 10, 64)
 	if err != nil {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Invalid time to sleep", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid time to sleep", OK: false})
 		return
 	}
 
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 	sleepMDroid(time.Duration(msToSleep) * time.Millisecond)
 }
 
@@ -75,11 +76,11 @@ func handleReboot(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Machine name required", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Machine name required", OK: false})
 		return
 	}
 
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 	err := sendServiceCommand(format.Name(machine), "reboot")
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -92,11 +93,11 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	machine, ok := params["machine"]
 
 	if !ok {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Machine name required", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Machine name required", OK: false})
 		return
 	}
 
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 	err := sendServiceCommand(machine, "shutdown")
 	if err != nil {
 		log.Error().Msg(err.Error())
@@ -125,10 +126,10 @@ func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	err := sessions.SlackAlert(params["message"])
 	if err != nil {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: err.Error(), OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: err.Error(), OK: false})
 		return
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: params["message"], OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: params["message"], OK: true})
 }
 
 func handleChangeLogLevel(w http.ResponseWriter, r *http.Request) {
@@ -142,9 +143,9 @@ func handleChangeLogLevel(w http.ResponseWriter, r *http.Request) {
 	case "ERROR":
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	default:
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Invalid log level.", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid log level.", OK: false})
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: level, OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: level, OK: true})
 }
 
 func changeLogLevel(level zerolog.Level) {
@@ -167,7 +168,7 @@ func startRouter(router *mux.Router) {
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 	router.HandleFunc("/sleep/{millis}", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
-	router.HandleFunc("/responses/stats", format.HandleGetStats).Methods("GET")
+	router.HandleFunc("/responses/stats", response.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
 
 	//
@@ -205,8 +206,8 @@ func startRouter(router *mux.Router) {
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		response := format.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
-		format.WriteResponse(&w, r, response)
+		response := response.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
+		response.Write(&w, r)
 	}).Methods("GET")
 
 	// Setup checksum middleware
@@ -254,13 +255,13 @@ func checksumMiddleware(next http.Handler) http.Handler {
 			defer r.Body.Close() //  must close
 			if err != nil {
 				log.Error().Msgf("Error reading body: %v", err)
-				format.WriteResponse(&w, r, format.JSONResponse{Output: "Can't read body", OK: false})
+				response.WriteNew(&w, r, response.JSONResponse{Output: "Can't read body", OK: false})
 				break
 			}
 
 			if md5.Sum(body) != md5.Sum([]byte(checksum)) {
 				log.Error().Msgf("Invalid checksum %s", checksum)
-				format.WriteResponse(&w, r, format.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
+				response.WriteNew(&w, r, response.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
 				break
 			}
 			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))

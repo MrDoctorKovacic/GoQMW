@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/rs/zerolog/log"
@@ -87,7 +88,7 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	if params["command"] != "" {
 		AwaitText(params["command"])
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
 // Read will continuously pull data from incoming serial

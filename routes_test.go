@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/qcasey/MDroid-Core/format"
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 )
 
 func TestSlackAlert(t *testing.T) {
@@ -32,12 +32,12 @@ func TestSlackAlert(t *testing.T) {
 	}
 
 	// Check the response body is what we expect.
-	expectedResponse := format.JSONResponse{Output: "Slack URL not set in config.", OK: false}
-	var response format.JSONResponse
-	json.NewDecoder(rr.Body).Decode(&response)
+	expectedResponse := response.JSONResponse{Output: "Slack URL not set in config.", OK: false}
+	var resp response.JSONResponse
+	json.NewDecoder(rr.Body).Decode(&resp)
 
-	if expectedResponse.OK != response.OK {
+	if expectedResponse.OK != resp.OK {
 		t.Errorf("handler returned unexpected OK: got %v want %v",
-			response.OK, expectedResponse.OK)
+			resp.OK, expectedResponse.OK)
 	}
 }

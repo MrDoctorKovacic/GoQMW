@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
+	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,7 +23,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 
 	// Default to NOT OK response
-	response := format.JSONResponse{OK: false}
+	response := response.JSONResponse{OK: false}
 
 	if err != nil {
 		log.Error().Msgf("Error reading body: %v", err)
@@ -36,7 +37,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	if len(body) == 0 {
 		response.Output = "Error: Empty body"
-		format.WriteResponse(&w, r, response)
+		response.Write(&w, r)
 		return
 	}
 
@@ -46,7 +47,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
 		log.Error().Msgf("Error decoding incoming JSON:\n%s", err.Error())
 		response.Output = err.Error()
-		format.WriteResponse(&w, r, response)
+		response.Write(&w, r)
 		return
 	}
 
@@ -54,7 +55,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	newdata.Name = params["name"]
 	if err = Set(newdata); err != nil {
 		response.Output = err.Error()
-		format.WriteResponse(&w, r, response)
+		response.Write(&w, r)
 		return
 	}
 
@@ -62,7 +63,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	response.OK = true
 	response.Output = newdata
 
-	format.WriteResponse(&w, r, response)
+	response.Write(&w, r)
 }
 
 // SetValue prepares a Value structure before passing it to the setter
@@ -96,7 +97,7 @@ func Set(newPackage Data) error {
 	shouldUpdateDB := true
 	oldPackage, exists := session.data[newPackage.Name]
 	if !exists {
-		format.Statistics.SessionValues++
+		response.Statistics.SessionValues++
 	} else {
 		// Check if this is a new value we should insert into the DB
 		if oldPackage.Value == newPackage.Value {

@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/bradfitz/latlong"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
-	"github.com/qcasey/MDroid-Core/format"
 	"github.com/rs/zerolog/log"
 )
 
@@ -78,8 +78,8 @@ func (*Location) SetRoutes(router *mux.Router) {
 	router.HandleFunc("/session/gps", HandleGet).Methods("GET")
 	router.HandleFunc("/session/gps", HandleSet).Methods("POST")
 	router.HandleFunc("/session/timezone", func(w http.ResponseWriter, r *http.Request) {
-		response := format.JSONResponse{Output: GetTimezone(), OK: true}
-		format.WriteResponse(&w, r, response)
+		response := response.JSONResponse{Output: GetTimezone(), OK: true}
+		response.Write(&w, r)
 	}).Methods("GET")
 }
 
@@ -90,7 +90,7 @@ func (*Location) SetRoutes(router *mux.Router) {
 // HandleGet returns the latest GPS fix
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	data := Get()
-	format.WriteResponse(&w, r, format.JSONResponse{Output: data, OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: data, OK: true})
 }
 
 // Get returns the latest GPS fix
@@ -131,7 +131,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Debug().Msgf("Logged %s to database", postingString)
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
 // Set posts a new GPS fix
