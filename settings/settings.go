@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/rs/zerolog/log"
 
@@ -42,8 +43,8 @@ func init() {
 // HandleGetAll returns all current settings
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Responding to GET request with entire settings map.")
-	response := format.JSONResponse{Output: GetAll(), Status: "success", OK: true}
-	format.WriteResponse(&w, r, response)
+	resp := response.JSONResponse{Output: GetAll(), Status: "success", OK: true}
+	resp.Write(&w, r)
 }
 
 // HandleGet returns all the values of a specific setting
@@ -57,12 +58,12 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	responseVal, ok := Settings.Data[componentName]
 	Settings.mutex.RUnlock()
 
-	response := format.JSONResponse{Output: responseVal, OK: true}
+	resp := response.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
-		response = format.JSONResponse{Output: "Setting not found.", OK: false}
+		resp = response.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	format.WriteResponse(&w, r, response)
+	resp.Write(&w, r)
 }
 
 // HandleGetValue returns a specific setting value
@@ -77,12 +78,12 @@ func HandleGetValue(w http.ResponseWriter, r *http.Request) {
 	responseVal, ok := Settings.Data[componentName][settingName]
 	Settings.mutex.RUnlock()
 
-	response := format.JSONResponse{Output: responseVal, OK: true}
+	resp := response.JSONResponse{Output: responseVal, OK: true}
 	if !ok {
-		response = format.JSONResponse{Output: "Setting not found.", OK: false}
+		resp = response.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 
-	format.WriteResponse(&w, r, response)
+	resp.Write(&w, r)
 }
 
 // GetAll returns all the values of known settings
@@ -159,8 +160,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	Set(componentName, settingName, settingValue)
 
 	// Respond with OK
-	response := format.JSONResponse{Output: componentName, OK: true}
-	format.WriteResponse(&w, r, response)
+	response := response.JSONResponse{Output: componentName, OK: true}
+	response.Write(&w, r)
 }
 
 // Set will handle actually updates or posts a new setting value

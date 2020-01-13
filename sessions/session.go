@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format"
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 )
@@ -96,7 +96,7 @@ func HandleGetStats(w http.ResponseWriter, r *http.Request) {
 	defer session.Mutex.RUnlock()
 	session.stats.calcThroughput()
 
-	format.WriteResponse(&w, r, format.JSONResponse{Output: session.stats, OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: session.stats, OK: true})
 }
 
 func (s *Stats) calcThroughput() {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/mserial"
@@ -60,10 +61,10 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 		// Some commands need special timing functions
 		go PushQueue(params["command"])
 	} else {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Invalid command", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid command", OK: false})
 		return
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: "OK", OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
 // repeatCommand endlessly, helps with request functions
@@ -95,7 +96,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
-		format.WriteResponse(&w, r, format.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
 		return
 	}
 
@@ -237,11 +238,11 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		log.Error().Msgf("Invalid device %s", device)
-		response := format.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
-		format.WriteResponse(&w, r, response)
+		response := response.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
+		response.Write(&w, r)
 		return
 	}
 
 	// Yay
-	format.WriteResponse(&w, r, format.JSONResponse{Output: device, OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: device, OK: true})
 }

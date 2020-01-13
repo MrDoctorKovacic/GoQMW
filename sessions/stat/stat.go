@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
+	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,14 +37,14 @@ func init() {
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	statsLock.Lock()
 	defer statsLock.Unlock()
-	format.WriteResponse(&w, r, format.JSONResponse{Output: stats, OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: stats, OK: true})
 }
 
 // HandleGet returns the latest stat
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	statResponse, ok := get(params["name"])
-	format.WriteResponse(&w, r, format.JSONResponse{Output: statResponse, OK: ok})
+	response.WriteNew(&w, r, response.JSONResponse{Output: statResponse, OK: ok})
 }
 
 func get(name string) (stat, bool) {
@@ -97,5 +98,5 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Debug().Msgf("Logged stats to database")
 	}
-	format.WriteResponse(&w, r, format.JSONResponse{Output: formattedName, OK: true})
+	response.WriteNew(&w, r, response.JSONResponse{Output: formattedName, OK: true})
 }

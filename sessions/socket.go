@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format"
+	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 )
@@ -88,17 +88,17 @@ func CheckServer(host string, token string) {
 	}
 }
 
-func parseMessage(message []byte) *format.JSONResponse {
-	response := format.JSONResponse{}
-	err := json.Unmarshal(message, &response)
+func parseMessage(message []byte) *response.JSONResponse {
+	resp := response.JSONResponse{}
+	err := json.Unmarshal(message, &resp)
 	if err != nil {
 		log.Error().Msgf("Error marshalling json from websocket.\nJSON: %s\nError:%s", message, err.Error())
 		return nil
 	}
 
 	// Check if the server is echoing back to us, or if it's a legitimate request from the server
-	if response.Method != "response" {
-		output, ok := response.Output.(string)
+	if resp.Method != "response" {
+		output, ok := resp.Output.(string)
 		if !ok {
 			log.Error().Msg("Cannot cast output to string.")
 			return nil
@@ -112,7 +112,7 @@ func parseMessage(message []byte) *format.JSONResponse {
 		}
 
 		log.Debug().Msgf("API response:  %s", string(internalResponse))
-		response := format.JSONResponse{}
+		response := response.JSONResponse{}
 		err = json.Unmarshal(internalResponse, &response)
 		if err != nil {
 			log.Error().Msgf("Error marshalling response to websocket: %s", err.Error())
@@ -185,7 +185,7 @@ func runServerSocket(host string, token string) {
 
 	go func() {
 		defer close(done)
-		err = c.WriteJSON(format.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
+		err = c.WriteJSON(response.JSONResponse{Output: "Ready and willing.", Method: "response", Status: "success", OK: true})
 		if err != nil {
 			log.Error().Msgf("Error writing to websocket: %s", err.Error())
 			return
