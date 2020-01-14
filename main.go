@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions/system"
 	"github.com/gorilla/mux"
 	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
+	"github.com/qcasey/MDroid-Core/sessions/system"
 )
 
 func main() {
