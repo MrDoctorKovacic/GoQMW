@@ -26,7 +26,7 @@
         {
             "label": "Build ArmV5",
             "type": "shell",
-            "command": "env GOOS=linux GOARCH=arm GOARM=5 go build -o ./bin/MDroid-Core-ArmV5 ./",
+            "command": "env CC=arm-linux-gnueabihf-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=5 go build -o ./bin/MDroid-Core-ArmV5 ./",
             "group": {
                 "kind": "build",
                 "isDefault": true
