@@ -13,7 +13,9 @@ import (
 // SQLiteInit creates a new SQLite connection
 func (database *Database) SQLiteInit() (string, error) {
 	var err error
-	filename := fmt.Sprintf("/root/MDroid/logs/core/dbs/%s.db", time.Now().Local().String())
+	// TODO: make this a setting
+	filename := fmt.Sprintf("/home/pi/MDroid/logs/core/dbs/%s.db", time.Now().Local().String())
+
 	database.sqlconn, err = sql.Open("sqlite3", filename)
 	if err != nil {
 		return filename, err
