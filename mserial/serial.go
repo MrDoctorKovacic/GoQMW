@@ -113,7 +113,7 @@ func readSerial(device *serial.Port) error {
 // read will continuously pull data from incoming serial
 func read(serialDevice *serial.Port) (interface{}, error) {
 	reader := bufio.NewReader(serialDevice)
-	msg, err := reader.ReadBytes('}')
+	msg, _, err := reader.ReadLine()
 	if err != nil {
 		return nil, err
 	}
