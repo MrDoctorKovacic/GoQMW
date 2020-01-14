@@ -1,14 +1,12 @@
 package mserial
 
 import (
-	"bufio"
-	"encoding/json"
 	"net/http"
 	"sync"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
@@ -89,20 +87,6 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 		AwaitText(params["command"])
 	}
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
-}
-
-// Read will continuously pull data from incoming serial
-func Read(serialDevice *serial.Port) (interface{}, error) {
-	reader := bufio.NewReader(serialDevice)
-	msg, err := reader.ReadBytes('}')
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse serial data
-	var data interface{}
-	json.Unmarshal(msg, &data)
-	return data, nil
 }
 
 // Push queues a message for writing
