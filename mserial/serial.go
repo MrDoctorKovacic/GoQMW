@@ -1,6 +1,8 @@
 package mserial
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -98,7 +100,7 @@ func loop(device *serial.Port, isWriter bool) {
 
 // readSerial takes one line from the serial device and parses it into the session
 func readSerial(device *serial.Port) error {
-	response, err := Read(device)
+	response, err := read(device)
 	if err != nil {
 		return err
 	}
@@ -106,6 +108,20 @@ func readSerial(device *serial.Port) error {
 	// Parse serial data
 	parseJSON(response)
 	return nil
+}
+
+// read will continuously pull data from incoming serial
+func read(serialDevice *serial.Port) (interface{}, error) {
+	reader := bufio.NewReader(serialDevice)
+	msg, err := reader.ReadBytes('}')
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse serial data
+	var data interface{}
+	json.Unmarshal(msg, &data)
+	return data, nil
 }
 
 // write pushes out a message to the open serial port
