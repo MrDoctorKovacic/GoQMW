@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/mserial/gyro"
+	"github.com/mitchellh/mapstructure"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
@@ -171,6 +173,17 @@ func parseJSON(marshalledJSON interface{}) {
 		case float64:
 			if floatValue, ok := value.(float64); ok {
 				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+			}
+		case map[string]interface{}:
+			var m gyro.Measurement
+			err := mapstructure.Decode(value, &m)
+			if err != nil {
+				log.Error().Msgf(err.Error())
+				return
+			}
+			err = gyro.AddMeasurement(key, m)
+			if err != nil {
+				log.Error().Msgf(err.Error())
 			}
 		case []interface{}:
 			log.Error().Msg(key + " is an array. Data: ")
