@@ -1,15 +1,11 @@
-package gyro
+package mserial
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format/response"
 )
-
-// Module exports MDroid module
-type Module struct{}
 
 // Measurement contains a simple X,Y,Z output from the IMU
 type Measurement struct {
@@ -24,26 +20,10 @@ type gyros struct {
 	Magnetic     Measurement `json:"Magnetic,omitempty"`
 }
 
-var (
-	// Mod exports our module functionality
-	Mod                Module
-	currentGyroReading gyros
-)
+var currentGyroReading gyros
 
-// Setup handles module init
-func (*Module) Setup(configAddr *map[string]string) {
-}
-
-// SetRoutes inits module routes
-func (*Module) SetRoutes(router *mux.Router) {
-	//
-	// Serial routes
-	//
-	router.HandleFunc("/session/gyros", getGyroMeasurements).Methods("GET")
-}
-
-// AddMeasurement to current readings
-func AddMeasurement(name string, m Measurement) error {
+// addMeasurement to current readings
+func addMeasurement(name string, m Measurement) error {
 	switch name {
 	case "ACCELERATION":
 		currentGyroReading.Acceleration = m
