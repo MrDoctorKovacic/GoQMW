@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -63,6 +64,10 @@ func parseFile(filename string) (map[string]map[string]string, error) {
 
 // writeFile to given file, TODO: create one if it doesn't exist
 func writeFile(file string) error {
+	if file == "" {
+		return fmt.Errorf("Empty filename")
+	}
+
 	Settings.mutex.Lock()
 	settingsJSON, err := json.MarshalIndent(Settings.Data, "", "\t")
 	Settings.mutex.Unlock()
