@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,6 +22,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
+
+type MDroidRoute struct {
+	Path    string `json:"Path"`
+	Methods string `json:"Methods"`
+}
+
+var routes []MDroidRoute
 
 // **
 // Start with some router functions
@@ -162,6 +170,9 @@ func Start(router *mux.Router) {
 	//
 	// Main routes
 	//
+	router.HandleFunc("/routes", func(w http.ResponseWriter, r *http.Request) {
+		response.WriteNew(&w, r, response.JSONResponse{Output: routes, OK: true})
+	}).Methods("GET")
 	router.HandleFunc("/restart/{machine}", handleReboot).Methods("GET")
 	router.HandleFunc("/shutdown/{machine}", handleShutdown).Methods("GET")
 	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
@@ -203,12 +214,33 @@ func Start(router *mux.Router) {
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		response := response.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs for applicable routes.", OK: true}
-		response.Write(&w, r)
+		response.WriteNew(&w, r, response.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs or /routes for applicable routes.", OK: true})
 	}).Methods("GET")
 
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
+
+	// Walk routes
+	routes := make([]MDroidRoute, 0)
+
+	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		var newroute MDroidRoute
+
+		pathTemplate, err := route.GetPathTemplate()
+		if err == nil {
+			newroute.Path = pathTemplate
+		}
+		methods, err := route.GetMethods()
+		if err == nil {
+			newroute.Methods = strings.Join(methods, ",")
+		}
+		routes = append(routes, newroute)
+		return nil
+	})
+
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
 
 	log.Info().Msg("Starting server...")
 
@@ -219,6 +251,11 @@ func Start(router *mux.Router) {
 		log.Error().Msg("Router failed! We messed up really bad to get this far. Restarting the router...")
 		time.Sleep(time.Second * 10)
 	}
+}
+
+func getRoutes(w http.ResponseWriter, r *http.Request) {
+
+	response.WriteNew(&w, r, response.JSONResponse{Output: routes})
 }
 
 // authMiddleware will match http bearer token again the one hardcoded in our config
