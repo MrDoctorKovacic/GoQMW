@@ -53,6 +53,8 @@ func startSerialComms(deviceName string, baudrate int) {
 	if err != nil {
 		log.Error().Msgf("Failed to open serial port %s", deviceName)
 		log.Error().Msg(err.Error())
+		time.Sleep(time.Second * 2)
+		go startSerialComms(deviceName, baudrate)
 		return
 	}
 	defer s.Close()
