@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
 )
@@ -93,17 +93,8 @@ func Set(newPackage Data) error {
 	// Add / update value in global session after locking access to session
 	session.Mutex.Lock()
 
-	// Update number of session values
-	shouldUpdateDB := true
+	// Check if this is a new value we should insert into the DB
 	oldPackage, exists := session.data[newPackage.Name]
-	if !exists {
-		response.Statistics.SessionValues++
-	} else {
-		// Check if this is a new value we should insert into the DB
-		if oldPackage.Value == newPackage.Value {
-			shouldUpdateDB = false
-		}
-	}
 
 	// Add new package to session
 	session.data[newPackage.Name] = newPackage
@@ -114,8 +105,8 @@ func Set(newPackage Data) error {
 	// Finish post processing
 	go runHooks(newPackage)
 
-	// Insert into database
-	if db.DB != nil && shouldUpdateDB {
+	// Insert into database if this is a new/updated value
+	if db.DB != nil && (!exists || (exists && oldPackage.Value != newPackage.Value)) {
 		// Convert to a float if that suits the value, otherwise change field to value_string
 		valueString := fmt.Sprintf("value=%s", newPackage.Value)
 		if _, err := strconv.ParseFloat(newPackage.Value, 32); err != nil {
