@@ -165,9 +165,10 @@ func evalAngelEyesPower(keyIsIn string) {
 	lightSensor := sessions.GetBoolDefault("LIGHT_SENSOR_ON", false)
 
 	shouldTrigger := !lightSensor && keyIsIn != "FALSE"
+	triggerReason := fmt.Sprintf("lightSensor: %t, keyIsIn: %s", lightSensor, keyIsIn)
 
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Angel", &_angel)
+	genericPowerTrigger(shouldTrigger, triggerReason, "Angel", &_angel)
 }
 
 // Evaluates if the video boards should be on, and then passes that struct along as generic power module
@@ -176,9 +177,10 @@ func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
 	_board.target, _board.errors.target = settings.Get(_board.settings.component, _board.settings.name)
 
 	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
+	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s", accOn, wifiOn, keyIsIn)
 
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Board", &_board)
+	genericPowerTrigger(shouldTrigger, triggerReason, "Board", &_board)
 }
 
 // Evaluates if the tablet should be on, and then passes that struct along as generic power module
@@ -187,9 +189,10 @@ func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
 	_tablet.target, _tablet.errors.target = settings.Get(_tablet.settings.component, _tablet.settings.name)
 
 	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
+	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s", accOn, wifiOn, keyIsIn)
 
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Tablet", &_tablet)
+	genericPowerTrigger(shouldTrigger, triggerReason, "Tablet", &_tablet)
 }
 
 // Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
@@ -202,13 +205,14 @@ func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
 	if wifiOn && keyIsIn == "FALSE" {
 		shouldTrigger = false
 	}
+	triggerReason := fmt.Sprintf("wifiOn: %t, keyIsIn: %s", wifiOn, keyIsIn)
 
 	// Pass wireless module to generic power trigger
-	genericPowerTrigger(shouldTrigger, "Wireless", &_wireless)
+	genericPowerTrigger(shouldTrigger, triggerReason, "Wireless", &_wireless)
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
-func genericPowerTrigger(shouldBeOn bool, name string, module *device) {
+func genericPowerTrigger(shouldBeOn bool, reason string, name string, module *device) {
 	// Check if request is already being made
 	if module.powerStats.workingOnRequest {
 		return
@@ -238,18 +242,25 @@ func genericPowerTrigger(shouldBeOn bool, name string, module *device) {
 		return
 	}
 
+	var triggerType string
 	// Evaluate power target with trigger and settings info
 	if (module.target == "AUTO" && !module.isOn && shouldBeOn) || (module.target == "ON" && !module.isOn) {
 		message := mserial.Message{Device: mserial.Writer, Text: fmt.Sprintf("powerOn%s", name)}
+		triggerType = "on"
 		mserial.Await(&message)
 	} else if (module.target == "AUTO" && module.isOn && !shouldBeOn) || (module.target == "OFF" && module.isOn) {
+		triggerType = "off"
 		gracefulShutdown(name)
 	} else {
 		return
 	}
 
 	// Log and set next time threshold
-	log.Info().Msgf("Powering off %s, because target is %s", name, module.target)
+	if module.target != "AUTO" {
+		reason = fmt.Sprintf("target is %s", module.target)
+	}
+	log.Info().Msgf("Powering %s %s, because %s", triggerType, name, reason)
+
 	module.powerStats.lastTrigger = powerTrigger{time: time.Now(), target: module.target}
 }
 
