@@ -23,6 +23,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// MDroidRoute holds information for our meta /routes output
 type MDroidRoute struct {
 	Path    string `json:"Path"`
 	Methods string `json:"Methods"`
@@ -221,8 +222,6 @@ func Start(router *mux.Router) {
 	router.Use(checksumMiddleware)
 
 	// Walk routes
-	routes := make([]MDroidRoute, 0)
-
 	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		var newroute MDroidRoute
 
@@ -251,11 +250,6 @@ func Start(router *mux.Router) {
 		log.Error().Msg("Router failed! We messed up really bad to get this far. Restarting the router...")
 		time.Sleep(time.Second * 10)
 	}
-}
-
-func getRoutes(w http.ResponseWriter, r *http.Request) {
-
-	response.WriteNew(&w, r, response.JSONResponse{Output: routes})
 }
 
 // authMiddleware will match http bearer token again the one hardcoded in our config
