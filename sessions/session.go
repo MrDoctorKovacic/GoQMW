@@ -77,7 +77,7 @@ func Setup(configAddr *map[string]string) {
 		}
 	}
 
-	go CheckServer(serverHost, token)
+	go checkServer(serverHost, token)
 }
 
 // InitializeDefaults sets default session values here
