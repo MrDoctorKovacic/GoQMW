@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/bradfitz/latlong"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/rs/zerolog/log"
 )
 
