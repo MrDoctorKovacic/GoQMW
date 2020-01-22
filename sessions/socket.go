@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/websocket"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/rs/zerolog/log"
 )
 
@@ -46,9 +46,9 @@ func GetSessionSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CheckServer will continiously ping a central server for waiting packets,
+// checkServer will continiously ping a central server for waiting packets,
 // and will open a websocket as a client if so
-func CheckServer(host string, token string) {
+func checkServer(host string, token string) {
 	var failedOnce bool
 	log.Info().Msgf("Starting pings to main server at %s", host)
 
