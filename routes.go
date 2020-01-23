@@ -57,12 +57,12 @@ func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
-	sleepMDroid(time.Duration(msToSleep) * time.Millisecond)
+	sleepMDroid()
 }
 
-func sleepMDroid(msToSleep time.Duration) {
-	log.Info().Msgf("Going to sleep now, for %f hours (%d ms)", msToSleep.Hours(), msToSleep.Milliseconds())
-	go func() { mserial.PushText(fmt.Sprintf("putToSleep%d", msToSleep.Milliseconds())) }()
+func sleepMDroid() {
+	log.Info().Msg("Going to sleep now! Powering down.")
+	go func() { mserial.PushText(fmt.Sprintf("putToSleep%d", -1)) }()
 	sendServiceCommand("MDROID", "shutdown")
 }
 

@@ -127,6 +127,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 
+	// If "OFF", auto sleep is not enabled. Exit
 	if sleepEnabled != "AUTO" {
 		return
 	}
@@ -136,25 +137,9 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 
-	// Instead of power trigger, evaluate here. Sleep every so often
-	now := time.Now().Local()
-	var (
-		isTimeToSleep = false
-		msToSleep     time.Duration
-	)
-	if now.Hour() >= 20 {
-		isTimeToSleep = true
-		msToSleep = (time.Duration(29-now.Hour()) * time.Hour)
-	} else if now.Hour() <= 5 {
-		isTimeToSleep = true
-		msToSleep = (time.Duration(6-now.Hour()) * time.Hour)
-	}
-	msToSleep = msToSleep + time.Duration(60-now.Minute())*time.Minute
-	msToSleep = msToSleep + time.Duration(60-now.Second())*time.Second
-	shouldTrigger := !accOn && wifiOn && keyIsIn == "FALSE" && isTimeToSleep
-
-	if shouldTrigger {
-		sleepMDroid(msToSleep)
+	// Sleep indefinitely, hand power control to the
+	if !accOn && wifiOn && keyIsIn == "FALSE" {
+		sleepMDroid()
 	}
 }
 
