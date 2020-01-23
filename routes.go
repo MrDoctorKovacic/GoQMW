@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +42,7 @@ func stopMDroid(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+	/*params := mux.Vars(r)
 	msToSleepString, ok := params["millis"]
 	if !ok {
 		response.WriteNew(&w, r, response.JSONResponse{Output: "Time to sleep required", OK: false})
@@ -55,7 +54,7 @@ func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
 		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid time to sleep", OK: false})
 		return
 	}
-
+	*/
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 	sleepMDroid()
 }
@@ -179,7 +178,8 @@ func Start(router *mux.Router) {
 	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
 	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
-	router.HandleFunc("/sleep/{millis}", handleSleepMDroid).Methods("GET")
+	router.HandleFunc("/sleep", handleSleepMDroid).Methods("GET")
+	router.HandleFunc("/shutdown", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
 	router.HandleFunc("/responses/stats", response.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
