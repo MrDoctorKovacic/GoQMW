@@ -31,5 +31,8 @@ func main() {
 	system.Mod.SetRoutes(router)
 	db.Mod.Setup(configMap)
 
+	// Connect bluetooth device on startup
+	bluetooth.Connect()
+
 	Start(router)
 }
