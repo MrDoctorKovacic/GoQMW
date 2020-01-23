@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
@@ -71,6 +72,13 @@ func wirelessSettings(settingName string, settingValue string) {
 func keyState(hook *sessions.Data) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
+
+	// Play / pause bluetooth media on key in/out
+	if hook.Value != "FALSE" {
+		go bluetooth.Play()
+	} else {
+		go bluetooth.Pause()
+	}
 
 	// Determine state of wireless, angel eyes, and main board
 	evalWirelessPower(hook.Value, accOn, wifiOn)
