@@ -136,7 +136,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 		return
 	}
 
-	// Sleep indefinitely, hand power control to the
+	// Sleep indefinitely, hand power control to the arduino
 	if !accOn && wifiOn && keyIsIn == "FALSE" {
 		sleepMDroid()
 	}
