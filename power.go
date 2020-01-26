@@ -159,9 +159,10 @@ func evalAngelEyesPower(keyIsIn string) {
 func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
 	_board.isOn, _board.errors.on = sessions.GetBool("BOARD_POWER")
 	_board.target, _board.errors.target = settings.Get(_board.settings.component, _board.settings.name)
+	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
 
-	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
-	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s", accOn, wifiOn, keyIsIn)
+	shouldTrigger := (accOn && !wifiOn && !startedRecently) || ((wifiOn || startedRecently) && keyIsIn != "FALSE")
+	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s, startedRecently: %t", accOn, wifiOn, keyIsIn, startedRecently)
 
 	// Pass angel module to generic power trigger
 	genericPowerTrigger(shouldTrigger, triggerReason, "Board", &_board)
@@ -171,9 +172,10 @@ func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
 func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
 	_tablet.isOn, _tablet.errors.on = sessions.GetBool("TABLET_POWER")
 	_tablet.target, _tablet.errors.target = settings.Get(_tablet.settings.component, _tablet.settings.name)
+	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
 
-	shouldTrigger := accOn && !wifiOn || wifiOn && keyIsIn != "FALSE"
-	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s", accOn, wifiOn, keyIsIn)
+	shouldTrigger := (accOn && !wifiOn && !startedRecently) || ((wifiOn || startedRecently) && keyIsIn != "FALSE")
+	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s, startedRecently: %t", accOn, wifiOn, keyIsIn, startedRecently)
 
 	// Pass angel module to generic power trigger
 	genericPowerTrigger(shouldTrigger, triggerReason, "Tablet", &_tablet)
