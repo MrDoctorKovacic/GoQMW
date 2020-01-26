@@ -43,11 +43,10 @@ type powerTrigger struct {
 
 // Read the target action based on current ACC Power value
 var (
-	_lock     = device{settings: settingDef{component: "MDROID", name: "AUTOLOCK"}}
-	_wireless = device{settings: settingDef{component: "WIRELESS", name: "POWER"}}
-	_angel    = device{settings: settingDef{component: "ANGEL_EYES", name: "POWER"}}
-	_tablet   = device{settings: settingDef{component: "TABLET", name: "POWER"}}
-	_board    = device{settings: settingDef{component: "BOARD", name: "POWER"}}
+	_lock   = device{settings: settingDef{component: "MDROID", name: "AUTOLOCK"}}
+	_angel  = device{settings: settingDef{component: "ANGEL_EYES", name: "POWER"}}
+	_tablet = device{settings: settingDef{component: "TABLET", name: "POWER"}}
+	_board  = device{settings: settingDef{component: "BOARD", name: "POWER"}}
 )
 
 func (ps *powerStats) startRequest() {
@@ -178,22 +177,6 @@ func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
 
 	// Pass angel module to generic power trigger
 	genericPowerTrigger(shouldTrigger, triggerReason, "Tablet", &_tablet)
-}
-
-// Evaluates if the wireless boards should be on, and then passes that struct along as generic power module
-func evalWirelessPower(keyIsIn string, accOn bool, wifiOn bool) {
-	_wireless.isOn, _wireless.errors.on = sessions.GetBool("WIRELESS_POWER")
-	_wireless.target, _wireless.errors.target = settings.Get(_wireless.settings.component, _wireless.settings.name)
-
-	// Wireless is most likely supposed to be on, only one case where it should not be
-	shouldTrigger := true
-	if wifiOn && keyIsIn == "FALSE" {
-		shouldTrigger = false
-	}
-	triggerReason := fmt.Sprintf("wifiOn: %t, keyIsIn: %s", wifiOn, keyIsIn)
-
-	// Pass wireless module to generic power trigger
-	genericPowerTrigger(shouldTrigger, triggerReason, "Wireless", &_wireless)
 }
 
 // Error check against module's status fetches, then check if we're powering on or off
