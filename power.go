@@ -132,7 +132,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	}
 
 	// Don't fall asleep if the board was recently started
-	if time.Since(sessions.GetStartTime()) < time.Minute*15 {
+	if time.Since(sessions.GetStartTime()) < time.Minute*10 {
 		return
 	}
 
