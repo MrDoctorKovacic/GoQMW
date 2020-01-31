@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
 	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/mserial"
@@ -12,7 +11,7 @@ import (
 
 func main() {
 	// Init router
-	router := mux.NewRouter()
+	router := CreateRouter()
 
 	// Run through the config file and retrieve some settings
 	configMap := parseConfig()
