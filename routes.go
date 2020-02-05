@@ -163,10 +163,9 @@ func changeLogLevel(level zerolog.Level) {
 // end router functions
 // **
 
-// CreateRouter initializes an MDroid router with default system routes
-func CreateRouter() *mux.Router {
-	// Init router
-	router := mux.NewRouter()
+// SetDefaultRoutes initializes an MDroid router with default system routes
+func SetDefaultRoutes(router *mux.Router) {
+	log.Info().Msg("Configuring default routes...")
 
 	//
 	// Main routes
@@ -218,13 +217,10 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		response.WriteNew(&w, r, response.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs or /routes for applicable routes.", OK: true})
 	}).Methods("GET")
-
-	return router
 }
 
 // Start configures default MDroid routes, starts router with optional middleware if configured
 func Start(router *mux.Router) {
-	log.Info().Msg("Configuring default routes...")
 
 	// Setup checksum middleware
 	router.Use(checksumMiddleware)
