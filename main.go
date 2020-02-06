@@ -11,13 +11,19 @@ import (
 )
 
 func main() {
+	// Run through the config file and retrieve some settings
+	configMap := parseConfig()
+
 	// Init router
 	router := mux.NewRouter()
 
-	SetDefaultRoutes(router)
+	gps.Mod.Setup(configMap)
+	gps.Mod.SetRoutes(router)
+	system.Mod.Setup(configMap)
+	system.Mod.SetRoutes(router)
 
-	// Run through the config file and retrieve some settings
-	configMap := parseConfig()
+	// Set default routes (including session)
+	SetDefaultRoutes(router)
 
 	// Setup conventional modules
 	// TODO: More modular handling of modules
@@ -25,12 +31,8 @@ func main() {
 	mserial.Mod.SetRoutes(router)
 	bluetooth.Mod.Setup(configMap)
 	bluetooth.Mod.SetRoutes(router)
-	gps.Mod.Setup(configMap)
-	gps.Mod.SetRoutes(router)
 	pybus.Mod.Setup(configMap)
 	pybus.Mod.SetRoutes(router)
-	system.Mod.Setup(configMap)
-	system.Mod.SetRoutes(router)
 	db.Mod.Setup(configMap)
 
 	// Connect bluetooth device on startup
