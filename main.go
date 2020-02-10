@@ -37,6 +37,8 @@ func main() {
 
 	// Connect bluetooth device on startup
 	bluetooth.Connect()
+	bluetooth.Disconnect()
+	bluetooth.Connect()
 
 	Start(router)
 }
