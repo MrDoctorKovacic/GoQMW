@@ -79,7 +79,7 @@ func (*Module) SetRoutes(router *mux.Router) {
 	router.HandleFunc("/serial/{command}/{checksum}", WriteSerialHandler).Methods("POST", "GET")
 	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST", "GET")
 
-	router.HandleFunc("/session/gyros", getGyroMeasurements).Methods("GET")
+	router.HandleFunc("/gyros", getGyroMeasurements).Methods("GET")
 }
 
 // WriteSerialHandler handles messages sent through the server
