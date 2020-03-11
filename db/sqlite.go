@@ -13,6 +13,9 @@ import (
 // SQLiteInit creates a new SQLite connection
 func (database *Database) SQLiteInit() (string, error) {
 	var err error
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
 	// TODO: make this a setting
 	filename := fmt.Sprintf("/home/pi/MDroid/logs/core/dbs/%s.db", time.Now().Local().String())
 
