@@ -95,6 +95,8 @@ func connect() {
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
 	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).SetClientID(mqttConfig.clientid)
+	opts.SetUsername(mqttConfig.username)
+	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
 	opts.SetDefaultPublishHandler(f)
 	opts.SetPingTimeout(15 * time.Second)
