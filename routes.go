@@ -185,7 +185,6 @@ func SetDefaultRoutes(router *mux.Router) {
 	// Session routes
 	//
 	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
-	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/stats", sessions.HandleGetStats).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
