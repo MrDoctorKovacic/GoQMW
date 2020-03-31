@@ -60,13 +60,14 @@ func Setup(configAddr *map[string]string) {
 	InitializeDefaults()
 
 	// Set up Auth tokens
-	token, usingTokens := configMap["AUTH_TOKEN"]
-	serverHost, usingCentralHost := configMap["MDROID_SERVER"]
-	if !usingTokens || !usingCentralHost {
-		log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
-	} else {
-		log.Info().Msg("Successfully set up auth tokens")
-	}
+	/*
+		token, usingTokens := configMap["AUTH_TOKEN"]
+		serverHost, usingCentralHost := configMap["MDROID_SERVER"]
+		if !usingTokens || !usingCentralHost {
+			log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
+		} else {
+			log.Info().Msg("Successfully set up auth tokens")
+		}*/
 
 	// Setup throughput warnings
 	throughputString, usingThroughputCheck := configMap["THROUGHPUT_WARN_THRESHOLD"]
@@ -76,8 +77,6 @@ func Setup(configAddr *map[string]string) {
 			session.throughputWarning = throughput
 		}
 	}
-
-	go checkServer(serverHost, token)
 }
 
 // InitializeDefaults sets default session values here

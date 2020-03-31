@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/mqtt"
 	"github.com/bradfitz/latlong"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
@@ -150,6 +151,16 @@ func Set(newdata Fix) string {
 	Mod.LastFix = Mod.CurrentFix
 	Mod.CurrentFix = newdata
 	Mod.Mutex.Unlock()
+
+	// Post to MQTT
+	if mqtt.IsConnected() {
+		data, err := json.Marshal(newdata)
+		if err != nil {
+			log.Error().Msg(err.Error())
+		} else {
+			go mqtt.Publish("gps", string(data))
+		}
+	}
 
 	// Update timezone information with new GPS fix
 	processTimezone()

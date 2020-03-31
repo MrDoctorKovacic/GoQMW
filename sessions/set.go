@@ -14,6 +14,7 @@ import (
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
 )
@@ -106,23 +107,32 @@ func Set(newPackage Data) error {
 	go runHooks(newPackage)
 
 	// Insert into database if this is a new/updated value
-	if db.DB != nil && (!exists || (exists && oldPackage.Value != newPackage.Value)) {
-		// Convert to a float if that suits the value, otherwise change field to value_string
-		valueString := fmt.Sprintf("value=%s", newPackage.Value)
-		if _, err := strconv.ParseFloat(newPackage.Value, 32); err != nil {
-			valueString = fmt.Sprintf("value=\"%s\"", newPackage.Value)
+	if !exists || (exists && oldPackage.Value != newPackage.Value) {
+		formattedName := strings.Replace(newPackage.Name, " ", "_", -1)
+
+		if mqtt.IsConnected() {
+			topic := fmt.Sprintf("session/%s", formattedName)
+			go mqtt.Publish(topic, newPackage.Value)
 		}
 
-		// In Sessions, all values come in and out as strings regardless,
-		// but this conversion alows Influx queries on the floats to be executed
-		err := db.DB.Write(fmt.Sprintf("%s %s", strings.Replace(newPackage.Name, " ", "_", -1), valueString))
-		if err != nil {
-			errorText := fmt.Sprintf("Error writing %s to database:\n%s", valueString, err.Error())
-			// Only spam our log if Influx is online
-			if db.DB.Started {
-				log.Error().Msg(errorText)
+		if db.DB != nil {
+			// Convert to a float if that suits the value, otherwise change field to value_string
+			valueString := fmt.Sprintf("value=%s", newPackage.Value)
+			if _, err := strconv.ParseFloat(newPackage.Value, 32); err != nil {
+				valueString = fmt.Sprintf("value=\"%s\"", newPackage.Value)
 			}
-			return fmt.Errorf(errorText)
+
+			// In Sessions, all values come in and out as strings regardless,
+			// but this conversion alows Influx queries on the floats to be executed
+			err := db.DB.Write(fmt.Sprintf("%s %s", formattedName, valueString))
+			if err != nil {
+				errorText := fmt.Sprintf("Error writing %s to database:\n%s", valueString, err.Error())
+				// Only spam our log if Influx is online
+				if db.DB.Started {
+					log.Error().Msg(errorText)
+				}
+				return fmt.Errorf(errorText)
+			}
 		}
 	}
 

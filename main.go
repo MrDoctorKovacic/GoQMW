@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions/gps"
@@ -34,6 +35,7 @@ func main() {
 	pybus.Mod.Setup(configMap)
 	pybus.Mod.SetRoutes(router)
 	db.Mod.Setup(configMap)
+	mqtt.Mod.Setup(configMap)
 
 	// Connect bluetooth device on startup
 	bluetooth.Connect()
