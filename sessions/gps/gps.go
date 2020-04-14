@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/mqtt"
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/bradfitz/latlong"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
