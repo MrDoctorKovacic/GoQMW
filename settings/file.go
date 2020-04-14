@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,6 +34,12 @@ func ReadFile(useSettingsFile string) {
 		log.Info().Msg("Successfully loaded settings from file '" + Settings.File + "': " + string(out))
 		for component := range Settings.Data {
 			for setting := range Settings.Data[component] {
+				// Post to MQTT
+				if mqtt.Enabled {
+					topic := fmt.Sprintf("settings/%s/%s", component, setting)
+					go mqtt.Publish(topic, Settings.Data[component][setting])
+				}
+
 				runHooks(component, setting, Settings.Data[component][setting])
 			}
 		}

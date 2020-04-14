@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -34,9 +35,13 @@ var (
 	// Mod exports our module functionality
 	Mod Module
 
+	// Enabled if MQTT is enabled
+	Enabled bool
+
 	mqttConfig    config
 	finishedSetup bool
 	client        mqtt.Client
+	clientLock    sync.Mutex
 )
 
 var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -74,8 +79,9 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 
 // Publish will write the given message to the given topic and wait
 func Publish(topic string, message string) {
-	if !IsConnected() {
+	for !IsConnected() {
 		connect()
+		time.Sleep(500 * time.Millisecond)
 	}
 	token := client.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
 	token.Wait()
@@ -91,6 +97,13 @@ func IsConnected() bool {
 }
 
 func connect() {
+	clientLock.Lock()
+	defer clientLock.Unlock()
+
+	if IsConnected() {
+		return
+	}
+
 	finishedSetup = false
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
@@ -141,5 +154,6 @@ func (*Module) Setup(configAddr *map[string]string) {
 		return
 	}
 
+	Enabled = true
 	go connect()
 }

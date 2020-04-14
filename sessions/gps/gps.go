@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/bradfitz/latlong"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/rs/zerolog/log"
 )
 
@@ -153,7 +153,7 @@ func Set(newdata Fix) string {
 	Mod.Mutex.Unlock()
 
 	// Post to MQTT
-	if mqtt.IsConnected() {
+	if mqtt.Enabled {
 		data, err := json.Marshal(newdata)
 		if err != nil {
 			log.Error().Msg(err.Error())

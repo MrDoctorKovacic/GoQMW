@@ -110,7 +110,7 @@ func Set(newPackage Data) error {
 	if !exists || (exists && oldPackage.Value != newPackage.Value) {
 		formattedName := strings.Replace(newPackage.Name, " ", "_", -1)
 
-		if mqtt.IsConnected() {
+		if mqtt.Enabled {
 			topic := fmt.Sprintf("session/%s", formattedName)
 			go mqtt.Publish(topic, newPackage.Value)
 		}
