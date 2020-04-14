@@ -83,7 +83,7 @@ func Publish(topic string, message string) {
 
 // IsConnected returns if the MQTT client has finished setting up and is connected
 func IsConnected() bool {
-	if !finishedSetup {
+	if !finishedSetup || client == nil {
 		return false
 	}
 
