@@ -88,6 +88,17 @@ func Publish(topic string, message string) {
 	token.Wait()
 }
 
+// PublishFloat will write the given message to the given topic and wait
+func PublishFloat(topic string, message float64) {
+	for !IsConnected() {
+		//connect()
+		logger.Warn().Msg("Not connected, waiting 500ms")
+		time.Sleep(500 * time.Millisecond)
+	}
+	token := client.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
+	token.Wait()
+}
+
 // IsConnected returns if the MQTT client has finished setting up and is connected
 func IsConnected() bool {
 	if !finishedSetup || client == nil {

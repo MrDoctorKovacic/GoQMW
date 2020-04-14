@@ -152,16 +152,6 @@ func Set(newdata Fix) string {
 	Mod.CurrentFix = newdata
 	Mod.Mutex.Unlock()
 
-	// Post to MQTT
-	if mqtt.Enabled {
-		data, err := json.Marshal(newdata)
-		if err != nil {
-			log.Error().Msg(err.Error())
-		} else {
-			go mqtt.Publish("gps", string(data))
-		}
-	}
-
 	// Update timezone information with new GPS fix
 	processTimezone()
 
@@ -169,14 +159,30 @@ func Set(newdata Fix) string {
 	postingString.WriteString(fmt.Sprintf("latitude=\"%s\",", newdata.Latitude))
 	postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
 
+	if mqtt.Enabled && Mod.LastFix.Latitude != newdata.Latitude {
+		go mqtt.Publish("gps/latitude", newdata.Latitude)
+	}
+	if mqtt.Enabled && Mod.LastFix.Longitude != newdata.Longitude {
+		go mqtt.Publish("gps/longitude", newdata.Longitude)
+	}
+
 	// Append posting strings based on what GPS information was posted
 	if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
+		if mqtt.Enabled && Mod.LastFix.Altitude != newdata.Altitude {
+			go mqtt.PublishFloat("gps/altitude", convFloat)
+		}
 		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
+		if mqtt.Enabled && Mod.LastFix.Speed != newdata.Speed {
+			go mqtt.PublishFloat("gps/speed", convFloat)
+		}
 		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
+		if mqtt.Enabled && Mod.LastFix.Climb != newdata.Climb {
+			go mqtt.PublishFloat("gps/climb", convFloat)
+		}
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}
 	if newdata.Time == "" {

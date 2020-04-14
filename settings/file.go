@@ -29,13 +29,21 @@ func ReadFile(useSettingsFile string) {
 	// Set new settings globally
 	Settings.Data = initSettings
 
+	// Check if MQTT has an address and will be setup
+	flushToMQTT := false
+	if address, err := Get("MDROID", "MQTT_ADDRESS"); err != nil {
+		if address != "" {
+			flushToMQTT = true
+		}
+	}
+
 	// Run hooks on all new settings
 	if out, err := json.Marshal(Settings.Data); err == nil {
 		log.Info().Msg("Successfully loaded settings from file '" + Settings.File + "': " + string(out))
 		for component := range Settings.Data {
 			for setting := range Settings.Data[component] {
 				// Post to MQTT
-				if mqtt.Enabled {
+				if flushToMQTT {
 					topic := fmt.Sprintf("settings/%s/%s", component, setting)
 					go mqtt.Publish(topic, Settings.Data[component][setting])
 				}
