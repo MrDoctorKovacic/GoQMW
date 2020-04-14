@@ -4,6 +4,7 @@ package gps
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -135,6 +136,18 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
+func fixIsSignifigantlyDifferent(oldFix string, newFix string) bool {
+	if oldFloat, err := strconv.ParseFloat(oldFix, 64); err == nil {
+		if newFloat, err := strconv.ParseFloat(newFix, 64); err == nil {
+			if math.Abs(oldFloat-newFloat) > 0.00000001 {
+				return true
+			}
+			log.Info().Msgf("%f", math.Abs(oldFloat-newFloat))
+		}
+	}
+	return false
+}
+
 // Set posts a new GPS fix
 func Set(newdata Fix) string {
 	// Update value for global session if the data is newer
@@ -159,29 +172,29 @@ func Set(newdata Fix) string {
 	postingString.WriteString(fmt.Sprintf("latitude=\"%s\",", newdata.Latitude))
 	postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
 
-	if mqtt.Enabled && Mod.LastFix.Latitude != newdata.Latitude {
+	if mqtt.Enabled && fixIsSignifigantlyDifferent(Mod.LastFix.Latitude, newdata.Latitude) {
 		go mqtt.Publish("gps/latitude", newdata.Latitude)
 	}
-	if mqtt.Enabled && Mod.LastFix.Longitude != newdata.Longitude {
+	if mqtt.Enabled && fixIsSignifigantlyDifferent(Mod.LastFix.Longitude, newdata.Longitude) {
 		go mqtt.Publish("gps/longitude", newdata.Longitude)
 	}
 
 	// Append posting strings based on what GPS information was posted
 	if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
 		if mqtt.Enabled && Mod.LastFix.Altitude != newdata.Altitude {
-			go mqtt.PublishFloat("gps/altitude", convFloat)
+			go mqtt.Publish("gps/altitude", convFloat)
 		}
 		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
 		if mqtt.Enabled && Mod.LastFix.Speed != newdata.Speed {
-			go mqtt.PublishFloat("gps/speed", convFloat)
+			go mqtt.Publish("gps/speed", convFloat)
 		}
 		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
 		if mqtt.Enabled && Mod.LastFix.Climb != newdata.Climb {
-			go mqtt.PublishFloat("gps/climb", convFloat)
+			go mqtt.Publish("gps/climb", convFloat)
 		}
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}
