@@ -117,7 +117,7 @@ func connect() {
 	opts.SetDefaultPublishHandler(f)
 	opts.SetPingTimeout(15 * time.Second)
 
-	client := mqtt.NewClient(opts)
+	client = mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
 		return
