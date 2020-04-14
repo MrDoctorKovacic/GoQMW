@@ -31,8 +31,10 @@ func ReadFile(useSettingsFile string) {
 
 	// Check if MQTT has an address and will be setup
 	flushToMQTT := false
-	if address, err := Get("MDROID", "MQTT_ADDRESS"); err != nil {
-		if address != "" {
+	component, ok := Settings.Data["MDROID"]
+	if ok {
+		address, ok := component["MQTT_ADDRESS"]
+		if ok && address != "" {
 			flushToMQTT = true
 		}
 	}
