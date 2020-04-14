@@ -81,6 +81,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 func Publish(topic string, message string) {
 	for !IsConnected() {
 		//connect()
+		logger.Warn().Msg("Not connected, waiting 500ms")
 		time.Sleep(500 * time.Millisecond)
 	}
 	token := client.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
