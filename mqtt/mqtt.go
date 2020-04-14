@@ -79,10 +79,10 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 
 // Publish will write the given message to the given topic and wait
 func Publish(topic string, message string) {
-	for !IsConnected() {
+	/*for !IsConnected() {
 		connect()
 		time.Sleep(500 * time.Millisecond)
-	}
+	}*/
 	token := client.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
 	token.Wait()
 }
@@ -100,9 +100,10 @@ func connect() {
 	clientLock.Lock()
 	defer clientLock.Unlock()
 
-	if IsConnected() {
-		return
-	}
+	/*
+		if IsConnected() {
+			return
+		}*/
 
 	finishedSetup = false
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
