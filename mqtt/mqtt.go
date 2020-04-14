@@ -94,6 +94,7 @@ func connect() {
 	finishedSetup = false
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
+	logger.Info().Msgf("%s %s %s %s", mqttConfig.address, mqttConfig.clientid, mqttConfig.username, mqttConfig.password)
 	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).SetClientID(mqttConfig.clientid)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
