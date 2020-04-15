@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -42,7 +41,6 @@ var (
 	mqttConfig    config
 	finishedSetup bool
 	client        mqtt.Client
-	clientLock    sync.Mutex
 )
 
 var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -81,8 +79,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 // Publish will write the given message to the given topic and wait
 func Publish(topic string, message interface{}) {
 	for !IsConnected() {
-		//connect()
-		logger.Warn().Msg("Not connected, waiting 500ms")
+		//logger.Warn().Msg("Not connected, waiting 500ms")
 		time.Sleep(500 * time.Millisecond)
 	}
 	token := client.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
@@ -99,18 +96,10 @@ func IsConnected() bool {
 }
 
 func connect() {
-	clientLock.Lock()
-	defer clientLock.Unlock()
-
-	/*
-		if IsConnected() {
-			return
-		}*/
 
 	finishedSetup = false
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
-	logger.Info().Msgf("%s %s %s %s", mqttConfig.address, mqttConfig.clientid, mqttConfig.username, mqttConfig.password)
 	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
