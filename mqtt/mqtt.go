@@ -40,7 +40,8 @@ var (
 
 	mqttConfig    config
 	finishedSetup bool
-	client        mqtt.Client
+	remoteClient  mqtt.Client
+	localClient   mqtt.Client
 )
 
 var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -61,8 +62,8 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 			return
 		}
 		req.Header.Set("Content-Type", "application/json")
-		client := &http.Client{}
-		response, err = client.Do(req)
+		httpClient := &http.Client{}
+		response, err = httpClient.Do(req)
 	} else if request.Method == "GET" {
 		response, err = http.Get(fmt.Sprintf("http://localhost:5353%s", request.Path))
 	}
@@ -82,41 +83,62 @@ func Publish(topic string, message interface{}) {
 		//logger.Warn().Msg("Not connected, waiting 500ms")
 		time.Sleep(500 * time.Millisecond)
 	}
-	token := client.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
-	token.Wait()
+	remoteToken := remoteClient.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
+	localToken := localClient.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
+	remoteToken.Wait()
+	localToken.Wait()
 }
 
 // IsConnected returns if the MQTT client has finished setting up and is connected
 func IsConnected() bool {
-	if !finishedSetup || client == nil {
+	if !finishedSetup || remoteClient == nil {
 		return false
 	}
 
-	return client.IsConnected()
+	return remoteClient.IsConnected()
 }
 
 func connect() {
-
 	finishedSetup = false
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
-	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid)
+
+	// Remote Client
+	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).SetClientID(mqttConfig.clientid)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
 	opts.SetDefaultPublishHandler(f)
 	opts.SetPingTimeout(15 * time.Second)
 
-	client = mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
+	remoteClient = mqtt.NewClient(opts)
+	if token := remoteClient.Connect(); token.Wait() && token.Error() != nil {
+		logger.Error().Msg(token.Error().Error())
+		return
+	}
+	if token := remoteClient.Subscribe("vehicle/requests/#", 0, nil); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
 		return
 	}
 
-	if token := client.Subscribe("vehicle/requests/#", 0, nil); token.Wait() && token.Error() != nil {
+	// Local Client
+	opts = mqtt.NewClientOptions().AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid)
+	opts.SetUsername(mqttConfig.username)
+	opts.SetPassword(mqttConfig.password)
+	opts.SetKeepAlive(30 * time.Second)
+	opts.SetDefaultPublishHandler(f)
+	opts.SetPingTimeout(15 * time.Second)
+
+	localClient = mqtt.NewClient(opts)
+	if token := localClient.Connect(); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
 		return
 	}
+	if token := localClient.Subscribe("vehicle/requests/#", 0, nil); token.Wait() && token.Error() != nil {
+		logger.Error().Msg(token.Error().Error())
+		return
+	}
+
 	finishedSetup = true
 }
 
