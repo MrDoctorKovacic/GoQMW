@@ -142,7 +142,6 @@ func fixIsSignifigantlyDifferent(oldFix string, newFix string) bool {
 			if math.Abs(oldFloat-newFloat) > 0.0000001 {
 				return true
 			}
-			log.Info().Msgf("%f", math.Abs(oldFloat-newFloat))
 		}
 	}
 	return false
