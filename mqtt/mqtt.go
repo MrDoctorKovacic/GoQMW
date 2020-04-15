@@ -19,10 +19,11 @@ type Module struct{}
 
 // config holds configuration and status of MQTT
 type config struct {
-	address  string
-	clientid string
-	username string
-	password string
+	address         string
+	addressFallback string
+	clientid        string
+	username        string
+	password        string
 }
 
 type message struct {
@@ -110,7 +111,7 @@ func connect() {
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
 	logger.Info().Msgf("%s %s %s %s", mqttConfig.address, mqttConfig.clientid, mqttConfig.username, mqttConfig.password)
-	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).SetClientID(mqttConfig.clientid)
+	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
@@ -138,6 +139,11 @@ func (*Module) Setup(configAddr *map[string]string) {
 	mqttConfig.address, ok = configMap["MQTT_ADDRESS"]
 	if !ok {
 		logger.Warn().Msgf("Missing MQTT address.")
+		return
+	}
+	mqttConfig.addressFallback, ok = configMap["MQTT_ADDRESS_FALLBACK"]
+	if !ok {
+		logger.Warn().Msgf("Missing MQTT fallback address.")
 		return
 	}
 	mqttConfig.clientid, ok = configMap["MQTT_CLIENT_ID"]
