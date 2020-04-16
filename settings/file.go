@@ -48,7 +48,7 @@ func ReadFile(useSettingsFile string) {
 				if flushToMQTT {
 					log.Info().Msg("Flushing settings values to MQTT")
 					topic := fmt.Sprintf("settings/%s/%s", component, setting)
-					go mqtt.Publish(topic, Settings.Data[component][setting])
+					go mqtt.Publish(topic, Settings.Data[component][setting], true)
 				} else {
 					log.Info().Msg("MQTT disabled, not flushing values")
 				}

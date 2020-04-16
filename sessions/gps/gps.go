@@ -172,28 +172,28 @@ func Set(newdata Fix) string {
 	postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
 
 	if mqtt.Enabled && fixIsSignifigantlyDifferent(Mod.LastFix.Latitude, newdata.Latitude) {
-		go mqtt.Publish("gps/latitude", newdata.Latitude)
+		go mqtt.Publish("gps/latitude", newdata.Latitude, true)
 	}
 	if mqtt.Enabled && fixIsSignifigantlyDifferent(Mod.LastFix.Longitude, newdata.Longitude) {
-		go mqtt.Publish("gps/longitude", newdata.Longitude)
+		go mqtt.Publish("gps/longitude", newdata.Longitude, true)
 	}
 
 	// Append posting strings based on what GPS information was posted
 	if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
 		if mqtt.Enabled && Mod.LastFix.Altitude != newdata.Altitude {
-			go mqtt.Publish("gps/altitude", convFloat)
+			go mqtt.Publish("gps/altitude", convFloat, true)
 		}
 		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
 		if mqtt.Enabled && Mod.LastFix.Speed != newdata.Speed {
-			go mqtt.Publish("gps/speed", convFloat)
+			go mqtt.Publish("gps/speed", convFloat, true)
 		}
 		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
 		if mqtt.Enabled && Mod.LastFix.Climb != newdata.Climb {
-			go mqtt.Publish("gps/climb", convFloat)
+			go mqtt.Publish("gps/climb", convFloat, true)
 		}
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}

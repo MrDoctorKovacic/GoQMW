@@ -185,7 +185,7 @@ func Set(componentName string, settingName string, settingValue string) bool {
 	// Post to MQTT
 	if mqtt.Enabled {
 		topic := fmt.Sprintf("settings/%s/%s", componentName, settingName)
-		go mqtt.Publish(topic, settingValue)
+		go mqtt.Publish(topic, settingValue, true)
 	}
 
 	// Log our success

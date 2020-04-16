@@ -112,7 +112,7 @@ func Set(newPackage Data) error {
 
 		if mqtt.Enabled {
 			topic := fmt.Sprintf("session/%s", formattedName)
-			go mqtt.Publish(topic, newPackage.Value)
+			go mqtt.Publish(topic, newPackage.Value, true)
 		}
 
 		if db.DB != nil {

@@ -78,14 +78,18 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 }
 
 // Publish will write the given message to the given topic and wait
-func Publish(topic string, message interface{}) {
+func Publish(topic string, message interface{}, publishToRemote bool) {
 	for !IsConnected() {
 		//logger.Warn().Msg("Not connected, waiting 500ms")
 		time.Sleep(500 * time.Millisecond)
 	}
-	remoteToken := remoteClient.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
 	localToken := localClient.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
-	remoteToken.Wait()
+
+	if publishToRemote {
+		remoteToken := remoteClient.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
+		remoteToken.Wait()
+	}
+
 	localToken.Wait()
 }
 
@@ -122,7 +126,7 @@ func connect() {
 	}
 
 	// Local Client
-	opts = mqtt.NewClientOptions().AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid)
+	opts = mqtt.NewClientOptions().AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid).SetAutoReconnect(true)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
@@ -132,10 +136,20 @@ func connect() {
 	localClient = mqtt.NewClient(opts)
 	if token := localClient.Connect(); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
+		go func() {
+			logger.Error().Msg("Failed to setup MQTT, waiting half a second and retrying..")
+			time.Sleep(500 * time.Millisecond)
+			connect()
+		}()
 		return
 	}
 	if token := localClient.Subscribe("vehicle/requests/#", 0, nil); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
+		go func() {
+			logger.Error().Msg("Failed to setup MQTT, waiting half a second and retrying..")
+			time.Sleep(500 * time.Millisecond)
+			connect()
+		}()
 		return
 	}
 
