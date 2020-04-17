@@ -102,6 +102,14 @@ func IsConnected() bool {
 	return remoteClient.IsConnected()
 }
 
+func reconnect() {
+	go func() {
+		logger.Error().Msg("Failed to setup MQTT, waiting half a second and retrying..")
+		time.Sleep(500 * time.Millisecond)
+		connect()
+	}()
+}
+
 func connect() {
 	finishedSetup = false
 	mqtt.DEBUG = log.New(os.Stdout, "", 0)
@@ -118,10 +126,12 @@ func connect() {
 	remoteClient = mqtt.NewClient(opts)
 	if token := remoteClient.Connect(); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
+		reconnect()
 		return
 	}
 	if token := remoteClient.Subscribe("vehicle/requests/#", 0, nil); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
+		reconnect()
 		return
 	}
 
@@ -136,20 +146,12 @@ func connect() {
 	localClient = mqtt.NewClient(opts)
 	if token := localClient.Connect(); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
-		go func() {
-			logger.Error().Msg("Failed to setup MQTT, waiting half a second and retrying..")
-			time.Sleep(500 * time.Millisecond)
-			connect()
-		}()
+		reconnect()
 		return
 	}
 	if token := localClient.Subscribe("vehicle/requests/#", 0, nil); token.Wait() && token.Error() != nil {
 		logger.Error().Msg(token.Error().Error())
-		go func() {
-			logger.Error().Msg("Failed to setup MQTT, waiting half a second and retrying..")
-			time.Sleep(500 * time.Millisecond)
-			connect()
-		}()
+		reconnect()
 		return
 	}
 
