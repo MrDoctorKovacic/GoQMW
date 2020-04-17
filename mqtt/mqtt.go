@@ -82,7 +82,7 @@ func Publish(topic string, message interface{}, publishToRemote bool) {
 	timesSlept := 0
 	for !IsReady() || !IsConnected() {
 		time.Sleep(500 * time.Millisecond)
-		if timesSlept%20 == 0 {
+		if timesSlept > 0 && timesSlept%40 == 0 {
 			logger.Warn().Msgf("Has waited %d seconds to get this packet out, still not connected", timesSlept/2)
 		}
 		timesSlept++
