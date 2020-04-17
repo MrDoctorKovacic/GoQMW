@@ -127,7 +127,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	}
 
 	// If "OFF", auto sleep is not enabled. Exit
-	if sleepEnabled != "AUTO" {
+	if sleepEnabled != "ON" {
 		return
 	}
 
