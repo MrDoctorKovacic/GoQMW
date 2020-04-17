@@ -139,7 +139,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 func fixIsSignifigantlyDifferent(oldFix string, newFix string) bool {
 	if oldFloat, err := strconv.ParseFloat(oldFix, 64); err == nil {
 		if newFloat, err := strconv.ParseFloat(newFix, 64); err == nil {
-			if math.Abs(oldFloat-newFloat) > 0.0000001 {
+			if math.Abs(oldFloat-newFloat) > 0.000001 {
 				return true
 			}
 		}
