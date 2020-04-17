@@ -112,7 +112,7 @@ func reconnect() {
 
 func connect() {
 	finishedSetup = false
-	mqtt.DEBUG = log.New(os.Stdout, "", 0)
+	//mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
 
 	// Remote Client
