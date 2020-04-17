@@ -95,11 +95,21 @@ func Publish(topic string, message interface{}, publishToRemote bool) {
 
 // IsConnected returns if the MQTT client has finished setting up and is connected
 func IsConnected() bool {
-	if !finishedSetup || remoteClient == nil {
+	if !finishedSetup || remoteClient == nil || localClient == nil {
 		return false
 	}
 
-	return remoteClient.IsConnected()
+	return remoteClient.IsConnected() && localClient.IsConnected()
+}
+
+func checkReconnection() {
+	for {
+		if finishedSetup && (!remoteClient.IsConnected() || !localClient.IsConnected()) {
+			logger.Error().Msg("MQTT connection lost... retrying..")
+			connect()
+		}
+		time.Sleep(1500 * time.Millisecond)
+	}
 }
 
 func reconnect() {
@@ -191,4 +201,5 @@ func (*Module) Setup(configAddr *map[string]string) {
 
 	Enabled = true
 	go connect()
+	go checkReconnection()
 }
