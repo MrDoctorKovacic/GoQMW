@@ -117,12 +117,12 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 
 // Evaluates if the board should be put to sleep
 func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
-	sleepEnabled, err := settings.Get("MDROID", "SLEEP")
+	sleepEnabled, err := settings.Get("MDROID", "AUTO_SLEEP")
 
 	if err != nil {
 		log.Error().Msgf("Setting Error: %s", err.Error())
-		log.Error().Msg("Setting read error for SLEEP. Resetting to AUTO")
-		settings.Set("MDROID", "SLEEP", "AUTO")
+		log.Error().Msg("Setting read error for AUTO_SLEEP. Resetting to AUTO")
+		settings.Set("MDROID", "AUTO_SLEEP", "ON")
 		return
 	}
 
