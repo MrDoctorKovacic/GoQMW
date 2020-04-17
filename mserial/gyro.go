@@ -6,7 +6,6 @@ import (
 
 	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mqtt"
-	"github.com/rs/zerolog/log"
 )
 
 // Measurement contains a simple X,Y,Z output from the IMU
@@ -26,7 +25,6 @@ var currentGyroReading gyros
 
 // addMeasurement to current readings
 func addMeasurement(name string, m Measurement) error {
-	log.Info().Msg(name)
 	switch name {
 	case "ACCELERATION":
 		currentGyroReading.Acceleration = m
