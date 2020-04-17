@@ -79,9 +79,13 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 
 // Publish will write the given message to the given topic and wait
 func Publish(topic string, message interface{}, publishToRemote bool) {
-	for !IsConnected() {
-		//logger.Warn().Msg("Not connected, waiting 500ms")
+	timesSlept := 0
+	for !IsConnected() || !IsReady() {
 		time.Sleep(500 * time.Millisecond)
+		if timesSlept%20 == 0 {
+			logger.Warn().Msgf("Has waited %d seconds to get this packet out, still not connected", timesSlept/2)
+		}
+		timesSlept++
 	}
 	localToken := localClient.Publish(fmt.Sprintf("vehicle/%s", topic), 0, true, message)
 
@@ -93,18 +97,19 @@ func Publish(topic string, message interface{}, publishToRemote bool) {
 	localToken.Wait()
 }
 
-// IsConnected returns if the MQTT client has finished setting up and is connected
-func IsConnected() bool {
-	if !finishedSetup || remoteClient == nil || localClient == nil {
-		return false
-	}
+// IsReady returns if the MQTT client has finished setting up
+func IsReady() bool {
+	return finishedSetup && remoteClient != nil && localClient != nil
+}
 
+// IsConnected returns if the MQTT client is connected
+func IsConnected() bool {
 	return remoteClient.IsConnected() && localClient.IsConnected()
 }
 
 func checkReconnection() {
 	for {
-		if finishedSetup && (!remoteClient.IsConnected() || !localClient.IsConnected()) {
+		if IsReady() && !IsConnected() {
 			logger.Error().Msg("MQTT connection lost... retrying..")
 			connect()
 		}
