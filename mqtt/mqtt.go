@@ -155,7 +155,7 @@ func connect() {
 	// Local Client
 	opts = mqtt.NewClientOptions().AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid).SetAutoReconnect(true)
 	opts.SetCleanSession(false)
-	opts.SetMaxReconnectInterval(3 * time.Second)
+	opts.SetMaxReconnectInterval(30 * time.Second)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
