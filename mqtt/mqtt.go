@@ -133,6 +133,7 @@ func connect() {
 	// Remote Client
 	opts := mqtt.NewClientOptions().AddBroker(mqttConfig.address).SetClientID(mqttConfig.clientid)
 	opts.SetCleanSession(false)
+	opts.SetMaxReconnectInterval(30 * time.Second)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
@@ -154,6 +155,7 @@ func connect() {
 	// Local Client
 	opts = mqtt.NewClientOptions().AddBroker(mqttConfig.addressFallback).SetClientID(mqttConfig.clientid).SetAutoReconnect(true)
 	opts.SetCleanSession(false)
+	opts.SetMaxReconnectInterval(3 * time.Second)
 	opts.SetUsername(mqttConfig.username)
 	opts.SetPassword(mqttConfig.password)
 	opts.SetKeepAlive(30 * time.Second)
