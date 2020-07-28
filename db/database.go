@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/rs/zerolog/log"
 )
@@ -24,6 +25,7 @@ type Database struct {
 	Type         databaseType
 	Started      bool
 
+	mutex     sync.RWMutex
 	sqlconn   *sql.DB
 	sqlinsert *sql.Stmt
 }

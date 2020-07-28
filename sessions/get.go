@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/rs/zerolog/log"
 )
 
@@ -96,7 +96,7 @@ func GetBool(name string) (value bool, err error) {
 func GetStringDefault(name string, def string) string {
 	v, err := Get(name)
 	if err != nil {
-		log.Debug().Msgf("%s could not be determined, defaulting to FALSE", name)
+		log.Trace().Msgf("%s could not be determined, defaulting to FALSE", name)
 		v.Value = def
 	}
 	return v.Value
@@ -106,7 +106,7 @@ func GetStringDefault(name string, def string) string {
 func GetBoolDefault(name string, def bool) bool {
 	v, err := GetBool(name)
 	if err != nil {
-		log.Debug().Msgf("%s could not be determined, defaulting to false", name)
+		log.Trace().Msgf("%s could not be determined, defaulting to false", name)
 		v = def
 	}
 	return v

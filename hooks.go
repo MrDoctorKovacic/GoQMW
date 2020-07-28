@@ -17,12 +17,10 @@ func setupHooks() {
 	settings.RegisterHook("AUTO_SLEEP", autoSleepSettings)
 	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
-	settings.RegisterHook("WIRELESS", wirelessSettings)
 	sessions.RegisterHookSlice(&[]string{"MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW"}, voltage)
 	sessions.RegisterHook("AUX_CURRENT_RAW", auxCurrent)
 	sessions.RegisterHook("ACC_POWER", accPower)
 	sessions.RegisterHook("KEY_STATE", keyState)
-	sessions.RegisterHook("WIRELESS_POWER", wirelessPower)
 	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
 	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
 	sessions.RegisterHookSlice(&[]string{"SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3"}, voltage)
@@ -59,15 +57,6 @@ func autoSleepSettings(settingName string, settingValue string) {
 	evalAutoSleep(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
 }
 
-// When wireless setting is changed
-func wirelessSettings(settingName string, settingValue string) {
-	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
-
-	// Determine state of wireless
-	evalWirelessPower(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
-}
-
 // When key state is changed in session
 func keyState(hook *sessions.Data) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
@@ -80,8 +69,7 @@ func keyState(hook *sessions.Data) {
 		go bluetooth.Pause()
 	}
 
-	// Determine state of wireless, angel eyes, and main board
-	evalWirelessPower(hook.Value, accOn, wifiOn)
+	// Determine state of angel eyes, and main board
 	evalAngelEyesPower(hook.Value)
 	evalVideoPower(hook.Value, accOn, wifiOn)
 	evalAutoLock(hook.Value, accOn, wifiOn)
@@ -143,27 +131,11 @@ func accPower(hook *sessions.Data) {
 	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
 	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
-	// Trigger wireless, video, and tablet based on ACC and wifi status
-	go evalWirelessPower(keyIsIn, accOn, wifiOn)
+	// Trigger video, and tablet based on ACC and wifi status
 	go evalVideoPower(keyIsIn, accOn, wifiOn)
 	go evalTabletPower(keyIsIn, accOn, wifiOn)
 	go evalAutoLock(keyIsIn, accOn, wifiOn)
 	go evalAutoSleep(keyIsIn, accOn, wifiOn)
-}
-
-// When wireless is turned off, we can infer that LTE is also off
-func wirelessPower(hook *sessions.Data) {
-	// Pull the necessary configuration data
-	lteOn := sessions.GetBoolDefault("LTE_ON", false)
-
-	// When board is turned off but doesn't have time to reflect LTE status
-	if hook.Value == "FALSE" && lteOn {
-		// Indicate LTE is off
-		sessions.SetValue("LTE_ON", "FALSE")
-
-		// Reset network (temporary fix for DNS issues on LTE -> WIFI transition)
-		resetNetwork()
-	}
 }
 
 // Alert me when it's raining and windows are down

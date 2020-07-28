@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -163,8 +160,8 @@ func changeLogLevel(level zerolog.Level) {
 // end router functions
 // **
 
-// Start configures default MDroid routes, starts router with optional middleware if configured
-func Start(router *mux.Router) {
+// SetDefaultRoutes initializes an MDroid router with default system routes
+func SetDefaultRoutes(router *mux.Router) {
 	log.Info().Msg("Configuring default routes...")
 
 	//
@@ -188,7 +185,6 @@ func Start(router *mux.Router) {
 	// Session routes
 	//
 	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
-	router.HandleFunc("/session/socket", sessions.GetSessionSocket).Methods("GET")
 	router.HandleFunc("/session/stats", sessions.HandleGetStats).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}/{checksum}", sessions.HandleSet).Methods("POST")
@@ -217,10 +213,10 @@ func Start(router *mux.Router) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		response.WriteNew(&w, r, response.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs or /routes for applicable routes.", OK: true})
 	}).Methods("GET")
+}
 
-	// Setup checksum middleware
-	router.Use(checksumMiddleware)
-
+// Start configures default MDroid routes, starts router with optional middleware if configured
+func Start(router *mux.Router) {
 	// Walk routes
 	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		var newroute MDroidRoute
@@ -268,35 +264,3 @@ func authMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }*/
-
-func checksumMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for r.Method == "POST" {
-			params := mux.Vars(r)
-			checksum, ok := params["checksum"]
-
-			if !ok || checksum == "" {
-				break
-			}
-
-			body, err := ioutil.ReadAll(r.Body)
-			defer r.Body.Close() //  must close
-			if err != nil {
-				log.Error().Msgf("Error reading body: %v", err)
-				response.WriteNew(&w, r, response.JSONResponse{Output: "Can't read body", OK: false})
-				break
-			}
-
-			if md5.Sum(body) != md5.Sum([]byte(checksum)) {
-				log.Error().Msgf("Invalid checksum %s", checksum)
-				response.WriteNew(&w, r, response.JSONResponse{Output: fmt.Sprintf("Invalid checksum %s", checksum), OK: false})
-				break
-			}
-			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-			break
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}

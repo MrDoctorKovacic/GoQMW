@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/rs/zerolog/log"
 )
 
@@ -28,11 +29,30 @@ func ReadFile(useSettingsFile string) {
 	// Set new settings globally
 	Settings.Data = initSettings
 
+	// Check if MQTT has an address and will be setup
+	flushToMQTT := false
+	component, ok := Settings.Data["MDROID"]
+	if ok {
+		address, ok := component["MQTT_ADDRESS"]
+		if ok && address != "" {
+			flushToMQTT = true
+		}
+	}
+
 	// Run hooks on all new settings
 	if out, err := json.Marshal(Settings.Data); err == nil {
 		log.Info().Msg("Successfully loaded settings from file '" + Settings.File + "': " + string(out))
 		for component := range Settings.Data {
 			for setting := range Settings.Data[component] {
+				// Post to MQTT
+				if flushToMQTT {
+					log.Info().Msg("Flushing settings values to MQTT")
+					topic := fmt.Sprintf("settings/%s/%s", component, setting)
+					go mqtt.Publish(topic, Settings.Data[component][setting], true)
+				} else {
+					log.Info().Msg("MQTT disabled, not flushing values")
+				}
+
 				runHooks(component, setting, Settings.Data[component][setting])
 			}
 		}

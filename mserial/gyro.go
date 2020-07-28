@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/mqtt"
 )
 
 // Measurement contains a simple X,Y,Z output from the IMU
@@ -27,10 +28,13 @@ func addMeasurement(name string, m Measurement) error {
 	switch name {
 	case "ACCELERATION":
 		currentGyroReading.Acceleration = m
+		go mqtt.Publish("measurements/accel", fmt.Sprintf("%f,%f,%f", m.X, m.Y, m.Z), false)
 	case "GYROSCOPE":
 		currentGyroReading.Gyroscope = m
+		go mqtt.Publish("measurements/gyro", fmt.Sprintf("%f,%f,%f", m.X, m.Y, m.Z), false)
 	case "MAGNETIC":
 		currentGyroReading.Magnetic = m
+		go mqtt.Publish("measurements/magnetic", fmt.Sprintf("%f,%f,%f", m.X, m.Y, m.Z), false)
 	default:
 		return fmt.Errorf("Measurement name %s not registered for input", name)
 	}

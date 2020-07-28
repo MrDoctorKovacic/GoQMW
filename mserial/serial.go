@@ -152,7 +152,7 @@ func write(msg *Message) error {
 
 func parseJSON(marshalledJSON interface{}) {
 	if marshalledJSON == nil {
-		log.Debug().Msg("Marshalled JSON is nil.")
+		//log.Debug().Msg("Marshalled JSON is nil.")
 		return
 	}
 

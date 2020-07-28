@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gorilla/mux"
@@ -181,8 +182,18 @@ func Set(componentName string, settingName string, settingValue string) bool {
 	Settings.Data[componentName][settingName] = settingValue
 	Settings.mutex.Unlock()
 
+	// Post to MQTT
+	if mqtt.Enabled {
+		topic := fmt.Sprintf("settings/%s/%s", componentName, settingName)
+		go mqtt.Publish(topic, settingValue, true)
+	}
+
+	// Update setting in inner map
+	Settings.Data[componentName][settingName] = settingValue
+	Settings.mutex.Unlock()
+
 	// Log our success
-	log.Info().Msgf("Updated setting %s[%s] to %s", componentName, settingName, settingValue)
+	log.Info().Msgf("Updated setting of %s[%s] to %s", componentName, settingName, settingValue)
 
 	// Write out all settings to a file
 	writeFile(Settings.File)
