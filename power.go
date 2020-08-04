@@ -43,10 +43,9 @@ type powerTrigger struct {
 
 // Read the target action based on current ACC Power value
 var (
-	_lock   = device{settings: settingDef{component: "MDROID", name: "AUTOLOCK"}}
-	_angel  = device{settings: settingDef{component: "ANGEL_EYES", name: "POWER"}}
-	_tablet = device{settings: settingDef{component: "TABLET", name: "POWER"}}
-	_board  = device{settings: settingDef{component: "BOARD", name: "POWER"}}
+	_lock                 = device{settings: settingDef{component: "MDROID", name: "AUTOLOCK"}}
+	_angel                = device{settings: settingDef{component: "ANGEL_EYES", name: "POWER"}}
+	_highPowerAccessories = device{settings: settingDef{component: "USB_HUB", name: "POWER"}}
 )
 
 func (ps *powerStats) startRequest() {
@@ -58,7 +57,7 @@ func (ps *powerStats) endRequest() {
 }
 
 // Evaluates if the doors should be locked
-func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
+func evalAutoLock(keyIsIn string, accOn bool, isHome bool) {
 	// Check if request is already being made
 	if _lock.powerStats.workingOnRequest {
 		return
@@ -70,7 +69,7 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 
 	_lock.isOn, _lock.errors.on = sessions.GetBool("DOORS_LOCKED")
 	_lock.target, _lock.errors.target = settings.Get(_lock.settings.component, _lock.settings.name)
-	shouldTrigger := !_lock.isOn && !accOn && !wifiOn && keyIsIn == "FALSE"
+	shouldTrigger := !_lock.isOn && !accOn && !isHome && keyIsIn == "FALSE"
 
 	if _lock.errors.on != nil {
 		// Don't log, likely just doesn't exist in session yet
@@ -116,7 +115,7 @@ func evalAutoLock(keyIsIn string, accOn bool, wifiOn bool) {
 }
 
 // Evaluates if the board should be put to sleep
-func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
+func evalAutoSleep(keyIsIn string, accOn bool, isHome bool) {
 	sleepEnabled, err := settings.Get("MDROID", "AUTO_SLEEP")
 
 	if err != nil {
@@ -137,7 +136,7 @@ func evalAutoSleep(keyIsIn string, accOn bool, wifiOn bool) {
 	}
 
 	// Sleep indefinitely, hand power control to the arduino
-	if !accOn && wifiOn && keyIsIn == "FALSE" {
+	if !accOn && isHome && keyIsIn == "FALSE" {
 		sleepMDroid()
 	}
 }
@@ -155,30 +154,17 @@ func evalAngelEyesPower(keyIsIn string) {
 	genericPowerTrigger(shouldTrigger, triggerReason, "Angel", &_angel)
 }
 
-// Evaluates if the video boards should be on, and then passes that struct along as generic power module
-func evalVideoPower(keyIsIn string, accOn bool, wifiOn bool) {
-	_board.isOn, _board.errors.on = sessions.GetBool("BOARD_POWER")
-	_board.target, _board.errors.target = settings.Get(_board.settings.component, _board.settings.name)
+// Evaluates if the cameras and tablet should be on, and then passes that struct along as generic power module
+func evalLowPowerMode(keyIsIn string, accOn bool, isHome bool) {
+	_highPowerAccessories.isOn, _highPowerAccessories.errors.on = sessions.GetBool("USB_HUB")
+	_highPowerAccessories.target, _highPowerAccessories.errors.target = settings.Get(_highPowerAccessories.settings.component, _highPowerAccessories.settings.name)
 	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
 
-	shouldTrigger := (accOn && !wifiOn && !startedRecently) || ((wifiOn || startedRecently) && keyIsIn != "FALSE")
-	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s, startedRecently: %t", accOn, wifiOn, keyIsIn, startedRecently)
+	shouldTrigger := (accOn && !isHome && !startedRecently) || ((isHome || startedRecently) && keyIsIn != "FALSE")
+	triggerReason := fmt.Sprintf("accOn: %t, isHome: %t, keyIsIn: %s, startedRecently: %t", accOn, isHome, keyIsIn, startedRecently)
 
 	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldTrigger, triggerReason, "Board", &_board)
-}
-
-// Evaluates if the tablet should be on, and then passes that struct along as generic power module
-func evalTabletPower(keyIsIn string, accOn bool, wifiOn bool) {
-	_tablet.isOn, _tablet.errors.on = sessions.GetBool("TABLET_POWER")
-	_tablet.target, _tablet.errors.target = settings.Get(_tablet.settings.component, _tablet.settings.name)
-	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
-
-	shouldTrigger := (accOn && !wifiOn && !startedRecently) || ((wifiOn || startedRecently) && keyIsIn != "FALSE")
-	triggerReason := fmt.Sprintf("accOn: %t, wifiOn: %t, keyIsIn: %s, startedRecently: %t", accOn, wifiOn, keyIsIn, startedRecently)
-
-	// Pass angel module to generic power trigger
-	genericPowerTrigger(shouldTrigger, triggerReason, "Tablet", &_tablet)
+	genericPowerTrigger(shouldTrigger, triggerReason, "Board", &_highPowerAccessories)
 }
 
 // Error check against module's status fetches, then check if we're powering on or off

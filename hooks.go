@@ -42,25 +42,25 @@ func angelEyesSettings(settingName string, settingValue string) {
 // When auto lock setting is changed
 func autoLockSettings(settingName string, settingValue string) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
+	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
 
 	// Determine state of auto lock
-	evalAutoLock(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
+	evalAutoLock(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, isHome)
 }
 
 // When auto Sleep setting is changed
 func autoSleepSettings(settingName string, settingValue string) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
+	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
 
 	// Determine state of auto Sleep
-	evalAutoSleep(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, wifiOn)
+	evalAutoSleep(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, isHome)
 }
 
 // When key state is changed in session
 func keyState(hook *sessions.Data) {
 	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
+	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
 
 	// Play / pause bluetooth media on key in/out
 	if hook.Value != "FALSE" {
@@ -71,8 +71,8 @@ func keyState(hook *sessions.Data) {
 
 	// Determine state of angel eyes, and main board
 	evalAngelEyesPower(hook.Value)
-	evalVideoPower(hook.Value, accOn, wifiOn)
-	evalAutoLock(hook.Value, accOn, wifiOn)
+	evalLowPowerMode(hook.Value, accOn, isHome)
+	evalAutoLock(hook.Value, accOn, isHome)
 }
 
 // When light sensor is changed in session
@@ -128,14 +128,13 @@ func accPower(hook *sessions.Data) {
 	}
 
 	// Pull the necessary configuration data
-	wifiOn := sessions.GetBoolDefault("WIFI_CONNECTED", true)
-	keyIsIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
+	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
+	isKeyIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
 
-	// Trigger video, and tablet based on ACC and wifi status
-	go evalVideoPower(keyIsIn, accOn, wifiOn)
-	go evalTabletPower(keyIsIn, accOn, wifiOn)
-	go evalAutoLock(keyIsIn, accOn, wifiOn)
-	go evalAutoSleep(keyIsIn, accOn, wifiOn)
+	// Trigger low power and auto sleep
+	go evalLowPowerMode(isKeyIn, accOn, isHome)
+	go evalAutoLock(isKeyIn, accOn, isHome)
+	go evalAutoSleep(isKeyIn, accOn, isHome)
 }
 
 // Alert me when it's raining and windows are down
@@ -166,12 +165,7 @@ func lightSensorReason(hook *sessions.Data) {
 
 // Restart different machines when seat memory buttons are pressed
 func seatMemory(hook *sessions.Data) {
-	switch hook.Name {
-	case "SEAT_MEMORY_1":
-		sendServiceCommand("BOARD", "restart")
-	case "SEAT_MEMORY_2":
-		sendServiceCommand("WIRELESS", "restart")
-	case "SEAT_MEMORY_3":
+	if hook.Name == "SEAT_MEMORY_1" {
 		sendServiceCommand("MDROID", "restart")
 	}
 }

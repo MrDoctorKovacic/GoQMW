@@ -81,7 +81,6 @@ func Setup(configAddr *map[string]string) {
 
 // InitializeDefaults sets default session values here
 func InitializeDefaults() {
-	SetValue("VIDEO_ON", "TRUE")
 }
 
 // GetStartTime will give the time the session started
