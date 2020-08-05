@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/settings"
@@ -72,7 +72,7 @@ func repeatCommand(command string, sleepSeconds int) {
 	log.Info().Msgf("Running Pybus command %s every %d seconds", command, sleepSeconds)
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
-		if sessions.GetBoolDefault("KEY_DETECTED", false) {
+		if sessions.GetBool("KEY_DETECTED", false) {
 			PushQueue(command)
 		}
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
@@ -112,7 +112,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
 	// If the car's ACC power isn't on, it won't be ready for requests. Wake it up first
-	if !sessions.GetBoolDefault("ACC_POWER", false) {
+	if !sessions.GetBool("ACC_POWER", false) {
 		PushQueue("requestVehicleStatus") // this will be swallowed
 	}
 

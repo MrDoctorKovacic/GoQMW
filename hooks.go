@@ -30,38 +30,29 @@ func setupHooks() {
 //
 // From here on out are the hook functions.
 // We're taking actions based on the values or a combination of values
-// from the session/settings post values.
+// from the session/settings.
 //
 
 // When angel eyes setting is changed
 func angelEyesSettings(settingName string, settingValue string) {
 	// Determine state of angel eyes
-	evalAngelEyesPower(sessions.GetStringDefault("KEY_STATE", "FALSE"))
+	go evalAngelEyesPower()
 }
 
 // When auto lock setting is changed
 func autoLockSettings(settingName string, settingValue string) {
-	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
-
-	// Determine state of auto lock
-	evalAutoLock(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, isHome)
+	// Trigger state of auto lock
+	go evalAutoLock()
 }
 
 // When auto Sleep setting is changed
 func autoSleepSettings(settingName string, settingValue string) {
-	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
-
-	// Determine state of auto Sleep
-	evalAutoSleep(sessions.GetStringDefault("KEY_STATE", "FALSE"), accOn, isHome)
+	// Trigger state of auto sleep
+	go evalAutoSleep()
 }
 
 // When key state is changed in session
 func keyState(hook *sessions.Data) {
-	accOn := sessions.GetBoolDefault("ACC_POWER", false)
-	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
-
 	// Play / pause bluetooth media on key in/out
 	if hook.Value != "FALSE" {
 		go bluetooth.Play()
@@ -70,15 +61,15 @@ func keyState(hook *sessions.Data) {
 	}
 
 	// Determine state of angel eyes, and main board
-	evalAngelEyesPower(hook.Value)
-	evalLowPowerMode(hook.Value, accOn, isHome)
-	evalAutoLock(hook.Value, accOn, isHome)
+	go evalAngelEyesPower()
+	go evalLowPowerMode()
+	go evalAutoLock()
 }
 
 // When light sensor is changed in session
 func lightSensorOn(hook *sessions.Data) {
 	// Determine state of angel eyes
-	evalAngelEyesPower(sessions.GetStringDefault("KEY_STATE", "FALSE"))
+	go evalAngelEyesPower()
 }
 
 // Convert main raw voltage into an actual number
@@ -114,27 +105,10 @@ func auxCurrent(hook *sessions.Data) {
 
 // Trigger for booting boards/tablets
 func accPower(hook *sessions.Data) {
-	var accOn bool
-
-	// Check incoming ACC power value is valid
-	switch hook.Value {
-	case "TRUE":
-		accOn = true
-	case "FALSE":
-		accOn = false
-	default:
-		log.Error().Msgf("ACC Power Trigger unexpected value: %s", hook.Value)
-		return
-	}
-
-	// Pull the necessary configuration data
-	isHome := sessions.GetBoolDefault("BLE_CENTRAL_CONNECTED", true)
-	isKeyIn := sessions.GetStringDefault("KEY_STATE", "FALSE")
-
 	// Trigger low power and auto sleep
-	go evalLowPowerMode(isKeyIn, accOn, isHome)
-	go evalAutoLock(isKeyIn, accOn, isHome)
-	go evalAutoSleep(isKeyIn, accOn, isHome)
+	go evalLowPowerMode()
+	go evalAutoLock()
+	go evalAutoSleep()
 }
 
 // Alert me when it's raining and windows are down

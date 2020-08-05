@@ -78,36 +78,26 @@ func Get(name string) (data Data, err error) {
 	return sessionValue, nil
 }
 
-// GetBool returns the named session with a boolean value, if it exists. false otherwise
-func GetBool(name string) (value bool, err error) {
+// GetBool returns the named session with a boolean value, on failure will return the default value
+func GetBool(name string, defaultValue bool) bool {
 	v, err := Get(name)
 	if err != nil {
-		return false, err
+		return defaultValue
 	}
 
 	vb, err := strconv.ParseBool(v.Value)
 	if err != nil {
-		return false, err
+		return defaultValue
 	}
-	return vb, nil
+	return vb
 }
 
-// GetStringDefault generalizes fetching session string
-func GetStringDefault(name string, def string) string {
+// GetString generalizes fetching session string with a default value
+func GetString(name string, def string) string {
 	v, err := Get(name)
 	if err != nil {
 		log.Trace().Msgf("%s could not be determined, defaulting to FALSE", name)
 		v.Value = def
 	}
 	return v.Value
-}
-
-// GetBoolDefault generalizes fetching session bool
-func GetBoolDefault(name string, def bool) bool {
-	v, err := GetBool(name)
-	if err != nil {
-		log.Trace().Msgf("%s could not be determined, defaulting to false", name)
-		v = def
-	}
-	return v
 }
