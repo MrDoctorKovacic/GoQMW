@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"strconv"
-
 	bluetooth "github.com/qcasey/MDroid-Bluetooth"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/sessions"
@@ -17,13 +14,11 @@ func setupHooks() {
 	settings.RegisterHook("AUTO_SLEEP", autoSleepSettings)
 	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
-	sessions.RegisterHookSlice(&[]string{"MAIN_VOLTAGE_RAW", "AUX_VOLTAGE_RAW"}, voltage)
-	sessions.RegisterHook("AUX_CURRENT_RAW", auxCurrent)
 	sessions.RegisterHook("ACC_POWER", accPower)
 	sessions.RegisterHook("KEY_STATE", keyState)
 	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
 	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
-	sessions.RegisterHookSlice(&[]string{"SEAT_MEMORY_1", "SEAT_MEMORY_2", "SEAT_MEMORY_3"}, voltage)
+	sessions.RegisterHook("SEAT_MEMORY_1", seatMemory)
 	log.Info().Msg("Enabled session hooks")
 }
 
@@ -51,7 +46,15 @@ func autoSleepSettings(settingName string, settingValue string) {
 	go evalAutoSleep()
 }
 
-// When key state is changed in session
+// When ACC power state is changed
+func accPower(hook *sessions.Data) {
+	// Trigger low power and auto sleep
+	go evalLowPowerMode()
+	go evalAutoLock()
+	go evalAutoSleep()
+}
+
+// When key state is changed
 func keyState(hook *sessions.Data) {
 	// Play / pause bluetooth media on key in/out
 	if hook.Value != "FALSE" {
@@ -70,45 +73,6 @@ func keyState(hook *sessions.Data) {
 func lightSensorOn(hook *sessions.Data) {
 	// Determine state of angel eyes
 	go evalAngelEyesPower()
-}
-
-// Convert main raw voltage into an actual number
-func voltage(hook *sessions.Data) {
-	voltageFloat, err := strconv.ParseFloat(hook.Value, 64)
-	if err != nil {
-		log.Error().Msgf("Failed to convert string %s to float", hook.Value)
-		return
-	}
-
-	//sessions.SetValue(hook.Name[0:len(hook.Name)-4], fmt.Sprintf("%.3f", 0.15+(voltageFloat/1024)*24.4))
-	sessions.SetValue(hook.Name[0:len(hook.Name)-4], fmt.Sprintf("%.3f", (voltageFloat/1024)*16.5))
-}
-
-// Modifiers to the incoming Current sensor value
-func auxCurrent(hook *sessions.Data) {
-	currentFloat, err := strconv.ParseFloat(hook.Value, 32)
-	if err != nil {
-		log.Error().Msgf("Failed to convert string %s to float", hook.Value)
-		return
-	}
-
-	modifier := .06
-	if currentFloat < .3 {
-		modifier = .09
-	} else if currentFloat > 1.5 {
-		modifier = .3
-	}
-
-	realCurrent := currentFloat + modifier
-	sessions.SetValue("AUX_CURRENT", fmt.Sprintf("%.3f", realCurrent))
-}
-
-// Trigger for booting boards/tablets
-func accPower(hook *sessions.Data) {
-	// Trigger low power and auto sleep
-	go evalLowPowerMode()
-	go evalAutoLock()
-	go evalAutoSleep()
 }
 
 // Alert me when it's raining and windows are down

@@ -25,8 +25,8 @@ func RegisterHook(componentName string, function func(triggerPackage *Data)) {
 	hookList = append(hookList, hook{componentName: componentName, function: function})
 }
 
-// RegisterHookSlice takes a list of componentNames to apply the same hook to
-func RegisterHookSlice(componentNames *[]string, hook func(triggerPackage *Data)) {
+// RegisterHooks takes a list of componentNames to apply the same hook to
+func RegisterHooks(componentNames *[]string, hook func(triggerPackage *Data)) {
 	for _, name := range *componentNames {
 		RegisterHook(name, hook)
 	}
