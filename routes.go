@@ -16,7 +16,6 @@ import (
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 // MDroidRoute holds information for our meta /routes output
@@ -110,7 +109,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 // sendServiceCommand sends a command to a network machine, using a simple python server to recieve
 func sendServiceCommand(name string, command string) error {
-	machineServiceAddress := viper.GetString(fmt.Sprintf("%s.address", name))
+	machineServiceAddress := settings.Data.GetString(fmt.Sprintf("%s.address", name))
 	if machineServiceAddress == "" {
 		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
 	}

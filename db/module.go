@@ -2,8 +2,8 @@ package db
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 // Module begins module init
@@ -14,14 +14,14 @@ var Mod *Module
 
 // Setup parses this module's implementation
 func (*Module) Setup() {
-	if !viper.IsSet("mdroid.DATABASE_HOST") || !viper.IsSet("mdroid.DATABASE_NAME") {
+	if !settings.Data.IsSet("mdroid.DATABASE_HOST") || !settings.Data.IsSet("mdroid.DATABASE_NAME") {
 		DB = nil
 		log.Warn().Msg("Databases are disabled")
 		return
 	}
 
-	databaseHost := viper.GetString("mdroid.DATABASE_HOST")
-	databaseName := viper.GetString("mdroid.DATABASE_NAME")
+	databaseHost := settings.Data.GetString("mdroid.DATABASE_HOST")
+	databaseName := settings.Data.GetString("mdroid.DATABASE_NAME")
 
 	// Request to use SQLITE
 	if databaseHost == "SQLITE" {

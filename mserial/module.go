@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"github.com/tarm/serial"
 )
 
@@ -38,12 +38,12 @@ func init() {
 
 // Setup handles module init
 func (*Module) Setup() {
-	if !viper.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
+	if !settings.Data.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
 		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
 	}
 
-	hardwareSerialPort := viper.GetString("mdroid.HARDWARE_SERIAL_PORT")
+	hardwareSerialPort := settings.Data.GetString("mdroid.HARDWARE_SERIAL_PORT")
 
 	// Start initial reader / writer
 	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)

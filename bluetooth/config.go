@@ -4,7 +4,7 @@ import (
 	"regexp"
 
 	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
+	"github.com/qcasey/MDroid-Core/settings"
 )
 
 // Bluetooth is the modular implementation of Bluetooth controls
@@ -27,7 +27,7 @@ func init() {
 
 // Setup bluetooth with address
 func (Bluetooth) Setup() {
-	SetAddress(viper.GetString("mdroid.BLUETOOTH_ADDRESS"))
+	SetAddress(settings.Data.GetString("mdroid.BLUETOOTH_ADDRESS"))
 	go startAutoRefresh()
 }
 

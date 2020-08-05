@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 // Data holds the data and last update info for each session value
@@ -55,8 +55,8 @@ func init() {
 // Setup prepares valid tokens from settings file
 func Setup() {
 	// Setup throughput warnings
-	if viper.IsSet("mdroid.THROUGHPUT_WARN_THRESHOLD") {
-		session.throughputWarning = viper.GetInt("THROUGHPUT_WARN_THRESHOLD")
+	if settings.Data.IsSet("mdroid.THROUGHPUT_WARN_THRESHOLD") {
+		session.throughputWarning = settings.Data.GetInt("THROUGHPUT_WARN_THRESHOLD")
 	}
 }
 
@@ -100,7 +100,7 @@ func addStat(d Data) {
 
 // SlackAlert sends a message to a slack channel webhook
 func SlackAlert(message string) error {
-	channel := viper.GetString("MDROID.SLACK_URL")
+	channel := settings.Data.GetString("MDROID.SLACK_URL")
 	if channel == "" {
 		return fmt.Errorf("Empty slack channel")
 	}

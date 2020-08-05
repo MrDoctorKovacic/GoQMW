@@ -69,7 +69,13 @@ func main() {
 	pybus.Mod.Setup()
 	pybus.Mod.SetRoutes(router)
 	db.Mod.Setup()
-	mqtt.Mod.Setup()
+
+	// Set up MQTT, more dependent than other packages
+	if !settings.Data.IsSet("mdroid.MQTT_ADDRESS") || !settings.Data.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !settings.Data.IsSet("mdroid.MQTT_CLIENT_ID") || !settings.Data.IsSet("mdroid.MQTT_USERNAME") || !settings.Data.IsSet("mdroid.MQTT_PASSWORD") {
+		log.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
+		return
+	}
+	mqtt.Mod.Setup(settings.Data.GetString("mdroid.MQTT_ADDRESS"), settings.Data.GetString("mdroid.MQTT_ADDRESS_FALLBACK"), settings.Data.GetString("mdroid.MQTT_CLIENT_ID"), settings.Data.GetString("mdroid.MQTT_USERNAME"), settings.Data.GetString("mdroid.MQTT_PASSWORD"))
 
 	// Connect bluetooth device on startup
 	bluetooth.Connect()

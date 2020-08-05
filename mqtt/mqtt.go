@@ -11,7 +11,6 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	logger "github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 // Module exports MDroid module
@@ -184,13 +183,13 @@ func connect() {
 }
 
 // Setup handles module init
-func (*Module) Setup() {
-	if !viper.IsSet("mdroid.MQTT_ADDRESS") || !viper.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !viper.IsSet("mdroid.MQTT_CLIENT_ID") || !viper.IsSet("mdroid.MQTT_USERNAME") || !viper.IsSet("mdroid.MQTT_PASSWORD") {
-		logger.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
-		return
-	}
-
+func (*Module) Setup(address string, addressFallback string, clientid string, username string, password string) {
 	Enabled = true
+	mqttConfig.address = address
+	mqttConfig.addressFallback = addressFallback
+	mqttConfig.clientid = clientid
+	mqttConfig.username = username
+	mqttConfig.password = password
 	go connect()
 	go checkReconnection()
 }

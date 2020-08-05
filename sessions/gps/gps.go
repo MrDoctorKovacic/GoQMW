@@ -16,8 +16,8 @@ import (
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mqtt"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 // Location contains GPS meta data and other Mod information
@@ -56,8 +56,8 @@ func init() {
 // Setup timezone as per module standards
 func (*Location) Setup() {
 
-	if viper.IsSet("mdroid.timezone") {
-		loc, err := time.LoadLocation(viper.GetString("mdroid.timezone"))
+	if settings.Data.IsSet("mdroid.timezone") {
+		loc, err := time.LoadLocation(settings.Data.GetString("mdroid.timezone"))
 		if err != nil {
 			Mod.Timezone, _ = time.LoadLocation("UTC")
 			return

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
+	"github.com/qcasey/MDroid-Core/settings"
 )
 
 // Module begins module init
@@ -18,7 +18,7 @@ func (*Module) Setup() {
 	// Set up pybus repeat commands
 	go func() {
 		time.Sleep(500)
-		if viper.IsSet("mdroid.pybus_device") {
+		if settings.Data.IsSet("mdroid.pybus_device") {
 			runStartup()
 			startRepeats()
 		}
