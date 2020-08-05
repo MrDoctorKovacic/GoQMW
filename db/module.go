@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 // Module begins module init
@@ -12,21 +13,15 @@ type Module struct{}
 var Mod *Module
 
 // Setup parses this module's implementation
-func (*Module) Setup(configAddr *map[string]string) {
-	configMap := *configAddr
-	databaseHost, usingDatabase := configMap["DATABASE_HOST"]
-	if !usingDatabase {
+func (*Module) Setup() {
+	if !viper.IsSet("mdroid.DATABASE_HOST") || !viper.IsSet("mdroid.DATABASE_NAME") {
 		DB = nil
 		log.Warn().Msg("Databases are disabled")
 		return
 	}
 
-	databaseName, usingDatabase := configMap["DATABASE_NAME"]
-	if !usingDatabase {
-		DB = nil
-		log.Warn().Msg("Databases are disabled")
-		return
-	}
+	databaseHost := viper.GetString("mdroid.DATABASE_HOST")
+	databaseName := viper.GetString("mdroid.DATABASE_NAME")
 
 	// Request to use SQLITE
 	if databaseHost == "SQLITE" {

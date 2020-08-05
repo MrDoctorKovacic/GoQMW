@@ -7,7 +7,7 @@ import (
 )
 
 type hooks struct {
-	list  map[string][]func(settingName string, settingValue string)
+	list  map[string][]func(key string, value interface{})
 	count int
 	mutex sync.Mutex
 }
@@ -15,23 +15,23 @@ type hooks struct {
 var hookList hooks
 
 func init() {
-	hookList = hooks{list: make(map[string][]func(settingName string, settingValue string), 0), count: 0}
+	hookList = hooks{list: make(map[string][]func(key string, value interface{}), 0), count: 0}
 }
 
 // RegisterHook adds a new hook into a settings change
-func RegisterHook(componentName string, hook func(settingName string, settingValue string)) {
-	log.Info().Msgf("Adding new hook for %s", componentName)
+func RegisterHook(key string, hook func(key string, value interface{})) {
+	log.Info().Msgf("Adding new hook for %s", key)
 	hookList.mutex.Lock()
 	defer hookList.mutex.Unlock()
-	hookList.list[componentName] = append(hookList.list[componentName], hook)
+	hookList.list[key] = append(hookList.list[key], hook)
 	hookList.count++
 }
 
 // Runs all hooks registered with a specific component name
-func runHooks(componentName string, settingName string, settingValue string) {
+func runHooks(key string, value interface{}) {
 	hookList.mutex.Lock()
 	defer hookList.mutex.Unlock()
-	allHooks, ok := hookList.list[componentName]
+	allHooks, ok := hookList.list[key]
 
 	if !ok || len(allHooks) == 0 {
 		// No hooks registered for component
@@ -39,6 +39,6 @@ func runHooks(componentName string, settingName string, settingValue string) {
 	}
 
 	for _, h := range allHooks {
-		go h(settingName, settingValue)
+		go h(key, value)
 	}
 }

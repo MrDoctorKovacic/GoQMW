@@ -8,6 +8,7 @@ import (
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"github.com/tarm/serial"
 )
 
@@ -36,29 +37,13 @@ func init() {
 }
 
 // Setup handles module init
-func (*Module) Setup(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	hardwareSerialPort, usingHardwareSerial := configMap["HARDWARE_SERIAL_PORT"]
-	if !usingHardwareSerial {
+func (*Module) Setup() {
+	if !viper.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
 		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
 	}
 
-	// Check if serial is required for startup
-	// This allows setting an initial state without incorrectly triggering hooks
-	serialRequiredSetting, ok := configMap["SERIAL_STARTUP"]
-	if ok && serialRequiredSetting == "TRUE" {
-		// Serial is required for setup.
-		// Open a port, set state to the output and immediately close for later concurrent reading
-		s, err := openSerialPort(hardwareSerialPort, 115200)
-		if err != nil {
-			log.Error().Msg(err.Error())
-		}
-		readSerial(s)
-		log.Info().Msg("Closing port for later reading")
-		s.Close()
-	}
+	hardwareSerialPort := viper.GetString("mdroid.HARDWARE_SERIAL_PORT")
 
 	// Start initial reader / writer
 	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
@@ -76,9 +61,7 @@ func (*Module) SetRoutes(router *mux.Router) {
 	//
 	// Serial routes
 	//
-	router.HandleFunc("/serial/{command}/{checksum}", WriteSerialHandler).Methods("POST", "GET")
 	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST", "GET")
-
 	router.HandleFunc("/gyros", getGyroMeasurements).Methods("GET")
 }
 

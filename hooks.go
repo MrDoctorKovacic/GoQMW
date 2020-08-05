@@ -29,19 +29,19 @@ func setupHooks() {
 //
 
 // When angel eyes setting is changed
-func angelEyesSettings(settingName string, settingValue string) {
+func angelEyesSettings(key string, value interface{}) {
 	// Determine state of angel eyes
 	go evalAngelEyesPower()
 }
 
 // When auto lock setting is changed
-func autoLockSettings(settingName string, settingValue string) {
+func autoLockSettings(key string, value interface{}) {
 	// Trigger state of auto lock
 	go evalAutoLock()
 }
 
 // When auto Sleep setting is changed
-func autoSleepSettings(settingName string, settingValue string) {
+func autoSleepSettings(key string, value interface{}) {
 	// Trigger state of auto sleep
 	go evalAutoSleep()
 }

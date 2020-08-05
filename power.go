@@ -8,6 +8,7 @@ import (
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 func isKeyIn() bool {
@@ -26,13 +27,7 @@ func evalAutoLock() {
 		return
 	}
 
-	target, err := settings.Get("MDROID", "AUTOLOCK", "AUTO")
-	if err != nil {
-		log.Error().Msg("Setting read error for AUTOLOCK. Resetting to AUTO")
-		settings.Set("MDROID", "AUTOLOCK", "AUTO")
-		return
-	}
-
+	target := settings.Get("mdroid.autolock", "auto")
 	shouldBeOn := doorsLocked.Value == "FALSE" && !accOn && !isHome && !isKeyIn
 
 	// Instead of power trigger, evaluate here. Lock once every so often
@@ -64,7 +59,7 @@ func evalAutoLock() {
 func evalAutoSleep() {
 	accOn := sessions.GetBool("ACC_POWER", false)
 	isHome := sessions.GetBool("BLE_CENTRAL_CONNECTED", true)
-	sleepEnabled, _ := settings.Get("MDROID", "AUTO_SLEEP", "ON")
+	sleepEnabled := viper.GetString("MDROID.AUTO_SLEEP")
 
 	// If "OFF", auto sleep is not enabled. Exit
 	if sleepEnabled != "ON" {
@@ -111,7 +106,7 @@ func evalLowPowerMode() {
 // Error check against module's status fetches, then check if we're powering on or off
 func powerTrigger(shouldBeOn bool, reason string, componentName string) {
 	moduleIsOn := sessions.GetBool(fmt.Sprintf("%s_POWER", componentName), false)
-	moduleSetting, _ := settings.Get(componentName, "POWER", "AUTO")
+	moduleSetting := viper.GetString(fmt.Sprintf("%s.power", componentName))
 
 	// Add a limit to how many checks can occur
 	/*

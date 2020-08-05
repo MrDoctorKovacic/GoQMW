@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 )
 
 // Module begins module init
@@ -13,13 +14,11 @@ type Module struct{}
 var Mod *Module
 
 // Setup parses this module's implementation
-func (*Module) Setup(configAddr *map[string]string) {
-	configMap := *configAddr
-
+func (*Module) Setup() {
 	// Set up pybus repeat commands
 	go func() {
 		time.Sleep(500)
-		if _, usingPybus := configMap["PYBUS_DEVICE"]; usingPybus {
+		if viper.IsSet("mdroid.pybus_device") {
 			runStartup()
 			startRepeats()
 		}

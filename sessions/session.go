@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
 	"github.com/qcasey/MDroid-Core/format/response"
-	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 // Data holds the data and last update info for each session value
@@ -54,23 +53,11 @@ func init() {
 }
 
 // Setup prepares valid tokens from settings file
-func Setup(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	InitializeDefaults()
-
+func Setup() {
 	// Setup throughput warnings
-	throughputString, usingThroughputCheck := configMap["THROUGHPUT_WARN_THRESHOLD"]
-	if usingThroughputCheck {
-		throughput, err := strconv.Atoi(throughputString)
-		if err == nil {
-			session.throughputWarning = throughput
-		}
+	if viper.IsSet("mdroid.THROUGHPUT_WARN_THRESHOLD") {
+		session.throughputWarning = viper.GetInt("THROUGHPUT_WARN_THRESHOLD")
 	}
-}
-
-// InitializeDefaults sets default session values here
-func InitializeDefaults() {
 }
 
 // GetStartTime will give the time the session started
@@ -113,8 +100,8 @@ func addStat(d Data) {
 
 // SlackAlert sends a message to a slack channel webhook
 func SlackAlert(message string) error {
-	channel, err := settings.Get("MDROID", "SLACK_URL", "")
-	if err != nil || channel == "" {
+	channel := viper.GetString("MDROID.SLACK_URL")
+	if channel == "" {
 		return fmt.Errorf("Empty slack channel")
 	}
 	if message == "" {

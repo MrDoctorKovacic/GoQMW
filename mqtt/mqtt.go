@@ -11,6 +11,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	logger "github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 // Module exports MDroid module
@@ -183,33 +184,9 @@ func connect() {
 }
 
 // Setup handles module init
-func (*Module) Setup(configAddr *map[string]string) {
-	configMap := *configAddr
-
-	var ok bool
-	mqttConfig.address, ok = configMap["MQTT_ADDRESS"]
-	if !ok {
-		logger.Warn().Msgf("Missing MQTT address.")
-		return
-	}
-	mqttConfig.addressFallback, ok = configMap["MQTT_ADDRESS_FALLBACK"]
-	if !ok {
-		logger.Warn().Msgf("Missing MQTT fallback address.")
-		return
-	}
-	mqttConfig.clientid, ok = configMap["MQTT_CLIENT_ID"]
-	if !ok {
-		logger.Warn().Msgf("Missing MQTT client ID.")
-		return
-	}
-	mqttConfig.username, ok = configMap["MQTT_USERNAME"]
-	if !ok {
-		logger.Warn().Msgf("Missing MQTT username.")
-		return
-	}
-	mqttConfig.password, ok = configMap["MQTT_PASSWORD"]
-	if !ok {
-		logger.Warn().Msgf("Missing MQTT password.")
+func (*Module) Setup() {
+	if !viper.IsSet("mdroid.MQTT_ADDRESS") || !viper.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !viper.IsSet("mdroid.MQTT_CLIENT_ID") || !viper.IsSet("mdroid.MQTT_USERNAME") || !viper.IsSet("mdroid.MQTT_PASSWORD") {
+		logger.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
 		return
 	}
 
