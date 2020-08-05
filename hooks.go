@@ -47,7 +47,7 @@ func autoSleepSettings(key string, value interface{}) {
 }
 
 // When ACC power state is changed
-func accPower(hook *sessions.Data) {
+func accPower() {
 	// Trigger low power and auto sleep
 	go evalLowPowerMode()
 	go evalAutoLock()
@@ -55,9 +55,10 @@ func accPower(hook *sessions.Data) {
 }
 
 // When key state is changed
-func keyState(hook *sessions.Data) {
+func keyState() {
+
 	// Play / pause bluetooth media on key in/out
-	if hook.Value != "FALSE" {
+	if sessions.Data.GetString("KEY_STATE") != "FALSE" {
 		go bluetooth.Play()
 	} else {
 		go bluetooth.Pause()
@@ -70,35 +71,33 @@ func keyState(hook *sessions.Data) {
 }
 
 // When light sensor is changed in session
-func lightSensorOn(hook *sessions.Data) {
+func lightSensorOn() {
 	// Determine state of angel eyes
 	go evalAngelEyesPower()
 }
 
 // Alert me when it's raining and windows are down
-func lightSensorReason(hook *sessions.Data) {
-	keyPosition := sessions.GetString("KEY_POSITION", "OFF")
-	windowsOpen := sessions.GetBool("WINDOWS_OPEN", false)
-	doorsLocked, err := sessions.GetData("DOORS_LOCKED")
+func lightSensorReason() {
+	keyPosition := sessions.Data.GetString("KEY_POSITION")
+	windowsOpen := sessions.Data.GetString("WINDOWS_OPEN")
+	doorsLocked := sessions.Data.GetString("DOORS_LOCKED")
+	doorsLockedLastUpdate := sessions.Data.GetString("DOORS_LOCKED.lastUpdate")
 
-	delta, err := format.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
+	delta, err := format.CompareTimeToNow(doorsLockedLastUpdate, gps.GetTimezone())
 	if err != nil {
 		log.Error().Msg(err.Error())
 		return
 	}
 
-	if hook.Value == "RAIN" &&
+	if sessions.Data.GetString("LIGHT_SENSOR_REASON") == "RAIN" &&
 		keyPosition == "OFF" &&
-		doorsLocked.Value == "TRUE" &&
-		windowsOpen &&
+		doorsLocked == "TRUE" &&
+		windowsOpen == "TRUE" &&
 		delta.Minutes() > 5 {
 		sessions.SlackAlert("Windows are down in the rain, eh?")
 	}
 }
 
-// Restart different machines when seat memory buttons are pressed
-func seatMemory(hook *sessions.Data) {
-	if hook.Name == "SEAT_MEMORY_1" {
-		sendServiceCommand("MDROID", "restart")
-	}
+func seatMemory() {
+	sendServiceCommand("MDROID", "restart")
 }
