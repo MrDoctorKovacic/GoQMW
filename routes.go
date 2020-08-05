@@ -110,7 +110,7 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 
 // sendServiceCommand sends a command to a network machine, using a simple python server to recieve
 func sendServiceCommand(name string, command string) error {
-	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS")
+	machineServiceAddress, err := settings.Get(format.Name(name), "ADDRESS", "")
 	if machineServiceAddress == "" {
 		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
 	}
@@ -247,20 +247,3 @@ func Start(router *mux.Router) {
 		time.Sleep(time.Second * 10)
 	}
 }
-
-// authMiddleware will match http bearer token again the one hardcoded in our config
-/*
-func authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		reqToken := r.Header.Get("Authorization")
-		splitToken := strings.Split(reqToken, "Bearer")
-		if len(splitToken) != 2 || strings.TrimSpace(splitToken[1]) != settings.AuthToken {
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte("403 - Invalid Auth Token!"))
-		}
-
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}*/

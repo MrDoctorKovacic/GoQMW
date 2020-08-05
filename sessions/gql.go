@@ -35,7 +35,7 @@ var SessionMutation = &graphql.Field{
 		},
 	},
 	Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-		return SetValue(params.Args["name"].(string), params.Args["value"].(string)), nil
+		return Set(params.Args["name"].(string), params.Args["value"].(string)), nil
 	},
 }
 
@@ -54,7 +54,7 @@ var SessionQuery = &graphql.Field{
 		names, ok := p.Args["names"].([]string)
 		if ok {
 			for _, name := range names {
-				s, err := Get(name)
+				s, err := GetData(name)
 				if err != nil {
 					return nil, err
 				}

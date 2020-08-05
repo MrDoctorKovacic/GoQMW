@@ -104,12 +104,16 @@ func loop(device *serial.Port, isWriter bool) {
 // readSerial takes one line from the serial device and parses it into the session
 func readSerial(device *serial.Port) error {
 	response, err := read(device)
+	// Return the read error, the device has gone offline
 	if err != nil {
 		return err
 	}
 
-	// Parse serial data
-	parseJSON(response)
+	// Handle parse errors here instead of passing up
+	err = parseJSON(response) // Parse serial data
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
 	return nil
 }
 
@@ -150,10 +154,9 @@ func write(msg *Message) error {
 	return nil
 }
 
-func parseJSON(marshalledJSON interface{}) {
+func parseJSON(marshalledJSON interface{}) error {
 	if marshalledJSON == nil {
-		//log.Debug().Msg("Marshalled JSON is nil.")
-		return
+		return fmt.Errorf("Marshalled JSON is nil")
 	}
 
 	data := marshalledJSON.(map[string]interface{})
@@ -162,29 +165,28 @@ func parseJSON(marshalledJSON interface{}) {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			sessions.SetValue(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+			sessions.Set(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
 		case string:
-			sessions.SetValue(strings.ToUpper(key), strings.ToUpper(vv))
+			sessions.Set(strings.ToUpper(key), strings.ToUpper(vv))
 		case int:
-			sessions.SetValue(strings.ToUpper(key), strconv.Itoa(value.(int)))
+			sessions.Set(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
 			if floatValue, ok := value.(float32); ok {
-				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+				sessions.Set(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
 		case float64:
 			if floatValue, ok := value.(float64); ok {
-				sessions.SetValue(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+				sessions.Set(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
 		case map[string]interface{}:
 			var m Measurement
 			err := mapstructure.Decode(value, &m)
 			if err != nil {
-				log.Error().Msgf(err.Error())
-				return
+				return err
 			}
 			err = addMeasurement(key, m)
 			if err != nil {
-				log.Error().Msgf(err.Error())
+				return err
 			}
 		case []interface{}:
 			log.Error().Msg(key + " is an array. Data: ")
@@ -194,7 +196,8 @@ func parseJSON(marshalledJSON interface{}) {
 		case nil:
 			break
 		default:
-			log.Error().Msgf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value)
+			return fmt.Errorf("%s is of a type I don't know how to handle (%s: %s)", key, vv, value)
 		}
 	}
+	return nil
 }

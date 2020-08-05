@@ -12,7 +12,6 @@ import (
 	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 )
 
@@ -107,7 +106,16 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 
 	// Parse command into a bool, make either "on" or "off" effectively
 	isPositive, err := format.IsPositiveRequest(command)
-	isPosErr := err != nil
+	cannotBeParsedIntoBoolean := err != nil
+
+	// Check if we care that the request isn't formatted into an "on" or "off"
+	if cannotBeParsedIntoBoolean {
+		switch device {
+		case "DOOR", "TOP", "CONVERTIBLE_TOP", "HAZARD", "FLASHER", "INTERIOR":
+			log.Error().Msg(err.Error())
+			return
+		}
+	}
 
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
@@ -116,20 +124,16 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		PushQueue("requestVehicleStatus") // this will be swallowed
 	}
 
-	// All I wanted was a moment or two to
-	// See if you could do that switch-a-roo
+	// All I wanted was a moment or two
+	// To see if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
-		if isPosErr {
-			log.Error().Msg(err.Error())
-			return
-		}
 		doorStatus, _ := sessions.Get("DOORS_LOCKED")
-		if mserial.Writer != nil && isPositive && doorStatus.Value == "FALSE" ||
-			mserial.Writer != nil && !isPositive && doorStatus.Value == "TRUE" {
+		if mserial.Writer != nil &&
+			((isPositive && doorStatus == "FALSE") || (!isPositive && doorStatus == "TRUE")) {
 			mserial.PushText("toggleDoorLocks")
 		} else {
-			log.Info().Msgf("Request to %s doors denied, door status is %s", command, doorStatus.Value)
+			log.Info().Msgf("Request to %s doors denied, door status is %s", command, doorStatus)
 		}
 	case "WINDOW":
 		if command == "POPDOWN" {
@@ -142,10 +146,6 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			PushQueue("rollWindowsDown")
 		}
 	case "TOP", "CONVERTIBLE_TOP":
-		if isPosErr {
-			log.Error().Msg(err.Error())
-			return
-		}
 		if isPositive {
 			PushQueue("convertibleTopUp")
 		} else {
@@ -154,30 +154,18 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	case "TRUNK":
 		PushQueue("openTrunk")
 	case "HAZARD":
-		if isPosErr {
-			log.Error().Msg(err.Error())
-			return
-		}
 		if isPositive {
 			PushQueue("turnOnHazards")
 		} else {
 			PushQueue("turnOffAllExteriorLights")
 		}
 	case "FLASHER":
-		if isPosErr {
-			log.Error().Msg(err.Error())
-			return
-		}
 		if isPositive {
 			PushQueue("flashAllExteriorLights")
 		} else {
 			PushQueue("turnOffAllExteriorLights")
 		}
 	case "INTERIOR":
-		if isPosErr {
-			log.Error().Msg(err.Error())
-			return
-		}
 		if isPositive {
 			PushQueue("interiorLightsOff")
 		} else {
@@ -215,26 +203,6 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 			PushQueue("press6")
 		default:
 			PushQueue("pressStereoPower")
-		}
-	case "AZMODAN", "CAMERA", "BOARD":
-		if format.Name(command) == "AUTO" {
-			settings.Set("BOARD", "POWER", "AUTO")
-		} else if isPositive && !isPosErr {
-			settings.Set("BOARD", "POWER", "ON")
-			mserial.PushText("powerOnBoard")
-		} else if !isPosErr {
-			settings.Set("BOARD", "POWER", "OFF")
-			mserial.PushText("powerOffBoard")
-		}
-	case "BRIGHTWING", "LTE":
-		if format.Name(command) == "AUTO" {
-			settings.Set("WIRELESS", "POWER", "AUTO")
-		} else if isPositive && !isPosErr {
-			settings.Set("WIRELESS", "POWER", "ON")
-			mserial.PushText("powerOnWireless")
-		} else if !isPosErr {
-			settings.Set("WIRELESS", "POWER", "OFF")
-			mserial.PushText("powerOffWireless")
 		}
 	default:
 		log.Error().Msgf("Invalid device %s", device)

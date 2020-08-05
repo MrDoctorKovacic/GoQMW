@@ -77,14 +77,9 @@ func lightSensorOn(hook *sessions.Data) {
 
 // Alert me when it's raining and windows are down
 func lightSensorReason(hook *sessions.Data) {
-	keyPosition, kerr := sessions.Get("KEY_POSITION")
-	doorsLocked, derr := sessions.Get("DOORS_LOCKED")
-	windowsOpen, werr := sessions.Get("WINDOWS_OPEN")
-
-	// Check if any of the above aren't set yet
-	if kerr != nil || derr != nil || werr != nil {
-		return
-	}
+	keyPosition := sessions.GetString("KEY_POSITION", "OFF")
+	windowsOpen := sessions.GetBool("WINDOWS_OPEN", false)
+	doorsLocked, err := sessions.GetData("DOORS_LOCKED")
 
 	delta, err := format.CompareTimeToNow(doorsLocked.LastUpdate, gps.GetTimezone())
 	if err != nil {
@@ -93,9 +88,9 @@ func lightSensorReason(hook *sessions.Data) {
 	}
 
 	if hook.Value == "RAIN" &&
-		keyPosition.Value == "OFF" &&
+		keyPosition == "OFF" &&
 		doorsLocked.Value == "TRUE" &&
-		windowsOpen.Value == "TRUE" &&
+		windowsOpen &&
 		delta.Minutes() > 5 {
 		sessions.SlackAlert("Windows are down in the rain, eh?")
 	}

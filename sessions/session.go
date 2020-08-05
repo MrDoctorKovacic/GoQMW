@@ -59,16 +59,6 @@ func Setup(configAddr *map[string]string) {
 
 	InitializeDefaults()
 
-	// Set up Auth tokens
-	/*
-		token, usingTokens := configMap["AUTH_TOKEN"]
-		serverHost, usingCentralHost := configMap["MDROID_SERVER"]
-		if !usingTokens || !usingCentralHost {
-			log.Warn().Msg("Missing central host parameters - checking into central host has been disabled. Are you sure this is correct?")
-		} else {
-			log.Info().Msg("Successfully set up auth tokens")
-		}*/
-
 	// Setup throughput warnings
 	throughputString, usingThroughputCheck := configMap["THROUGHPUT_WARN_THRESHOLD"]
 	if usingThroughputCheck {
@@ -92,12 +82,12 @@ func GetStartTime() time.Time {
 func HandleGetStats(w http.ResponseWriter, r *http.Request) {
 	session.Mutex.RLock()
 	defer session.Mutex.RUnlock()
-	session.stats.calcThroughput()
+	session.stats.calculateThroughput()
 
 	response.WriteNew(&w, r, response.JSONResponse{Output: session.stats, OK: true})
 }
 
-func (s *Stats) calcThroughput() {
+func (s *Stats) calculateThroughput() {
 	d := session.stats.dataSample.Front()
 	data := d.Value.(Data)
 	s.throughput = float64(session.stats.dataSample.Len()) / time.Since(data.date).Seconds()
@@ -117,13 +107,13 @@ func addStat(d Data) {
 
 	// Check throughput every so often
 	if session.stats.Sets%500 == 0 {
-		session.stats.calcThroughput()
+		session.stats.calculateThroughput()
 	}
 }
 
 // SlackAlert sends a message to a slack channel webhook
 func SlackAlert(message string) error {
-	channel, err := settings.Get("MDROID", "SLACK_URL")
+	channel, err := settings.Get("MDROID", "SLACK_URL", "")
 	if err != nil || channel == "" {
 		return fmt.Errorf("Empty slack channel")
 	}

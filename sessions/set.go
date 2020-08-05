@@ -54,7 +54,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	// Call the setter
 	newdata.Name = params["name"]
-	if err = Set(newdata); err != nil {
+	if err = setSessionPackage(newdata); err != nil {
 		response.Output = err.Error()
 		response.Write(&w, r)
 		return
@@ -67,15 +67,15 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	response.Write(&w, r)
 }
 
-// SetValue prepares a Value structure before passing it to the setter
-func SetValue(name string, value string) Data {
+// Set prepares a Value structure before passing it to the setter
+func Set(name string, value string) Data {
 	newPackage := Data{Name: name, Value: value, Quiet: true}
-	Set(newPackage)
+	setSessionPackage(newPackage)
 	return newPackage
 }
 
-// Set does the actual setting of Session Values
-func Set(newPackage Data) error {
+// setSessionPackage does the actual setting of Session Values
+func setSessionPackage(newPackage Data) error {
 	// Ensure name is valid
 	if !format.IsValidName(newPackage.Name) {
 		return fmt.Errorf("%s is not a valid name. Possibly a failed serial transmission?", newPackage.Name)
@@ -110,10 +110,8 @@ func Set(newPackage Data) error {
 	if !exists || (exists && oldPackage.Value != newPackage.Value) {
 		formattedName := strings.Replace(newPackage.Name, " ", "_", -1)
 
-		if mqtt.Enabled {
-			topic := fmt.Sprintf("session/%s", formattedName)
-			go mqtt.Publish(topic, newPackage.Value, true)
-		}
+		topic := fmt.Sprintf("session/%s", formattedName)
+		go mqtt.Publish(topic, newPackage.Value, true)
 
 		if db.DB != nil {
 			// Convert to a float if that suits the value, otherwise change field to value_string

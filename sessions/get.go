@@ -66,7 +66,20 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get returns the named session, if it exists. Nil otherwise
-func Get(name string) (data Data, err error) {
+func Get(name string) (value string, err error) {
+	session.Mutex.RLock()
+	defer session.Mutex.RUnlock()
+	sessionValue, ok := session.data[name]
+	session.stats.Gets++
+
+	if !ok {
+		return "", fmt.Errorf("%s does not exist in Session", name)
+	}
+	return sessionValue.Value, nil
+}
+
+// GetData returns the named session, if it exists. Nil otherwise
+func GetData(name string) (data Data, err error) {
 	session.Mutex.RLock()
 	defer session.Mutex.RUnlock()
 	sessionValue, ok := session.data[name]
@@ -78,6 +91,19 @@ func Get(name string) (data Data, err error) {
 	return sessionValue, nil
 }
 
+// GetLastModified returns the named session, if it exists. Nil otherwise
+func GetLastModified(name string) (value string, err error) {
+	session.Mutex.RLock()
+	defer session.Mutex.RUnlock()
+	sessionValue, ok := session.data[name]
+	session.stats.Gets++
+
+	if !ok {
+		return "", fmt.Errorf("%s does not exist in Session", name)
+	}
+	return sessionValue.LastUpdate, nil
+}
+
 // GetBool returns the named session with a boolean value, on failure will return the default value
 func GetBool(name string, defaultValue bool) bool {
 	v, err := Get(name)
@@ -85,7 +111,7 @@ func GetBool(name string, defaultValue bool) bool {
 		return defaultValue
 	}
 
-	vb, err := strconv.ParseBool(v.Value)
+	vb, err := strconv.ParseBool(v)
 	if err != nil {
 		return defaultValue
 	}
@@ -97,7 +123,7 @@ func GetString(name string, def string) string {
 	v, err := Get(name)
 	if err != nil {
 		log.Trace().Msgf("%s could not be determined, defaulting to FALSE", name)
-		v.Value = def
+		v = def
 	}
-	return v.Value
+	return v
 }

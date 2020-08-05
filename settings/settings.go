@@ -116,8 +116,8 @@ func GetComponent(componentName string) (map[string]string, error) {
 	return nil, fmt.Errorf("Could not find component with name %s", componentName)
 }
 
-// Get returns all the values of a specific setting
-func Get(componentName string, settingName string) (string, error) {
+// Get returns the value of a specific setting, self healing with a default value if missing
+func Get(componentName string, settingName string, defaultValue string) (string, error) {
 	Settings.mutex.RLock()
 	defer Settings.mutex.RUnlock()
 
@@ -128,12 +128,17 @@ func Get(componentName string, settingName string) (string, error) {
 			return setting, nil
 		}
 	}
+
+	// Failed to get setting value, set to provided default
+	log.Error().Msgf("Could not find %s[%s] in settings. Defaulting to %s", componentName, settingName, defaultValue)
+	Set(componentName, settingName, defaultValue)
+
 	return "", fmt.Errorf("Could not find component/setting with those values")
 }
 
 // GetBool returns the named session with a boolean value, if it exists. false otherwise
 func GetBool(componentName string, settingName string) (value bool, err error) {
-	v, err := Get(componentName, settingName)
+	v, err := Get(componentName, settingName, "FALSE")
 	if err != nil {
 		return false, err
 	}
@@ -166,7 +171,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set will handle actually updates or posts a new setting value
-func Set(componentName string, settingName string, settingValue string) bool {
+func Set(componentName string, settingName string, settingValue string) error {
 	// Format names
 	componentName = format.Name(componentName)
 	settingName = format.Name(settingName)
@@ -183,10 +188,8 @@ func Set(componentName string, settingName string, settingValue string) bool {
 	Settings.mutex.Unlock()
 
 	// Post to MQTT
-	if mqtt.Enabled {
-		topic := fmt.Sprintf("settings/%s/%s", componentName, settingName)
-		go mqtt.Publish(topic, settingValue, true)
-	}
+	topic := fmt.Sprintf("settings/%s/%s", componentName, settingName)
+	go mqtt.Publish(topic, settingValue, true)
 
 	// Update setting in inner map
 	Settings.Data[componentName][settingName] = settingValue
@@ -196,10 +199,10 @@ func Set(componentName string, settingName string, settingValue string) bool {
 	log.Info().Msgf("Updated setting of %s[%s] to %s", componentName, settingName, settingValue)
 
 	// Write out all settings to a file
-	writeFile(Settings.File)
+	err := writeFile(Settings.File)
 
 	// Trigger hooks
 	runHooks(componentName, settingName, settingValue)
 
-	return true
+	return err
 }

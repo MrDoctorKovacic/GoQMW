@@ -20,13 +20,13 @@ func evalAutoLock() {
 	isHome := sessions.GetBool("BLE_CENTRAL_CONNECTED", true)
 	isKeyIn := isKeyIn()
 
-	doorsLocked, err := sessions.Get("DOORS_LOCKED")
+	doorsLocked, err := sessions.GetData("DOORS_LOCKED")
 	if err != nil {
 		// Don't log, likely just doesn't exist in session yet
 		return
 	}
 
-	target, err := settings.Get("MDROID", "AUTOLOCK")
+	target, err := settings.Get("MDROID", "AUTOLOCK", "AUTO")
 	if err != nil {
 		log.Error().Msg("Setting read error for AUTOLOCK. Resetting to AUTO")
 		settings.Set("MDROID", "AUTOLOCK", "AUTO")
@@ -37,12 +37,7 @@ func evalAutoLock() {
 
 	// Instead of power trigger, evaluate here. Lock once every so often
 	if target == "AUTO" && shouldBeOn {
-		lastLock, err := sessions.Get("DOORS_LOCKED")
-		if err != nil {
-			log.Error().Msg(err.Error())
-			return
-		}
-		lockToggleTime, err := time.Parse("", lastLock.LastUpdate)
+		lockToggleTime, err := time.Parse("", doorsLocked.LastUpdate)
 		if err != nil {
 			log.Error().Msg(err.Error())
 			return
@@ -69,14 +64,7 @@ func evalAutoLock() {
 func evalAutoSleep() {
 	accOn := sessions.GetBool("ACC_POWER", false)
 	isHome := sessions.GetBool("BLE_CENTRAL_CONNECTED", true)
-	sleepEnabled, err := settings.Get("MDROID", "AUTO_SLEEP")
-
-	if err != nil {
-		log.Error().Msgf("Setting Error: %s", err.Error())
-		log.Error().Msg("Setting read error for AUTO_SLEEP. Resetting to AUTO")
-		settings.Set("MDROID", "AUTO_SLEEP", "ON")
-		return
-	}
+	sleepEnabled, _ := settings.Get("MDROID", "AUTO_SLEEP", "ON")
 
 	// If "OFF", auto sleep is not enabled. Exit
 	if sleepEnabled != "ON" {
@@ -123,17 +111,7 @@ func evalLowPowerMode() {
 // Error check against module's status fetches, then check if we're powering on or off
 func powerTrigger(shouldBeOn bool, reason string, componentName string) {
 	moduleIsOn := sessions.GetBool(fmt.Sprintf("%s_POWER", componentName), false)
-	moduleSetting, err := settings.Get(componentName, "POWER")
-
-	// Handle error in fetches
-	if err != nil {
-		log.Error().Msgf("Setting Fetch Error: %s", err.Error())
-		if componentName != "" {
-			log.Error().Msgf("Resetting %s to AUTO", componentName)
-			settings.Set(componentName, "POWER", "AUTO")
-		}
-		return
-	}
+	moduleSetting, _ := settings.Get(componentName, "POWER", "AUTO")
 
 	// Add a limit to how many checks can occur
 	/*
