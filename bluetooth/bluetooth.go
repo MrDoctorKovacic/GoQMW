@@ -4,14 +4,54 @@ package bluetooth
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/format/response"
-	"github.com/MrDoctorKovacic/MDroid-Core/settings"
+	"github.com/gorilla/mux"
 	"github.com/gosimple/slug"
+	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 )
+
+// Bluetooth is the modular implementation of Bluetooth controls
+var (
+	BluetoothAddress string
+	tmuxStarted      bool
+	replySerialRegex *regexp.Regexp
+	findStringRegex  *regexp.Regexp
+	cleanRegex       *regexp.Regexp
+)
+
+func init() {
+	replySerialRegex = regexp.MustCompile(`(.*reply_serial=2\n\s*variant\s*)array`)
+	findStringRegex = regexp.MustCompile(`string\s"(.*)"|uint32\s(\d)+`)
+	cleanRegex = regexp.MustCompile(`(string|uint32|\")+`)
+}
+
+// Setup bluetooth with address
+func Setup(router *mux.Router) {
+	SetAddress(settings.Data.GetString("mdroid.BLUETOOTH_ADDRESS"))
+	go startAutoRefresh()
+
+	// Connect bluetooth device on startup
+	Connect()
+
+	//
+	// Bluetooth routes
+	//
+	router.HandleFunc("/bluetooth", GetDeviceInfo).Methods("GET")
+	router.HandleFunc("/bluetooth/getDeviceInfo", GetDeviceInfo).Methods("GET")
+	router.HandleFunc("/bluetooth/getMediaInfo", GetMediaInfo).Methods("GET")
+	router.HandleFunc("/bluetooth/connect", HandleConnect).Methods("GET")
+	router.HandleFunc("/bluetooth/disconnect", HandleDisconnect).Methods("GET")
+	router.HandleFunc("/bluetooth/prev", Prev).Methods("GET")
+	router.HandleFunc("/bluetooth/next", Next).Methods("GET")
+	router.HandleFunc("/bluetooth/pause", HandlePause).Methods("GET")
+	router.HandleFunc("/bluetooth/play", HandlePlay).Methods("GET")
+	router.HandleFunc("/bluetooth/refresh", ForceRefresh).Methods("GET")
+}
 
 // startAutoRefresh will begin go routine for refreshing bt media device address
 func startAutoRefresh() {
@@ -31,11 +71,11 @@ func ForceRefresh(w http.ResponseWriter, r *http.Request) {
 func SetAddress(address string) {
 	// Format address for dbus
 	if address != "" {
-		Mod.BluetoothAddress = strings.Replace(strings.TrimSpace(address), ":", "_", -1)
-		log.Info().Msg("Now routing Bluetooth commands to " + Mod.BluetoothAddress)
+		BluetoothAddress = strings.Replace(strings.TrimSpace(address), ":", "_", -1)
+		log.Info().Msg("Now routing Bluetooth commands to " + BluetoothAddress)
 
 		// Set new address to persist in settings file
-		settings.Set("CONFIG", "BLUETOOTH_ADDRESS", Mod.BluetoothAddress)
+		settings.Data.Set("mdroid.BLUETOOTH_ADDRESS", BluetoothAddress)
 	}
 }
 
@@ -52,7 +92,7 @@ func Connect() {
 	time.Sleep(5 * time.Second)
 
 	SendDBusCommand(
-		[]string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress, "org.bluez.Device1.Connect"},
+		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress, "org.bluez.Device1.Connect"},
 		false,
 		true)
 
@@ -74,7 +114,7 @@ func Disconnect() error {
 	log.Info().Msg("Disconnecting from bluetooth device...")
 
 	SendDBusCommand(
-		[]string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress,
+		[]string{"/org/bluez/hci0/dev_" + BluetoothAddress,
 			"org.bluez.Device1.Disconnect"},
 		false,
 		true)
@@ -85,7 +125,7 @@ func Disconnect() error {
 func askDeviceInfo() map[string]string {
 	log.Info().Msg("Getting device info...")
 
-	deviceMessage := []string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}
+	deviceMessage := []string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Status"}
 	result, ok := SendDBusCommand(deviceMessage, true, false)
 	if !ok {
 		return nil
@@ -100,7 +140,7 @@ func askDeviceInfo() map[string]string {
 
 func askMediaInfo() map[string]string {
 	log.Info().Msg("Getting media info...")
-	mediaMessage := []string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}
+	mediaMessage := []string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.freedesktop.DBus.Properties.Get", "string:org.bluez.MediaPlayer1", "string:Track"}
 	result, ok := SendDBusCommand(mediaMessage, true, false)
 	if !ok {
 		return nil
@@ -154,14 +194,14 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 // Prev skips to previous track
 func Prev(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Going to previous track...")
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false, false)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false, false)
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Going to next track...")
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false, false)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false, false)
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
@@ -174,7 +214,7 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 // Play attempts to play bluetooth media
 func Play() {
 	log.Info().Msg("Attempting to play media...")
-	SendDBusCommand([]string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Play"}, false, false)
+	SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Play"}, false, false)
 }
 
 // HandlePause attempts to pause bluetooth media
@@ -186,5 +226,5 @@ func HandlePause(w http.ResponseWriter, r *http.Request) {
 // Pause attempts to pause bluetooth media
 func Pause() {
 	log.Info().Msg("Attempting to pause media...")
-	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + Mod.BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Pause"}, false, false)
+	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Pause"}, false, false)
 }

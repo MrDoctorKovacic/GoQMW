@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 )
 
@@ -32,6 +33,33 @@ type Database struct {
 
 // DB currently being used
 var DB *Database
+
+// Setup parses this module's implementation
+func Setup() {
+	if !settings.Data.IsSet("mdroid.DATABASE_HOST") || !settings.Data.IsSet("mdroid.DATABASE_NAME") {
+		DB = nil
+		log.Warn().Msg("Databases are disabled")
+		return
+	}
+
+	databaseHost := settings.Data.GetString("mdroid.DATABASE_HOST")
+	databaseName := settings.Data.GetString("mdroid.DATABASE_NAME")
+
+	// Request to use SQLITE
+	if databaseHost == "SQLITE" {
+		DB = &Database{Host: databaseHost, DatabaseName: databaseName, Type: SQLite}
+		dbname, err := DB.SQLiteInit()
+		if err != nil {
+			panic(err)
+		}
+		log.Info().Msgf("Using SQLite DB at %s", dbname)
+		return
+	}
+
+	// Setup InfluxDB as normal
+	DB = &Database{Host: databaseHost, DatabaseName: databaseName, Type: InfluxDB}
+	log.Info().Msgf("Using InfluxDB at %s with DB name %s.", databaseHost, databaseName)
+}
 
 // Helper function to parse interfaces as a DB string
 func parseWriterData(stmt *strings.Builder, data *map[string]interface{}) error {

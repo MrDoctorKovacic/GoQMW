@@ -20,14 +20,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Location contains GPS meta data and other Mod information
-type Location struct {
-	Timezone   *time.Location
-	CurrentFix Fix
-	LastFix    Fix
-	Mutex      sync.Mutex
-}
-
 // Fix holds various data points we expect to receive
 type Fix struct {
 	Latitude  string `json:"latitude,omitempty"`
@@ -41,39 +33,39 @@ type Fix struct {
 	Course    string `json:"course,omitempty"`
 }
 
-// Mod is the module implementation
-var Mod *Location
+var (
+	timezone   *time.Location
+	currentFix Fix
+	lastFix    Fix
+	mutex      sync.Mutex
+)
 
 func init() {
-	timezone, err := time.LoadLocation("America/Los_Angeles")
+	var err error
+	timezone, err = time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		log.Error().Msg("Could not load default timezone")
 		return
 	}
-	Mod = &Location{Timezone: timezone} // use logging default timezone
 }
 
 // Setup timezone as per module standards
-func (*Location) Setup() {
-
+func Setup(router *mux.Router) {
 	if settings.Data.IsSet("mdroid.timezone") {
 		loc, err := time.LoadLocation(settings.Data.GetString("mdroid.timezone"))
 		if err != nil {
-			Mod.Timezone, _ = time.LoadLocation("UTC")
+			timezone, _ = time.LoadLocation("UTC")
 			return
 		}
 
-		Mod.Timezone = loc
+		timezone = loc
 		return
 	}
 
 	// Timezone is not set in config
-	Mod.Timezone, _ = time.LoadLocation("UTC")
-	log.Info().Msgf("Set timezone to %s", Mod.Timezone.String())
-}
+	timezone, _ = time.LoadLocation("UTC")
+	log.Info().Msgf("Set timezone to %s", timezone.String())
 
-// SetRoutes implements router aggregate function
-func (*Location) SetRoutes(router *mux.Router) {
 	//
 	// GPS Routes
 	//
@@ -98,9 +90,9 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 // Get returns the latest GPS fix
 func Get() Fix {
 	// Log if requested
-	Mod.Mutex.Lock()
-	gpsFix := Mod.CurrentFix
-	Mod.Mutex.Unlock()
+	mutex.Lock()
+	gpsFix := currentFix
+	mutex.Unlock()
 
 	return gpsFix
 }
@@ -108,9 +100,9 @@ func Get() Fix {
 // GetTimezone returns the latest GPS timezone recorded
 func GetTimezone() *time.Location {
 	// Log if requested
-	Mod.Mutex.Lock()
-	timezone := Mod.Timezone
-	Mod.Mutex.Unlock()
+	mutex.Lock()
+	timezone := timezone
+	mutex.Unlock()
 
 	return timezone
 }
@@ -158,11 +150,11 @@ func Set(newdata Fix) string {
 	// Prepare new value
 	var postingString strings.Builder
 
-	Mod.Mutex.Lock()
+	mutex.Lock()
 	// Update Location fixes
-	Mod.LastFix = Mod.CurrentFix
-	Mod.CurrentFix = newdata
-	Mod.Mutex.Unlock()
+	lastFix = currentFix
+	currentFix = newdata
+	mutex.Unlock()
 
 	// Update timezone information with new GPS fix
 	processTimezone()
@@ -171,28 +163,28 @@ func Set(newdata Fix) string {
 	postingString.WriteString(fmt.Sprintf("latitude=\"%s\",", newdata.Latitude))
 	postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
 
-	if fixIsSignifigantlyDifferent(Mod.LastFix.Latitude, newdata.Latitude) {
+	if fixIsSignifigantlyDifferent(lastFix.Latitude, newdata.Latitude) {
 		go mqtt.Publish("gps/latitude", newdata.Latitude, true)
 	}
-	if fixIsSignifigantlyDifferent(Mod.LastFix.Longitude, newdata.Longitude) {
+	if fixIsSignifigantlyDifferent(lastFix.Longitude, newdata.Longitude) {
 		go mqtt.Publish("gps/longitude", newdata.Longitude, true)
 	}
 
 	// Append posting strings based on what GPS information was posted
 	if convFloat, err := strconv.ParseFloat(newdata.Altitude, 32); err == nil {
-		if Mod.LastFix.Altitude != newdata.Altitude {
+		if lastFix.Altitude != newdata.Altitude {
 			go mqtt.Publish("gps/altitude", convFloat, true)
 		}
 		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
-		if Mod.LastFix.Speed != newdata.Speed {
+		if lastFix.Speed != newdata.Speed {
 			go mqtt.Publish("gps/speed", convFloat, true)
 		}
 		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
-		if Mod.LastFix.Climb != newdata.Climb {
+		if lastFix.Climb != newdata.Climb {
 			go mqtt.Publish("gps/climb", convFloat, true)
 		}
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
@@ -216,10 +208,10 @@ func Set(newdata Fix) string {
 // Parses GPS coordinates into a time.Mod timezone
 // On OpenWRT, this requires the zoneinfo-core and zoneinfo-northamerica (or other relevant Mods) packages
 func processTimezone() {
-	Mod.Mutex.Lock()
-	latFloat, err1 := strconv.ParseFloat(Mod.CurrentFix.Latitude, 64)
-	longFloat, err2 := strconv.ParseFloat(Mod.CurrentFix.Longitude, 64)
-	Mod.Mutex.Unlock()
+	mutex.Lock()
+	latFloat, err1 := strconv.ParseFloat(currentFix.Latitude, 64)
+	longFloat, err2 := strconv.ParseFloat(currentFix.Longitude, 64)
+	mutex.Unlock()
 
 	if err1 != nil {
 		log.Error().Msgf("Error converting lat into float64: %s", err1.Error())
@@ -237,7 +229,7 @@ func processTimezone() {
 		return
 	}
 
-	Mod.Mutex.Lock()
-	Mod.Timezone = newTimezone
-	Mod.Mutex.Unlock()
+	mutex.Lock()
+	timezone = newTimezone
+	mutex.Unlock()
 }

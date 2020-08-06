@@ -1,29 +1,14 @@
 package main
 
 import (
-	bluetooth "github.com/qcasey/MDroid-Bluetooth"
+	bluetooth "github.com/qcasey/MDroid-Core/bluetooth"
 	"github.com/qcasey/MDroid-Core/format"
+	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/rs/zerolog/log"
-
-	"github.com/qcasey/MDroid-Core/settings"
 )
 
-func setupHooks() {
-	settings.RegisterHook("AUTO_SLEEP", autoSleepSettings)
-	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
-	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
-	sessions.RegisterHook("ACC_POWER", accPower)
-	sessions.RegisterHook("KEY_STATE", keyState)
-	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
-	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
-	sessions.RegisterHook("SEAT_MEMORY_1", seatMemory)
-	log.Info().Msg("Enabled session hooks")
-}
-
 //
-// From here on out are the hook functions.
 // We're taking actions based on the values or a combination of values
 // from the session/settings.
 //

@@ -16,10 +16,10 @@ type command struct {
 // ScanOn turns on bluetooth scan with bluetoothctl
 func ScanOn() {
 	log.Info().Msg("Turning scan on...")
-	if Mod.tmuxStarted {
+	if tmuxStarted {
 		runCommand("tmux", []string{"kill-session", "-t", "bluetoothConnect"})
 	}
-	//command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", fmt.Sprintf("connect %s", Mod.BluetoothAddress)}},
+	//command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", fmt.Sprintf("connect %s", BluetoothAddress)}},
 	tmuxCommands := []command{
 		command{name: "tmux", args: []string{"new-session", "-d", "-s", "bluetoothConnect", "bluetoothctl"}},
 		command{name: "tmux", args: []string{"send-keys", "-t", "bluetoothConnect", "-l", "scan on"}},
@@ -29,7 +29,7 @@ func ScanOn() {
 	for _, c := range tmuxCommands {
 		runCommand(c.name, c.args)
 	}
-	Mod.tmuxStarted = true
+	tmuxStarted = true
 }
 
 func runCommand(commandName string, commandArgs []string) {
@@ -60,7 +60,7 @@ func getConnectedAddress() string {
 
 	// Use new device if found
 	newAddress := strings.TrimSpace(string(out))
-	if newAddress != "" && Mod.BluetoothAddress != newAddress {
+	if newAddress != "" && BluetoothAddress != newAddress {
 		log.Info().Msg("Found new connected media device with address: " + newAddress)
 		SetAddress(newAddress)
 	}
@@ -70,7 +70,7 @@ func getConnectedAddress() string {
 
 // SendDBusCommand used as a general BT control function for these endpoints
 func SendDBusCommand(args []string, hideOutput bool, skipAddressCheck bool) (string, bool) {
-	if !skipAddressCheck && Mod.BluetoothAddress == "" {
+	if !skipAddressCheck && BluetoothAddress == "" {
 		log.Warn().Msg("No valid BT Address to run command")
 		return "No valid BT Address to run command", false
 	}
@@ -104,8 +104,8 @@ func cleanDBusOutput(output string) map[string]string {
 	outputMap := make(map[string]string, 0)
 
 	// Start regex replacing for important values
-	s := Mod.replySerialRegex.ReplaceAllString(output, "")
-	outputArray := Mod.findStringRegex.FindAllString(s, -1)
+	s := replySerialRegex.ReplaceAllString(output, "")
+	outputArray := findStringRegex.FindAllString(s, -1)
 
 	if outputArray == nil {
 		log.Error().Msg("Error parsing dbus output. Full output:")
@@ -119,7 +119,7 @@ func cleanDBusOutput(output string) map[string]string {
 	// The regex should cut things down to an alternating key:value after being trimmed
 	// We add these to the map, and add a "Meta" key when it would normally be empty (as the first in the array)
 	for i, value := range outputArray {
-		newValue := strings.TrimSpace(Mod.cleanRegex.ReplaceAllString(value, ""))
+		newValue := strings.TrimSpace(cleanRegex.ReplaceAllString(value, ""))
 		// Some devices have this meta value as the first entry (iOS mainly)
 		// we should swap key/value pairs if so
 		if i == 0 && (newValue == "Item" || newValue == "playing" || newValue == "paused") {

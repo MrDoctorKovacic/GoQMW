@@ -10,11 +10,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
+	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/sessions/gps"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -47,38 +47,39 @@ func main() {
 	configureLogging(debug)
 
 	settings.ParseConfig(settingsFile)
-
 	sessions.Setup()
-	setupHooks()
+
+	settings.RegisterHook("AUTO_SLEEP", autoSleepSettings)
+	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
+	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
+	sessions.RegisterHook("ACC_POWER", accPower)
+	sessions.RegisterHook("KEY_STATE", keyState)
+	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
+	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
+	sessions.RegisterHook("SEAT_MEMORY_1", seatMemory)
+	log.Info().Msg("Enabled session hooks")
 
 	// Init router
 	router := mux.NewRouter()
 
-	gps.Mod.Setup()
-	gps.Mod.SetRoutes(router)
+	gps.Setup(router)
 
 	// Set default routes (including session)
 	SetDefaultRoutes(router)
 
 	// Setup conventional modules
 	// TODO: More modular handling of modules
-	mserial.Mod.Setup()
-	mserial.Mod.SetRoutes(router)
-	bluetooth.Mod.Setup()
-	bluetooth.Mod.SetRoutes(router)
-	pybus.Mod.Setup()
-	pybus.Mod.SetRoutes(router)
-	db.Mod.Setup()
+	mserial.Setup(router)
+	bluetooth.Setup(router)
+	pybus.Setup(router)
+	db.Setup()
 
 	// Set up MQTT, more dependent than other packages
 	if !settings.Data.IsSet("mdroid.MQTT_ADDRESS") || !settings.Data.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !settings.Data.IsSet("mdroid.MQTT_CLIENT_ID") || !settings.Data.IsSet("mdroid.MQTT_USERNAME") || !settings.Data.IsSet("mdroid.MQTT_PASSWORD") {
 		log.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
-		return
+	} else {
+		mqtt.Setup(settings.Data.GetString("mdroid.MQTT_ADDRESS"), settings.Data.GetString("mdroid.MQTT_ADDRESS_FALLBACK"), settings.Data.GetString("mdroid.MQTT_CLIENT_ID"), settings.Data.GetString("mdroid.MQTT_USERNAME"), settings.Data.GetString("mdroid.MQTT_PASSWORD"))
 	}
-	mqtt.Mod.Setup(settings.Data.GetString("mdroid.MQTT_ADDRESS"), settings.Data.GetString("mdroid.MQTT_ADDRESS_FALLBACK"), settings.Data.GetString("mdroid.MQTT_CLIENT_ID"), settings.Data.GetString("mdroid.MQTT_USERNAME"), settings.Data.GetString("mdroid.MQTT_PASSWORD"))
-
-	// Connect bluetooth device on startup
-	bluetooth.Connect()
 
 	Start(router)
 }

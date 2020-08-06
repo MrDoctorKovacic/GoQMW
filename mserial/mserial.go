@@ -12,9 +12,6 @@ import (
 	"github.com/tarm/serial"
 )
 
-// Module exports MDroid module
-type Module struct{}
-
 // Message for the serial writer, and a channel to await it
 type Message struct {
 	Device     *serial.Port
@@ -25,9 +22,7 @@ type Message struct {
 
 var (
 	// Writer is our one main port to default to
-	Writer *serial.Port
-	// Mod exports our module functionality
-	Mod            Module
+	Writer         *serial.Port
 	writeQueue     map[*serial.Port][]*Message
 	writeQueueLock sync.Mutex
 )
@@ -37,7 +32,7 @@ func init() {
 }
 
 // Setup handles module init
-func (*Module) Setup() {
+func Setup(router *mux.Router) {
 	if !settings.Data.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
 		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
@@ -54,10 +49,7 @@ func (*Module) Setup() {
 		for device, baudrate := range parseSerialDevices(settings.GetAll()) {
 			go startSerialComms(device, baudrate)
 		}*/
-}
 
-// SetRoutes inits module routes
-func (*Module) SetRoutes(router *mux.Router) {
 	//
 	// Serial routes
 	//

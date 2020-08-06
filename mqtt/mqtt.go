@@ -13,9 +13,6 @@ import (
 	logger "github.com/rs/zerolog/log"
 )
 
-// Module exports MDroid module
-type Module struct{}
-
 // config holds configuration and status of MQTT
 type config struct {
 	address         string
@@ -32,9 +29,6 @@ type message struct {
 }
 
 var (
-	// Mod exports our module functionality
-	Mod Module
-
 	// Enabled if MQTT is enabled
 	Enabled bool
 
@@ -183,7 +177,7 @@ func connect() {
 }
 
 // Setup handles module init
-func (*Module) Setup(address string, addressFallback string, clientid string, username string, password string) {
+func Setup(address string, addressFallback string, clientid string, username string, password string) {
 	Enabled = true
 	mqttConfig.address = address
 	mqttConfig.addressFallback = addressFallback
