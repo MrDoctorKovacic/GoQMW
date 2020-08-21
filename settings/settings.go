@@ -33,7 +33,7 @@ var Data *viper.Viper
 
 // ParseConfig will take initial configuration values and parse them into global settings
 func ParseConfig(settingsFile string) {
-	Data := viper.New()
+	Data = viper.New()
 	Data.SetConfigName(settingsFile) // name of config file (without extension)
 	Data.AddConfigPath(".")          // optionally look for config in the working directory
 	err := Data.ReadInConfig()       // Find and read the config file
