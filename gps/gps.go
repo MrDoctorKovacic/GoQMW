@@ -13,9 +13,9 @@ import (
 
 	"github.com/bradfitz/latlong"
 	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mqtt"
+	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/rs/zerolog/log"
 )
@@ -114,17 +114,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 		log.Error().Msg(err.Error())
 		return
 	}
-	postingString := Set(newdata)
-
-	// Insert into database
-	if postingString != "" && db.DB != nil {
-		err := db.DB.Write(fmt.Sprintf("gps %s", strings.TrimSuffix(postingString, ",")))
-		if err != nil && db.DB.Started {
-			log.Error().Msgf("Error writing string %s to influx DB: %s", postingString, err.Error())
-			return
-		}
-		log.Debug().Msgf("Logged %s to database", postingString)
-	}
+	Set(newdata)
 	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
 }
 
@@ -163,6 +153,9 @@ func Set(newdata Fix) string {
 	postingString.WriteString(fmt.Sprintf("latitude=\"%s\",", newdata.Latitude))
 	postingString.WriteString(fmt.Sprintf("longitude=\"%s\",", newdata.Longitude))
 
+	sessions.Set("gps.latitude", newdata.Latitude)
+	sessions.Set("gps.longitude", newdata.Longitude)
+
 	if fixIsSignifigantlyDifferent(lastFix.Latitude, newdata.Latitude) {
 		go mqtt.Publish("gps/latitude", newdata.Latitude, true)
 	}
@@ -175,32 +168,40 @@ func Set(newdata Fix) string {
 		if lastFix.Altitude != newdata.Altitude {
 			go mqtt.Publish("gps/altitude", convFloat, true)
 		}
+		sessions.Set("gps.altitude", convFloat)
 		postingString.WriteString(fmt.Sprintf("altitude=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Speed, 32); err == nil {
 		if lastFix.Speed != newdata.Speed {
 			go mqtt.Publish("gps/speed", convFloat, true)
 		}
+		sessions.Set("gps.speed", convFloat)
 		postingString.WriteString(fmt.Sprintf("speed=%f,", convFloat))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Climb, 32); err == nil {
 		if lastFix.Climb != newdata.Climb {
 			go mqtt.Publish("gps/climb", convFloat, true)
 		}
+		sessions.Set("gps.climb", convFloat)
 		postingString.WriteString(fmt.Sprintf("climb=%f,", convFloat))
 	}
-	if newdata.Time == "" {
-		newdata.Time = time.Now().In(GetTimezone()).Format("2006-01-02 15:04:05.999")
-	}
 	if newdata.EPV != "" {
+		sessions.Set("gps.epv", newdata.EPV)
 		postingString.WriteString(fmt.Sprintf("EPV=%s,", newdata.EPV))
 	}
 	if newdata.EPT != "" {
+		sessions.Set("gps.ept", newdata.EPT)
 		postingString.WriteString(fmt.Sprintf("EPT=%s,", newdata.EPT))
 	}
 	if convFloat, err := strconv.ParseFloat(newdata.Course, 32); err == nil {
+		sessions.Set("gps.course", convFloat)
 		postingString.WriteString(fmt.Sprintf("Course=%f,", convFloat))
 	}
+
+	if newdata.Time == "" {
+		newdata.Time = time.Now().In(GetTimezone()).Format("2006-01-02 15:04:05.999")
+	}
+	sessions.Set("gps.time", newdata.Time)
 
 	return postingString.String()
 }

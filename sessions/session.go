@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format/response"
-	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/qcasey/viper"
@@ -169,7 +168,7 @@ func Set(key string, value interface{}) string {
 	oldKeyWrites := Data.GetInt(fmt.Sprintf("%s.writes", key))
 
 	Data.Set(fmt.Sprintf("%s.value", key), value)
-	Data.Set(fmt.Sprintf("%s.write_date", key), time.Now().In(gps.GetTimezone()))
+	Data.Set(fmt.Sprintf("%s.write_date", key), time.Now())
 	Data.Set(fmt.Sprintf("%s.writes", key), oldKeyWrites+1)
 
 	// Finish post processing
