@@ -34,10 +34,12 @@ func autoSleepSettings(key string, value interface{}) {
 // When ACC power state is changed
 func accPower() {
 	// Play / pause bluetooth media on key in/out
-	if sessions.Data.GetString("ACC_POWER") == "TRUE" {
-		go bluetooth.Play()
-	} else {
-		go bluetooth.Pause()
+	if sessions.Data.GetString("connected_bluetooth_device") != "" {
+		if sessions.Data.GetString("acc_power") == "TRUE" {
+			go bluetooth.Play()
+		} else {
+			go bluetooth.Pause()
+		}
 	}
 
 	// Trigger low power and auto sleep
@@ -54,10 +56,10 @@ func lightSensorOn() {
 
 // Alert me when it's raining and windows are down
 func lightSensorReason() {
-	keyPosition := sessions.Data.GetString("KEY_POSITION")
-	windowsOpen := sessions.Data.GetString("WINDOWS_OPEN")
-	doorsLocked := sessions.Data.GetString("DOORS_LOCKED")
-	doorsLockedLastUpdate := sessions.Data.GetString("DOORS_LOCKED_META.lastUpdate")
+	keyPosition := sessions.Data.GetString("key_position")
+	windowsOpen := sessions.Data.GetString("windows_open")
+	doorsLocked := sessions.Data.GetString("doors_locked")
+	doorsLockedLastUpdate := sessions.Data.GetString("doors_locked_meta.lastUpdate")
 
 	delta, err := format.CompareTimeToNow(doorsLockedLastUpdate, gps.GetTimezone())
 	if err != nil {
