@@ -1,7 +1,6 @@
 package main
 
 import (
-	bluetooth "github.com/qcasey/MDroid-Core/bluetooth"
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/sessions"
@@ -33,16 +32,8 @@ func autoSleepSettings(key string, value interface{}) {
 
 // When ACC power state is changed
 func accPower() {
-	// Play / pause bluetooth media on key in/out
-	if sessions.Data.GetString("connected_bluetooth_device") != "" {
-		if sessions.Data.GetString("acc_power") == "TRUE" {
-			go bluetooth.Play()
-		} else {
-			go bluetooth.Pause()
-		}
-	}
-
 	// Trigger low power and auto sleep
+	go evalBluetoothDeviceState()
 	go evalLowPowerMode()
 	go evalAutoLock()
 	go evalAutoSleep()

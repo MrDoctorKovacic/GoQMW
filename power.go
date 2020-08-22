@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/qcasey/MDroid-Core/bluetooth"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/sessions"
 	"github.com/qcasey/MDroid-Core/settings"
@@ -12,6 +13,17 @@ import (
 
 func hasAuxPower() bool {
 	return sessions.Data.GetString("ACC_POWER") == "TRUE"
+}
+
+func evalBluetoothDeviceState() {
+	// Play / pause bluetooth media on key in/out
+	if sessions.Data.GetString("connected_bluetooth_device") != "" {
+		if sessions.Data.GetString("acc_power") == "TRUE" {
+			bluetooth.Play()
+		} else {
+			bluetooth.Pause()
+		}
+	}
 }
 
 // Evaluates if the doors should be locked
