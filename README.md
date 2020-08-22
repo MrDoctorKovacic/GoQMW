@@ -9,23 +9,19 @@
 
 [Galaxy Watch Integration](https://quinncasey.com/unlocking-vehicle-with-mdroid-core-from-smartwatch/)
 
-REST & GraphQL API for vehicle data. It is the backbone to several projects allowing remote access to my car and its data.
-
 ## Motivation
 
-I wanted a hub to ingest different kinds of data from sources on my car, as well as store this data and make it queryable for other programs. Some sources are from my interfaces to the stock buses like [PyBus](https://github.com/qcasey/pyBus) or [CAN](https://github.com/qcasey/MDroid-CAN), others are inputs like [GPS](https://github.com/qcasey/MDroid-GPS) or [Drok UART](https://github.com/qcasey/MDroid-Drok).
+I wanted a hub to ingest different kinds of data from sources on my car, as well as store this data and make it available for other programs. Some sources are from my interfaces to the stock buses like [PyBus](https://github.com/qcasey/pyBus) or [CAN](https://github.com/qcasey/MDroid-CAN), others are inputs like [GPS](https://github.com/qcasey/MDroid-GPS) or [Drok UART](https://github.com/qcasey/MDroid-Drok).
 
  The board it's riding has an always-on LTE connection, giving me real time updates and control. Inspired by [Tesla's app implementation](https://www.tesla.com/support/tesla-app).
 
 ## Benefits
 
 * Incoming data is stored in [InfluxDB](https://www.influxdata.com/): a performant time series Database.
-* Pipelines data to one location that can be reliably queried, using raw JSON or GraphQL.
+* Pipelines data to one location that can be reliably queried.
 * Stores persistent settings for other machines on the network.
 * Can lower windows, open trunk, turn on hazards remotely, etc by mapping queries to the [BMW K-Bus](https://github.com/qcasey/pyBus)).
 * It's written in Go, runs on OpenWRT ARM boards in the MUSL compiler. Try it, [the MUSL bin is cross-compiled.](https://github.com/qcasey/MDroid-Core/blob/master/bin/MDroid-Core-MUSL)
-
-![GraphQL](https://quinncasey.com/wp-content/uploads/2019/11/graphql.png "GraphQL")
 
 ## Requirements
 
