@@ -215,7 +215,7 @@ func Set(key string, value interface{}) string {
 	oldKeyValue := Data.Get(key)
 
 	Data.Set(key, value)
-	Data.Set(fmt.Sprintf("%s.lastUpdated", key), time.Now().In(gps.GetTimezone()))
+	Data.Set(fmt.Sprintf("%s_meta.lastUpdate", key), time.Now().In(gps.GetTimezone()))
 	session.stats.Sets++
 
 	// Finish post processing
