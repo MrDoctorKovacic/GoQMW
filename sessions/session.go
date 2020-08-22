@@ -18,8 +18,8 @@ import (
 	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/viper"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 // Package holds the Package and last update info for each session value

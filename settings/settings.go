@@ -8,9 +8,9 @@ import (
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/mqtt"
+	"github.com/qcasey/viper"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 
 	"github.com/gorilla/mux"
 )
@@ -40,6 +40,7 @@ func ParseConfig(settingsFile string) {
 	if err != nil {
 		log.Warn().Msg(err.Error())
 	}
+	Data.WatchConfig()
 
 	// Enable debugging from settings
 	if Data.IsSet("mdroid.debug") && Data.GetBool("mdroid.debug") {
@@ -92,7 +93,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 	value := params["value"]
 
 	// Log if requested
-	log.Debug().Msgf("Responding to POST request for setting %s on component %s to be value %s", key, value)
+	log.Debug().Msgf("Responding to POST request for setting %s to be value %s", key, value)
 
 	// Do the dirty work elsewhere
 	Set(key, value)
