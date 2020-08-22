@@ -181,7 +181,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
 	// If the car's ACC power isn't on, it won't be ready for requests. Wake it up first
-	if sessions.Data.GetString("acc_power") != "TRUE" {
+	if !sessions.Data.GetBool("acc_power") {
 		PushQueue("requestVehicleStatus") // this will be swallowed
 	}
 

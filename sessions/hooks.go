@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -22,7 +23,7 @@ func RegisterHook(key string, function func()) {
 	log.Info().Msgf("Adding new hook for %s", key)
 	hookLock.Lock()
 	defer hookLock.Unlock()
-	hookList = append(hookList, hook{key: key, function: function})
+	hookList = append(hookList, hook{key: strings.ToLower(key), function: function})
 }
 
 // RegisterHooks takes a list of componentNames to apply the same hook to
