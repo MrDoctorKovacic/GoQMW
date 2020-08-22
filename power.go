@@ -77,7 +77,7 @@ func evalAutoSleep() {
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower() {
-	isKeyIn := isKeyIn()
+	isKeyIn := isKeyIn() || sessions.Data.GetString("ACC_POWER") == "TRUE"
 	lightSensor := sessions.Data.GetString("LIGHT_SENSOR_ON") == "TRUE"
 
 	shouldBeOn := !lightSensor && isKeyIn
