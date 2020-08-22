@@ -2,7 +2,6 @@ package sessions
 
 import (
 	"bytes"
-	"container/list"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -30,19 +29,8 @@ type Package struct {
 	Quiet      bool `json:"quiet,omitempty"`
 }
 
-// Stats hold simple metrics for the session as a whole
-type Stats struct {
-	dataSample       *list.List
-	throughput       float64
-	ThroughputString string `json:"Throughput"`
-	Sets             uint32 `json:"Sets"`
-	Gets             uint32 `json:"Gets"`
-	DipsBelowMinimum int    `json:"DipsBelowMinimum"`
-}
-
 // Session is a mapping of Datas, which contain session values
 type Session struct {
-	stats             Stats
 	Mutex             sync.RWMutex
 	file              string
 	startTime         time.Time
@@ -56,7 +44,6 @@ var Data *viper.Viper
 
 func init() {
 	Data = viper.New()
-	session.stats.dataSample = list.New()
 	session.startTime = time.Now()
 	session.throughputWarning = -1
 }
@@ -93,39 +80,6 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 // GetStartTime will give the time the session started
 func GetStartTime() time.Time {
 	return session.startTime
-}
-
-// HandleGetStats will return various statistics on this Session
-func HandleGetStats(w http.ResponseWriter, r *http.Request) {
-	session.Mutex.RLock()
-	defer session.Mutex.RUnlock()
-	session.stats.calculateThroughput()
-
-	response.WriteNew(&w, r, response.JSONResponse{Output: session.stats, OK: true})
-}
-
-func (s *Stats) calculateThroughput() {
-	d := session.stats.dataSample.Front()
-	data := d.Value.(Package)
-	s.throughput = float64(session.stats.dataSample.Len()) / time.Since(data.date).Seconds()
-	s.ThroughputString = fmt.Sprintf("%f sets per second", s.throughput)
-
-	if session.throughputWarning >= 0 && session.stats.throughput < float64(session.throughputWarning) {
-		session.stats.DipsBelowMinimum++
-		SlackAlert("Throughput has fallen below 20 sets/second")
-	}
-}
-
-func addStat(d Package) {
-	session.stats.dataSample.PushBack(d)
-	if session.stats.dataSample.Len() > 300 {
-		session.stats.dataSample.Remove(session.stats.dataSample.Front())
-	}
-
-	// Check throughput every so often
-	if session.stats.Sets%500 == 0 {
-		session.stats.calculateThroughput()
-	}
 }
 
 // SlackAlert sends a message to a slack channel webhook
@@ -212,10 +166,11 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 func Set(key string, value interface{}) string {
 	keyAlreadyExists := Data.IsSet(key)
 	oldKeyValue := Data.Get(fmt.Sprintf("%s.value", key))
+	oldKeyWrites := Data.GetInt(fmt.Sprintf("%s.writes", key))
 
 	Data.Set(fmt.Sprintf("%s.value", key), value)
 	Data.Set(fmt.Sprintf("%s.lastUpdate", key), time.Now().In(gps.GetTimezone()))
-	session.stats.Sets++
+	Data.Set(fmt.Sprintf("%s.writes", key), oldKeyWrites+1)
 
 	// Finish post processing
 	go runHooks(strings.ToLower(key))

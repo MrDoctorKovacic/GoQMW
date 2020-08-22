@@ -116,13 +116,6 @@ func powerTrigger(shouldBeOn bool, reason string, componentName string) {
 	moduleIsOn := sessions.Data.GetBool(fmt.Sprintf("%s_POWER.value", componentName))
 	moduleSetting := settings.Data.GetString(fmt.Sprintf("%s.power", componentName))
 
-	// Add a limit to how many checks can occur
-	/*
-		if module.powerStats.lastTrigger.target != module.target && time.Since(module.powerStats.lastTrigger.time) < time.Second*3 {
-			log.Info().Msgf("Ignoring target %s on module %s, since last check was under 3 seconds ago", name, module.target)
-			return
-		}*/
-
 	var triggerType string
 	// Evaluate power target with trigger and settings info
 	if (moduleSetting == "AUTO" && !moduleIsOn && shouldBeOn) || (moduleSetting == "ON" && !moduleIsOn) {
@@ -141,6 +134,4 @@ func powerTrigger(shouldBeOn bool, reason string, componentName string) {
 		reason = fmt.Sprintf("target is %s", moduleSetting)
 	}
 	log.Info().Msgf("Powering %s %s, because %s", triggerType, componentName, reason)
-
-	//module.powerStats.lastTrigger = powerTrigger{time: time.Now(), target: moduleSetting}
 }

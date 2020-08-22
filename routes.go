@@ -177,14 +177,12 @@ func SetDefaultRoutes(router *mux.Router) {
 	router.HandleFunc("/sleep", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/shutdown", handleSleepMDroid).Methods("GET")
 	router.HandleFunc("/alert/{message}", handleSlackAlert).Methods("GET")
-	router.HandleFunc("/responses/stats", response.HandleGetStats).Methods("GET")
 	router.HandleFunc("/debug/level/{level}", handleChangeLogLevel).Methods("GET")
 
 	//
 	// Session routes
 	//
 	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
-	router.HandleFunc("/session/stats", sessions.HandleGetStats).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
 	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")
 

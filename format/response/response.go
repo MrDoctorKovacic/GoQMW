@@ -106,12 +106,3 @@ func WriteNew(w *http.ResponseWriter, r *http.Request, response JSONResponse) {
 	// Echo back message
 	response.Write(w, r)
 }
-
-// HandleGetStats exports all known stat requests
-func HandleGetStats(w http.ResponseWriter, r *http.Request) {
-	// Calculate time running
-	Statistics.TimeRunning = time.Since(Statistics.TimeStarted).Seconds()
-
-	// Echo back message
-	WriteNew(&w, r, JSONResponse{Output: Statistics, OK: true})
-}
