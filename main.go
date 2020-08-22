@@ -53,7 +53,6 @@ func main() {
 	settings.RegisterHook("AUTO_LOCK", autoLockSettings)
 	settings.RegisterHook("ANGEL_EYES", angelEyesSettings)
 	sessions.RegisterHook("ACC_POWER", accPower)
-	sessions.RegisterHook("KEY_STATE", keyState)
 	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
 	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
 	sessions.RegisterHook("SEAT_MEMORY_1", seatMemory)

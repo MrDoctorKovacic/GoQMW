@@ -33,26 +33,17 @@ func autoSleepSettings(key string, value interface{}) {
 
 // When ACC power state is changed
 func accPower() {
-	// Trigger low power and auto sleep
-	go evalLowPowerMode()
-	go evalAutoLock()
-	go evalAutoSleep()
-}
-
-// When key state is changed
-func keyState() {
-
 	// Play / pause bluetooth media on key in/out
-	if sessions.Data.GetString("KEY_STATE") != "FALSE" {
+	if sessions.Data.GetString("ACC_POWER") == "TRUE" {
 		go bluetooth.Play()
 	} else {
 		go bluetooth.Pause()
 	}
 
-	// Determine state of angel eyes, and main board
-	go evalAngelEyesPower()
+	// Trigger low power and auto sleep
 	go evalLowPowerMode()
 	go evalAutoLock()
+	go evalAutoSleep()
 }
 
 // When light sensor is changed in session
