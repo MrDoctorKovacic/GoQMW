@@ -132,7 +132,7 @@ func repeatCommand(command string, sleepSeconds int) {
 	log.Info().Msgf("Running Pybus command %s every %d seconds", command, sleepSeconds)
 	for {
 		// Only push repeated pybus commands when powered, otherwise the car won't sleep
-		if sessions.Data.GetBool("acc_power") {
+		if sessions.Data.GetBool("acc_power.value") {
 			PushQueue(command)
 		}
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
@@ -181,7 +181,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msgf("Attempting to send command %s to device %s", command, device)
 
 	// If the car's ACC power isn't on, it won't be ready for requests. Wake it up first
-	if !sessions.Data.GetBool("acc_power") {
+	if !sessions.Data.GetBool("acc_power.value") {
 		PushQueue("requestVehicleStatus") // this will be swallowed
 	}
 
@@ -189,7 +189,7 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	// To see if you could do that switch-a-roo
 	switch device {
 	case "DOOR":
-		doorStatus := sessions.Data.GetString("doors_locked")
+		doorStatus := sessions.Data.GetString("doors_locked.value")
 		if mserial.Writer != nil &&
 			((isPositive && doorStatus == "FALSE") || (!isPositive && doorStatus == "TRUE")) {
 			mserial.PushText("toggleDoorLocks")

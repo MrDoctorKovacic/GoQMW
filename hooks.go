@@ -47,10 +47,10 @@ func lightSensorOn() {
 
 // Alert me when it's raining and windows are down
 func lightSensorReason() {
-	keyPosition := sessions.Data.GetString("key_position")
-	windowsOpen := sessions.Data.GetString("windows_open")
-	doorsLocked := sessions.Data.GetString("doors_locked")
-	doorsLockedLastUpdate := sessions.Data.GetString("doors_locked_meta.lastUpdate")
+	keyPosition := sessions.Data.GetString("key_position.value")
+	windowsOpen := sessions.Data.GetString("windows_open.value")
+	doorsLocked := sessions.Data.GetString("doors_locked.value")
+	doorsLockedLastUpdate := sessions.Data.GetString("doors_locked.lastUpdate")
 
 	delta, err := format.CompareTimeToNow(doorsLockedLastUpdate, gps.GetTimezone())
 	if err != nil {
@@ -58,7 +58,7 @@ func lightSensorReason() {
 		return
 	}
 
-	if sessions.Data.GetString("LIGHT_SENSOR_REASON") == "RAIN" &&
+	if sessions.Data.GetString("light_sensor_reason.value") == "RAIN" &&
 		keyPosition == "OFF" &&
 		doorsLocked == "TRUE" &&
 		windowsOpen == "TRUE" &&

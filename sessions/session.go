@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -212,10 +211,10 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 // Set prepares a Value structure before passing it to the setter
 func Set(key string, value interface{}) string {
 	keyAlreadyExists := Data.IsSet(key)
-	oldKeyValue := Data.Get(key)
+	oldKeyValue := Data.Get(fmt.Sprintf("%s.value", key))
 
-	Data.Set(key, value)
-	Data.Set(fmt.Sprintf("%s_meta.lastUpdate", key), time.Now().In(gps.GetTimezone()))
+	Data.Set(fmt.Sprintf("%s.value", key), value)
+	Data.Set(fmt.Sprintf("%s.lastUpdate", key), time.Now().In(gps.GetTimezone()))
 	session.stats.Sets++
 
 	// Finish post processing
@@ -226,14 +225,14 @@ func Set(key string, value interface{}) string {
 		formattedName := strings.ToLower(strings.Replace(key, " ", "_", -1))
 
 		topic := fmt.Sprintf("session/%s", formattedName)
-		go mqtt.Publish(topic, Data.GetString(key), true)
+		go mqtt.Publish(topic, value, true)
 
 		if db.DB != nil {
 			// Convert to a float if that suits the value, otherwise change field to value_string
-			valueString := fmt.Sprintf("value=%s", Data.GetString(key))
-			if _, err := strconv.ParseFloat(Data.GetString(key), 32); err != nil {
-				valueString = fmt.Sprintf("value=\"%s\"", Data.GetString(key))
-			}
+			valueString := fmt.Sprintf("value=%s", value)
+			/*if _, err := strconv.ParseFloat(value, 32); err != nil {
+				valueString = fmt.Sprintf("value=\"%s\"", value)
+			}*/
 
 			// In Sessions, all values come in and out as strings regardless,
 			// but this conversion alows Influx queries on the floats to be executed
