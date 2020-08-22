@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -165,19 +164,19 @@ func parseJSON(marshalledJSON interface{}) error {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			sessions.Set(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
+			sessions.Set(key, strconv.FormatBool(vv))
 		case int:
-			sessions.Set(strings.ToUpper(key), strconv.Itoa(value.(int)))
+			sessions.Set(key, value.(int))
 		case float32:
 			if floatValue, ok := value.(float32); ok {
-				sessions.Set(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+				sessions.Set(key, floatValue)
 			}
 		case float64:
 			if floatValue, ok := value.(float64); ok {
-				sessions.Set(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
+				sessions.Set(key, floatValue)
 			}
 		case string:
-			sessions.Set(strings.ToUpper(key), strings.ToUpper(vv))
+			sessions.Set(key, vv)
 		case map[string]interface{}:
 			var m Measurement
 			err := mapstructure.Decode(value, &m)
