@@ -18,7 +18,6 @@ import (
 // Bluetooth is the modular implementation of Bluetooth controls
 var (
 	BluetoothAddress string
-	tmuxStarted      bool
 	replySerialRegex *regexp.Regexp
 	findStringRegex  *regexp.Regexp
 	cleanRegex       *regexp.Regexp
