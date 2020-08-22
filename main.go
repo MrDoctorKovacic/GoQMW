@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/bluetooth"
@@ -22,16 +21,13 @@ import (
 
 func configureLogging(debug *bool) {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	zerolog.TimestampFunc = func() time.Time {
-		return time.Now().In(gps.GetTimezone())
-	}
 	zerolog.CallerMarshalFunc = func(file string, line int) string {
 		fileparts := strings.Split(file, "/")
 		filename := strings.Replace(fileparts[len(fileparts)-1], ".go", "", -1)
 		return filename + ":" + strconv.Itoa(line)
 	}
 	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "Mon Jan 2 15:04:05"}
-	log.Logger = zerolog.New(output).With().Caller().Timestamp().Logger()
+	log.Logger = zerolog.New(output).With().Caller().Logger()
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
