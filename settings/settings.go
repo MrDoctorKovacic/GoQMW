@@ -40,7 +40,6 @@ func ParseConfig(settingsFile string) {
 	if err != nil {
 		log.Warn().Msg(err.Error())
 	}
-	Data.WatchConfig()
 
 	// Enable debugging from settings
 	if Data.IsSet("mdroid.debug") && Data.GetBool("mdroid.debug") {
