@@ -176,7 +176,7 @@ func Set(key string, value interface{}) string {
 
 	// Insert into database if this is a new/updated value
 	if !keyAlreadyExists || (keyAlreadyExists && oldKeyValue != value) {
-		formattedName := strings.ToLower(strings.Replace(key, " ", "_", -1))
+		formattedName := strings.ToLower(strings.Replace(strings.Replace(key, " ", "_", -1), ".", "/", -1))
 
 		topic := fmt.Sprintf("session/%s", formattedName)
 		go mqtt.Publish(topic, value, true)
