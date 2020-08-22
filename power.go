@@ -89,9 +89,9 @@ func evalAutoSleep() {
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower() {
 	hasPower := hasAuxPower()
-	lightSensor := sessions.Data.GetString("light_sensor_on.value") == "TRUE"
+	lightSensor := sessions.Data.GetString("light_sensor_on.value") == "FALSE"
 
-	shouldBeOn := !lightSensor && hasPower
+	shouldBeOn := lightSensor && hasPower
 	triggerReason := fmt.Sprintf("lightSensor: %t, hasPower: %t", lightSensor, hasPower)
 
 	// Pass angel module to generic power trigger
