@@ -21,9 +21,9 @@ import (
 
 // Package holds the Package and last update info for each session value
 type Package struct {
-	Name       string `json:"name,omitempty"`
-	Value      string `json:"value,omitempty"`
-	LastUpdate string `json:"lastUpdate,omitempty"`
+	Name       string      `json:"name,omitempty"`
+	Value      interface{} `json:"value,omitempty"`
+	LastUpdate string      `json:"lastUpdate,omitempty"`
 	date       time.Time
 	Quiet      bool `json:"quiet,omitempty"`
 }
