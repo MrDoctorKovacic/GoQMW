@@ -10,15 +10,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func isKeyIn() bool {
-	return sessions.Data.GetString("KEY_STATE") != "FALSE"
+func hasAuxPower() bool {
+	return sessions.Data.GetString("ACC_POWER") == "TRUE"
 }
 
 // Evaluates if the doors should be locked
 func evalAutoLock() {
-	accOn := sessions.Data.GetString("ACC_POWER") == "TRUE"
+	accOn := hasAuxPower()
 	isHome := sessions.Data.GetString("BLE_CENTRAL_CONNECTED") == "TRUE"
-	isKeyIn := isKeyIn()
 
 	if !sessions.Data.IsSet("DOORS_LOCKED") {
 		// Don't log, likely just doesn't exist in session yet
@@ -26,7 +25,7 @@ func evalAutoLock() {
 	}
 
 	target := settings.Get("mdroid.autolock", "auto")
-	shouldBeOn := sessions.Data.GetString("DOORS_LOCKED") == "FALSE" && !accOn && !isHome && !isKeyIn
+	shouldBeOn := sessions.Data.GetString("DOORS_LOCKED") == "FALSE" && !accOn && !isHome
 
 	// Instead of power trigger, evaluate here. Lock once every so often
 	if target == "AUTO" && shouldBeOn {
@@ -55,7 +54,7 @@ func evalAutoLock() {
 
 // Evaluates if the board should be put to sleep
 func evalAutoSleep() {
-	accOn := sessions.Data.GetString("ACC_POWER") == "TRUE"
+	accOn := hasAuxPower()
 	isHome := sessions.Data.GetString("BLE_CENTRAL_CONNECTED") == "TRUE"
 	sleepEnabled := settings.Data.GetString("MDROID.AUTO_SLEEP")
 
@@ -70,18 +69,18 @@ func evalAutoSleep() {
 	}
 
 	// Sleep indefinitely, hand power control to the arduino
-	if !accOn && isHome && !isKeyIn() {
+	if !accOn && isHome {
 		sleepMDroid()
 	}
 }
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower() {
-	isKeyIn := isKeyIn() || sessions.Data.GetString("ACC_POWER") == "TRUE"
+	hasPower := hasAuxPower()
 	lightSensor := sessions.Data.GetString("LIGHT_SENSOR_ON") == "TRUE"
 
-	shouldBeOn := !lightSensor && isKeyIn
-	triggerReason := fmt.Sprintf("lightSensor: %t, keyIsIn: %t", lightSensor, isKeyIn)
+	shouldBeOn := !lightSensor && hasPower
+	triggerReason := fmt.Sprintf("lightSensor: %t, hasPower: %t", lightSensor, hasPower)
 
 	// Pass angel module to generic power trigger
 	powerTrigger(shouldBeOn, triggerReason, "ANGEL_EYES")
@@ -91,11 +90,10 @@ func evalAngelEyesPower() {
 func evalLowPowerMode() {
 	accOn := sessions.Data.GetString("ACC_POWER") == "TRUE"
 	isHome := sessions.Data.GetString("BLE_CENTRAL_CONNECTED") == "TRUE"
-	isKeyIn := isKeyIn()
 	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
 
-	shouldBeOn := (accOn && !isHome && !startedRecently) || ((isHome || startedRecently) && isKeyIn)
-	triggerReason := fmt.Sprintf("accOn: %t, isHome: %t, keyIsIn: %t, startedRecently: %t", accOn, isHome, isKeyIn, startedRecently)
+	shouldBeOn := (accOn && !isHome && !startedRecently) || (isHome || startedRecently)
+	triggerReason := fmt.Sprintf("accOn: %t, isHome: %t, startedRecently: %t", accOn, isHome, startedRecently)
 
 	// Pass angel module to generic power trigger
 	powerTrigger(shouldBeOn, triggerReason, "USB_HUB")
