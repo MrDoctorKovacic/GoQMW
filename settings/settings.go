@@ -15,19 +15,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Setting is GraphQL handler struct
-type Setting struct {
-	Name        string `json:"name,omitempty"`
-	Value       string `json:"value,omitempty"`
-	LastUpdated string `json:"lastUpdated,omitempty"`
-}
-
-// Component is GraphQL handler struct
-type Component struct {
-	Name     string    `json:"name,omitempty"`
-	Settings []Setting `json:"settings,omitempty"`
-}
-
 // Data points to an underlying viper instance
 var Data *viper.Viper
 

@@ -50,7 +50,7 @@ func lightSensorReason() {
 	keyPosition := sessions.Data.GetString("key_position.value")
 	windowsOpen := sessions.Data.GetString("windows_open.value")
 	doorsLocked := sessions.Data.GetString("doors_locked.value")
-	doorsLockedLastUpdate := sessions.Data.GetString("doors_locked.lastUpdate")
+	doorsLockedLastUpdate := sessions.Data.GetString("doors_locked.write_date")
 
 	delta, err := format.CompareTimeToNow(doorsLockedLastUpdate, gps.GetTimezone())
 	if err != nil {

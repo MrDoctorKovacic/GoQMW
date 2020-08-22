@@ -41,7 +41,7 @@ func evalAutoLock() {
 
 	// Instead of power trigger, evaluate here. Lock once every so often
 	if target == "AUTO" && shouldBeOn {
-		lockToggleTime, err := time.Parse("", sessions.Data.GetString("doors_locked.lastUpdate"))
+		lockToggleTime, err := time.Parse("", sessions.Data.GetString("doors_locked.write_date"))
 		if err != nil {
 			log.Error().Msg(err.Error())
 			return
