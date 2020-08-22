@@ -26,7 +26,7 @@ func configureLogging(debug *bool) {
 		filename := strings.Replace(fileparts[len(fileparts)-1], ".go", "", -1)
 		return filename + ":" + strconv.Itoa(line)
 	}
-	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "Mon Jan 2 15:04:05"}
+	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: ""}
 	log.Logger = zerolog.New(output).With().Caller().Logger()
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
