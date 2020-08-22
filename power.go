@@ -29,7 +29,7 @@ func evalBluetoothDeviceState() {
 // Evaluates if the doors should be locked
 func evalAutoLock() {
 	accOn := hasAuxPower()
-	isHome := sessions.Data.GetBool("ble_central_connected")
+	isHome := sessions.Data.GetBool("ble_connected")
 
 	if !sessions.Data.IsSet("doors_locked") {
 		// Don't log, likely just doesn't exist in session yet
@@ -67,7 +67,7 @@ func evalAutoLock() {
 // Evaluates if the board should be put to sleep
 func evalAutoSleep() {
 	accOn := hasAuxPower()
-	isHome := sessions.Data.GetBool("ble_central_connected")
+	isHome := sessions.Data.GetBool("ble_connected")
 	sleepEnabled := settings.Data.GetString("mdroid.auto_sleep")
 
 	// If "OFF", auto sleep is not enabled. Exit
@@ -101,7 +101,7 @@ func evalAngelEyesPower() {
 // Evaluates if the cameras and tablet should be on, and then passes that struct along as generic power module
 func evalLowPowerMode() {
 	accOn := sessions.Data.GetBool("acc_power")
-	isHome := sessions.Data.GetBool("ble_central_connected")
+	isHome := sessions.Data.GetBool("ble_connected")
 	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
 
 	shouldBeOn := (accOn && !isHome && !startedRecently) || (isHome || startedRecently)
