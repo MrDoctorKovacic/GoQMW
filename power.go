@@ -12,7 +12,7 @@ import (
 )
 
 func hasAuxPower() bool {
-	return sessions.Data.GetString("ACC_POWER") == "TRUE"
+	return sessions.Data.GetString("acc_power") == "TRUE"
 }
 
 func evalBluetoothDeviceState() {
@@ -29,19 +29,19 @@ func evalBluetoothDeviceState() {
 // Evaluates if the doors should be locked
 func evalAutoLock() {
 	accOn := hasAuxPower()
-	isHome := sessions.Data.GetString("BLE_CENTRAL_CONNECTED") == "TRUE"
+	isHome := sessions.Data.GetString("ble_central_connected") == "TRUE"
 
-	if !sessions.Data.IsSet("DOORS_LOCKED") {
+	if !sessions.Data.IsSet("doors_locked") {
 		// Don't log, likely just doesn't exist in session yet
 		return
 	}
 
 	target := settings.Get("mdroid.autolock", "auto")
-	shouldBeOn := sessions.Data.GetString("DOORS_LOCKED") == "FALSE" && !accOn && !isHome
+	shouldBeOn := sessions.Data.GetString("doors_locked") == "FALSE" && !accOn && !isHome
 
 	// Instead of power trigger, evaluate here. Lock once every so often
 	if target == "AUTO" && shouldBeOn {
-		lockToggleTime, err := time.Parse("", sessions.Data.GetString("DOORS_LOCKED.lastUpdate"))
+		lockToggleTime, err := time.Parse("", sessions.Data.GetString("doors_locked_meta.lastUpdate"))
 		if err != nil {
 			log.Error().Msg(err.Error())
 			return
@@ -67,8 +67,8 @@ func evalAutoLock() {
 // Evaluates if the board should be put to sleep
 func evalAutoSleep() {
 	accOn := hasAuxPower()
-	isHome := sessions.Data.GetString("BLE_CENTRAL_CONNECTED") == "TRUE"
-	sleepEnabled := settings.Data.GetString("MDROID.AUTO_SLEEP")
+	isHome := sessions.Data.GetString("ble_central_connected") == "TRUE"
+	sleepEnabled := settings.Data.GetString("mdroid.auto_sleep")
 
 	// If "OFF", auto sleep is not enabled. Exit
 	if sleepEnabled != "ON" {
@@ -89,7 +89,7 @@ func evalAutoSleep() {
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower() {
 	hasPower := hasAuxPower()
-	lightSensor := sessions.Data.GetString("LIGHT_SENSOR_ON") == "TRUE"
+	lightSensor := sessions.Data.GetString("light_sensor_on") == "TRUE"
 
 	shouldBeOn := !lightSensor && hasPower
 	triggerReason := fmt.Sprintf("lightSensor: %t, hasPower: %t", lightSensor, hasPower)
@@ -100,8 +100,8 @@ func evalAngelEyesPower() {
 
 // Evaluates if the cameras and tablet should be on, and then passes that struct along as generic power module
 func evalLowPowerMode() {
-	accOn := sessions.Data.GetString("ACC_POWER") == "TRUE"
-	isHome := sessions.Data.GetString("BLE_CENTRAL_CONNECTED") == "TRUE"
+	accOn := sessions.Data.GetString("acc_power") == "TRUE"
+	isHome := sessions.Data.GetString("ble_central_connected") == "TRUE"
 	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
 
 	shouldBeOn := (accOn && !isHome && !startedRecently) || (isHome || startedRecently)
