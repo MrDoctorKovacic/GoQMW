@@ -166,8 +166,6 @@ func parseJSON(marshalledJSON interface{}) error {
 		switch vv := value.(type) {
 		case bool:
 			sessions.Set(strings.ToUpper(key), strings.ToUpper(strconv.FormatBool(vv)))
-		case string:
-			sessions.Set(strings.ToUpper(key), strings.ToUpper(vv))
 		case int:
 			sessions.Set(strings.ToUpper(key), strconv.Itoa(value.(int)))
 		case float32:
@@ -178,6 +176,8 @@ func parseJSON(marshalledJSON interface{}) error {
 			if floatValue, ok := value.(float64); ok {
 				sessions.Set(strings.ToUpper(key), fmt.Sprintf("%f", floatValue))
 			}
+		case string:
+			sessions.Set(strings.ToUpper(key), strings.ToUpper(vv))
 		case map[string]interface{}:
 			var m Measurement
 			err := mapstructure.Decode(value, &m)
