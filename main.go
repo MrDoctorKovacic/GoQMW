@@ -27,7 +27,7 @@ func configureLogging(debug *bool) {
 	}
 	zerolog.TimeFieldFormat = "3:04PM"
 	output := zerolog.ConsoleWriter{Out: os.Stderr}
-	log.Logger = zerolog.New(output).With().Caller().Logger()
+	log.Logger = zerolog.New(output).With().Timestamp().Caller().Logger()
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
