@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
-	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
@@ -56,8 +55,6 @@ func main() {
 
 	// Init router
 	router := mux.NewRouter()
-
-	gps.Setup(router)
 
 	// Set default routes (including session)
 	SetDefaultRoutes(router)

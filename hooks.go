@@ -1,10 +1,7 @@
 package main
 
 import (
-	"github.com/qcasey/MDroid-Core/format"
-	"github.com/qcasey/MDroid-Core/gps"
 	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/rs/zerolog/log"
 )
 
 //
@@ -50,19 +47,11 @@ func lightSensorReason() {
 	keyPosition := sessions.Data.GetString("key_position.value")
 	windowsOpen := sessions.Data.GetString("windows_open.value")
 	doorsLocked := sessions.Data.GetString("doors_locked.value")
-	doorsLockedLastUpdate := sessions.Data.GetString("doors_locked.write_date")
-
-	delta, err := format.CompareTimeToNow(doorsLockedLastUpdate, gps.GetTimezone())
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return
-	}
 
 	if sessions.Data.GetString("light_sensor_reason.value") == "RAIN" &&
 		keyPosition == "OFF" &&
 		doorsLocked == "TRUE" &&
-		windowsOpen == "TRUE" &&
-		delta.Minutes() > 5 {
+		windowsOpen == "TRUE" {
 		sessions.SlackAlert("Windows are down in the rain, eh?")
 	}
 }
