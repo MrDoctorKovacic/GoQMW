@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -164,7 +163,7 @@ func parseJSON(marshalledJSON interface{}) error {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			sessions.Set(key, strconv.FormatBool(vv))
+			sessions.Set(key, vv)
 		case int:
 			sessions.Set(key, value.(int))
 		case float32:
