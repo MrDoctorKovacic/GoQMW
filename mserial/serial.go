@@ -119,6 +119,7 @@ func readSerial(device *serial.Port) error {
 	err = parseJSON(response) // Parse serial data
 	if err != nil {
 		log.Error().Msg(err.Error())
+		log.Error().Msgf("Could not parse from from serial device: \n\t%v", (response))
 	}
 	return nil
 }
