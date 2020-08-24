@@ -52,6 +52,7 @@ func main() {
 	sessions.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
 	sessions.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
 	sessions.RegisterHook("SEAT_MEMORY_1", seatMemory)
+	sessions.RegisterHook("ACC_POWER", accPower)
 	log.Info().Msg("Enabled session hooks")
 
 	// Init router
