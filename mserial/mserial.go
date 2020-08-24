@@ -54,7 +54,6 @@ func Setup(router *mux.Router) {
 	// Serial routes
 	//
 	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST", "GET")
-	router.HandleFunc("/gyros", getGyroMeasurements).Methods("GET")
 }
 
 // WriteSerialHandler handles messages sent through the server

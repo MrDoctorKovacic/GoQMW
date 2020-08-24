@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -11,6 +12,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
+
+// Measurement contains a simple X,Y,Z output from the IMU
+type Measurement struct {
+	X float64 `json:"X"`
+	Y float64 `json:"Y"`
+	Z float64 `json:"Z"`
+}
 
 // parseSerialDevices parses through other serial devices, if enabled
 /*
@@ -152,6 +160,18 @@ func write(msg *Message) error {
 	return nil
 }
 
+func parseGyros(name string, m Measurement) error {
+	if name == "ACCELERATION" || name == "GYROSCOPE" || name == "MAGNETIC" {
+		return fmt.Errorf("Measurement name %s not registered for input", name)
+	}
+
+	// Skip publishing values
+	sessions.SetQuietly(fmt.Sprintf("gyros.%s.x", strings.ToLower(name)), m.X)
+	sessions.SetQuietly(fmt.Sprintf("gyros.%s.y", strings.ToLower(name)), m.Y)
+	sessions.SetQuietly(fmt.Sprintf("gyros.%s.z", strings.ToLower(name)), m.Z)
+	return nil
+}
+
 func parseJSON(marshalledJSON interface{}) error {
 	if marshalledJSON == nil {
 		return fmt.Errorf("Marshalled JSON is nil")
@@ -182,7 +202,7 @@ func parseJSON(marshalledJSON interface{}) error {
 			if err != nil {
 				return err
 			}
-			err = addMeasurement(key, m)
+			err = parseGyros(key, m)
 			if err != nil {
 				return err
 			}
