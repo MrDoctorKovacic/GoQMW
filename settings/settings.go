@@ -61,7 +61,6 @@ func ParseConfig(settingsFile string) {
 	for _, key := range settings {
 		log.Info().Msgf("\t%s = %s", key, Data.GetString(key))
 		if flushToMQTT {
-			log.Info().Msg("\t\t- Flushing to MQTT")
 			go mqtt.Publish(fmt.Sprintf("settings/%s", key), Data.GetString(key), true)
 		}
 		HL.RunHooks(key)
