@@ -7,6 +7,7 @@ import (
 
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/hooks"
 	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/viper"
 	"github.com/rs/zerolog"
@@ -17,6 +18,9 @@ import (
 
 // Data points to an underlying viper instance
 var Data *viper.Viper
+
+// HL holds the registered hooks for settings
+var HL *hooks.HookList
 
 // ParseConfig will take initial configuration values and parse them into global settings
 func ParseConfig(settingsFile string) {
@@ -45,7 +49,7 @@ func ParseConfig(settingsFile string) {
 			topic := fmt.Sprintf("settings/%s", key)
 			go mqtt.Publish(topic, value, true)
 		}
-		runHooks(key, value)
+		HL.RunHooks(key)
 	}
 }
 
@@ -104,7 +108,7 @@ func Set(key string, value interface{}) error {
 	Data.WriteConfig()
 
 	// Trigger hooks
-	runHooks(key, value)
+	HL.RunHooks(key)
 
 	return nil
 }

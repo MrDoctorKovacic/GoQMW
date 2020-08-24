@@ -10,19 +10,19 @@ import (
 //
 
 // When angel eyes setting is changed
-func angelEyesSettings(key string, value interface{}) {
+func angelEyesSettings() {
 	// Determine state of angel eyes
 	go evalAngelEyesPower()
 }
 
 // When auto lock setting is changed
-func autoLockSettings(key string, value interface{}) {
+func autoLockSettings() {
 	// Trigger state of auto lock
 	go evalAutoLock()
 }
 
 // When auto Sleep setting is changed
-func autoSleepSettings(key string, value interface{}) {
+func autoSleepSettings() {
 	// Trigger state of auto sleep
 	go evalAutoSleep()
 }

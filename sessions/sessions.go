@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/db"
 	"github.com/qcasey/MDroid-Core/format/response"
+	"github.com/qcasey/MDroid-Core/hooks"
 	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/settings"
 	"github.com/qcasey/viper"
@@ -37,6 +38,9 @@ type Session struct {
 }
 
 var session Session
+
+// HL holds the registered hooks for settings
+var HL *hooks.HookList
 
 // Data holds a viper instance
 var Data *viper.Viper
@@ -172,7 +176,7 @@ func Set(key string, value interface{}) string {
 	Data.Set(fmt.Sprintf("%s.writes", key), oldKeyWrites+1)
 
 	// Finish post processing
-	go runHooks(strings.ToLower(key))
+	go HL.RunHooks(key)
 
 	// Insert into database if this is a new/updated value
 	if !keyAlreadyExists || oldKeyValue != value {
