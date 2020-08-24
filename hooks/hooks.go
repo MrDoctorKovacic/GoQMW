@@ -43,6 +43,8 @@ func (hl *HookList) RunHooks(key string) {
 	hl.lock.Lock()
 	defer hl.lock.Unlock()
 
+	log.Info().Msgf("Running hooks for key %s", key)
+
 	if len(hl.hooks) == 0 {
 		// No hooks registered
 		return
