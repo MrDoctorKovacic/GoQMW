@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/bluetooth"
 	"github.com/qcasey/MDroid-Core/db"
-	"github.com/qcasey/MDroid-Core/mqtt"
 	"github.com/qcasey/MDroid-Core/mserial"
 	"github.com/qcasey/MDroid-Core/pybus"
 	"github.com/qcasey/MDroid-Core/sessions"
@@ -68,13 +67,6 @@ func main() {
 	bluetooth.Setup(router)
 	pybus.Setup(router)
 	db.Setup()
-
-	// Set up MQTT, more dependent than other packages
-	if !settings.Data.IsSet("mdroid.MQTT_ADDRESS") || !settings.Data.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !settings.Data.IsSet("mdroid.MQTT_CLIENT_ID") || !settings.Data.IsSet("mdroid.MQTT_USERNAME") || !settings.Data.IsSet("mdroid.MQTT_PASSWORD") {
-		log.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
-	} else {
-		mqtt.Setup(settings.Data.GetString("mdroid.MQTT_ADDRESS"), settings.Data.GetString("mdroid.MQTT_ADDRESS_FALLBACK"), settings.Data.GetString("mdroid.MQTT_CLIENT_ID"), settings.Data.GetString("mdroid.MQTT_USERNAME"), settings.Data.GetString("mdroid.MQTT_PASSWORD"))
-	}
 
 	Start(router)
 }

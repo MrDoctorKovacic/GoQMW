@@ -45,6 +45,14 @@ func ParseConfig(settingsFile string) {
 
 	// Check if MQTT has an address and will be setup
 	flushToMQTT := Data.IsSet("mdroid.mqtt_address")
+	if flushToMQTT {
+		// Set up MQTT, more dependent than other packages
+		if !Data.IsSet("mdroid.MQTT_ADDRESS") || !Data.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !Data.IsSet("mdroid.MQTT_CLIENT_ID") || !Data.IsSet("mdroid.MQTT_USERNAME") || !Data.IsSet("mdroid.MQTT_PASSWORD") {
+			log.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
+		} else {
+			mqtt.Setup(Data.GetString("mdroid.MQTT_ADDRESS"), Data.GetString("mdroid.MQTT_ADDRESS_FALLBACK"), Data.GetString("mdroid.MQTT_CLIENT_ID"), Data.GetString("mdroid.MQTT_USERNAME"), Data.GetString("mdroid.MQTT_PASSWORD"))
+		}
+	}
 
 	// Run hooks on all new settings
 	settings := Data.AllKeys()
