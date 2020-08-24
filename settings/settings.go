@@ -67,12 +67,12 @@ func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 // HandleGet returns all the values of a specific setting
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	componentName := format.Name(params["component"])
+	componentName := format.Name(params["key"])
 
 	log.Debug().Msgf("Responding to GET request for setting component %s", componentName)
 
-	resp := response.JSONResponse{Output: Data.Get(params["component"]), OK: true}
-	if !Data.IsSet(params["component"]) {
+	resp := response.JSONResponse{Output: Data.Get(params["key"]), OK: true}
+	if !Data.IsSet(params["key"]) {
 		resp = response.JSONResponse{Output: "Setting not found.", OK: false}
 	}
 

@@ -190,8 +190,8 @@ func SetDefaultRoutes(router *mux.Router) {
 	// Settings routes
 	//
 	router.HandleFunc("/settings", settings.HandleGetAll).Methods("GET")
-	router.HandleFunc("/settings/{component}", settings.HandleGet).Methods("GET")
-	router.HandleFunc("/settings/{component}/{value}", settings.HandleSet).Methods("POST")
+	router.HandleFunc("/settings/{key}", settings.HandleGet).Methods("GET")
+	router.HandleFunc("/settings/{key}/{value}", settings.HandleSet).Methods("POST")
 
 	//
 	// Finally, welcome and meta routes
