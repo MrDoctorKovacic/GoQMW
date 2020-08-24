@@ -22,6 +22,10 @@ var Data *viper.Viper
 // HL holds the registered hooks for settings
 var HL *hooks.HookList
 
+func init() {
+	HL = new(hooks.HookList)
+}
+
 // ParseConfig will take initial configuration values and parse them into global settings
 func ParseConfig(settingsFile string) {
 	Data = viper.New()

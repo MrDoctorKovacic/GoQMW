@@ -49,6 +49,7 @@ func init() {
 	Data = viper.New()
 	session.startTime = time.Now()
 	session.throughputWarning = -1
+	HL = new(hooks.HookList)
 }
 
 // Setup prepares valid tokens from settings file
