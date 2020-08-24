@@ -162,7 +162,7 @@ func write(msg *Message) error {
 }
 
 func parseGyros(name string, m Measurement) error {
-	if name == "ACCELERATION" || name == "GYROSCOPE" || name == "MAGNETIC" {
+	if name != "ACCELERATION" && name != "GYROSCOPE" && name != "MAGNETIC" {
 		return fmt.Errorf("Measurement name %s not registered for input", name)
 	}
 
