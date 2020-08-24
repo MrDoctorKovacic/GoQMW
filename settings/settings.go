@@ -47,13 +47,13 @@ func ParseConfig(settingsFile string) {
 	flushToMQTT := Data.IsSet("mdroid.mqtt_address")
 
 	// Run hooks on all new settings
-	settings := Data.AllSettings()
+	settings := Data.AllKeys()
 	log.Info().Msg("Settings:")
-	for key := range settings {
-		log.Info().Msgf("\t%s = %s", key, settings[key])
+	for _, key := range settings {
+		log.Info().Msgf("\t%s = %s", key, Data.GetString(key))
 		if flushToMQTT {
 			log.Info().Msg("\t\t- Flushing to MQTT")
-			go mqtt.Publish(fmt.Sprintf("settings/%s", key), settings[key], true)
+			go mqtt.Publish(fmt.Sprintf("settings/%s", key), Data.GetString(key), true)
 		}
 		HL.RunHooks(key)
 	}
