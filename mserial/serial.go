@@ -115,6 +115,10 @@ func readSerial(device *serial.Port) error {
 		return err
 	}
 
+	if response == nil {
+		return nil
+	}
+
 	// Handle parse errors here instead of passing up
 	err = parseJSON(response) // Parse serial data
 	if err != nil {
@@ -130,6 +134,10 @@ func read(serialDevice *serial.Port) (interface{}, error) {
 	msg, _, err := reader.ReadLine()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(msg) == 0 {
+		return nil, nil
 	}
 
 	// Parse serial data
