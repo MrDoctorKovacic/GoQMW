@@ -4,6 +4,7 @@ package settings
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/qcasey/MDroid-Core/format"
 	"github.com/qcasey/MDroid-Core/format/response"
@@ -43,15 +44,16 @@ func ParseConfig(settingsFile string) {
 	}
 
 	// Check if MQTT has an address and will be setup
-	flushToMQTT := Data.GetString("mdroid.mqtt_address") != ""
+	flushToMQTT := Data.IsSet("mdroid.mqtt_address")
 
 	// Run hooks on all new settings
 	settings := Data.AllSettings()
+	log.Info().Msg("Settings:")
 	for key := range settings {
-		value := settings[key]
+		log.Info().Msgf("\t%s = %s", key, settings[key])
 		if flushToMQTT {
-			topic := fmt.Sprintf("settings/%s", key)
-			go mqtt.Publish(topic, value, true)
+			log.Info().Msg("\t\t- Flushing to MQTT")
+			go mqtt.Publish(fmt.Sprintf("settings/%s", key), settings[key], true)
 		}
 		HL.RunHooks(key)
 	}
@@ -104,7 +106,7 @@ func Set(key string, value interface{}) error {
 
 	// Post to MQTT
 	topic := fmt.Sprintf("settings/%s", key)
-	go mqtt.Publish(topic, value, true)
+	go mqtt.Publish(strings.ToLower(topic), value, true)
 
 	// Log our success
 	log.Info().Msgf("Updated setting of %s to %s", key, value)
