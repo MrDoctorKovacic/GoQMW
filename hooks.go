@@ -30,6 +30,7 @@ func autoSleepSettings(key string, value interface{}) {
 // When ACC power state is changed
 func accPower() {
 	// Trigger low power and auto sleep
+	go evalAngelEyesPower()
 	go evalBluetoothDeviceState()
 	go evalLowPowerMode()
 	go evalAutoLock()

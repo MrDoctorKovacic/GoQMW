@@ -113,7 +113,7 @@ func evalLowPowerMode() {
 
 // Error check against module's status fetches, then check if we're powering on or off
 func powerTrigger(shouldBeOn bool, reason string, componentName string) {
-	moduleIsOn := sessions.Data.GetBool(fmt.Sprintf("%s_POWER.value", componentName))
+	moduleIsOn := sessions.Data.GetBool(fmt.Sprintf("%s.value", componentName))
 	moduleSetting := settings.Data.GetString(fmt.Sprintf("%s.power", componentName))
 
 	var triggerType string
