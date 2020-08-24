@@ -184,6 +184,6 @@ func Setup(address string, addressFallback string, clientid string, username str
 	mqttConfig.clientid = clientid
 	mqttConfig.username = username
 	mqttConfig.password = password
-	go connect()
+	connect()
 	go checkReconnection()
 }
