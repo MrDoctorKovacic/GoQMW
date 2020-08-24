@@ -44,7 +44,7 @@ func runHooks(key string) {
 	}
 
 	for _, h := range hookList {
-		if h.key == key || h.key == "" {
+		if h.key == strings.ToLower(key) || h.key == "" {
 			go h.function()
 		}
 	}
