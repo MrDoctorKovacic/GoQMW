@@ -94,6 +94,9 @@ func evalAngelEyesPower() {
 	shouldBeOn := lightSensor && hasPower
 	triggerReason := fmt.Sprintf("lightSensor: %t, hasPower: %t", lightSensor, hasPower)
 
+	log.Info().Msg("Eval angel eyes")
+	log.Info().Msg(triggerReason)
+
 	// Pass angel module to generic power trigger
 	powerTrigger(shouldBeOn, triggerReason, "ANGEL_EYES")
 }
