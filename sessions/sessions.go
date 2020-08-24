@@ -170,14 +170,8 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 func Set(key string, value interface{}) string {
 	keyAlreadyExists := Data.IsSet(key)
 	oldKeyValue := Data.Get(fmt.Sprintf("%s.value", key))
-	oldKeyWrites := Data.GetInt(fmt.Sprintf("%s.writes", key))
 
-	Data.Set(fmt.Sprintf("%s.value", key), value)
-	Data.Set(fmt.Sprintf("%s.write_date", key), time.Now())
-	Data.Set(fmt.Sprintf("%s.writes", key), oldKeyWrites+1)
-
-	// Finish post processing
-	go HL.RunHooks(key)
+	addToSession(key, value)
 
 	// Insert into database if this is a new/updated value
 	if !keyAlreadyExists || oldKeyValue != value {
@@ -208,4 +202,21 @@ func Set(key string, value interface{}) string {
 	}
 
 	return key
+}
+
+// SetQuietly adds a value to the session without publishing
+func SetQuietly(key string, value interface{}) string {
+	addToSession(key, value)
+	return key
+}
+
+func addToSession(key string, value interface{}) {
+	oldKeyWrites := Data.GetInt(fmt.Sprintf("%s.writes", key))
+
+	Data.Set(fmt.Sprintf("%s.value", key), value)
+	Data.Set(fmt.Sprintf("%s.write_date", key), time.Now())
+	Data.Set(fmt.Sprintf("%s.writes", key), oldKeyWrites+1)
+
+	// Finish post processing
+	go HL.RunHooks(key)
 }
