@@ -15,9 +15,6 @@ type hook struct {
 var hookList []hook
 var hookLock sync.Mutex
 
-func init() {
-}
-
 // RegisterHook adds a new hook, watching for key (or all components if name is "")
 func RegisterHook(key string, function func()) {
 	log.Info().Msgf("Adding new hook for %s", key)
