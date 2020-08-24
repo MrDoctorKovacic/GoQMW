@@ -121,9 +121,8 @@ func powerTrigger(shouldBeOn bool, reason string, componentName string) {
 	var triggerType string
 	// Evaluate power target with trigger and settings info
 	if (moduleSetting == "AUTO" && !moduleIsOn && shouldBeOn) || (moduleSetting == "ON" && !moduleIsOn) {
-		message := mserial.Message{Device: mserial.Writer, Text: fmt.Sprintf("powerOn:%s", componentName)}
 		triggerType = "on"
-		mserial.Await(&message)
+		mserial.AwaitText(fmt.Sprintf("powerOn:%s", componentName))
 	} else if (moduleSetting == "AUTO" && moduleIsOn && !shouldBeOn) || (moduleSetting == "OFF" && moduleIsOn) {
 		triggerType = "off"
 		mserial.AwaitText(fmt.Sprintf("powerOff:%s", componentName))
