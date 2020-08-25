@@ -21,20 +21,14 @@ func isHome() bool {
 
 func addCustomHooks() {
 	// When ACC power state is changed
-	sessions.HL.RegisterHook("ACC_POWER", evalAngelEyesPower)
-	sessions.HL.RegisterHook("ACC_POWER", evalBluetoothDeviceState)
-	sessions.HL.RegisterHook("ACC_POWER", evalLowPowerMode)
-	sessions.HL.RegisterHook("ACC_POWER", evalAutoLock)
-	sessions.HL.RegisterHook("ACC_POWER", evalAutoSleep)
+	sessions.HL.RegisterHook("ACC_POWER", time.Second*5, evalAngelEyesPower, evalBluetoothDeviceState, evalLowPowerMode, evalAutoLock, evalAutoSleep)
 
-	settings.HL.RegisterHook("AUTO_SLEEP", evalAutoSleep)
-	settings.HL.RegisterHook("AUTO_LOCK", evalAutoLock)
-	settings.HL.RegisterHook("ANGEL_EYES", evalAngelEyesPower)
-	sessions.HL.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
-	sessions.HL.RegisterHook("LIGHT_SENSOR_ON", evalAngelEyesPower)
-	sessions.HL.RegisterHook("SEAT_MEMORY_1", func() { sendServiceCommand("MDROID", "restart") })
-
-	log.Info().Msg(fmt.Sprintf("Enabled %d session and %d settings hooks", sessions.HL.Length(), settings.HL.Length()))
+	settings.HL.RegisterHook("AUTO_SLEEP", -1, evalAutoSleep)
+	settings.HL.RegisterHook("AUTO_LOCK", -1, evalAutoLock)
+	settings.HL.RegisterHook("ANGEL_EYES", -1, evalAngelEyesPower)
+	sessions.HL.RegisterHook("LIGHT_SENSOR_REASON", -1, lightSensorReason)
+	sessions.HL.RegisterHook("LIGHT_SENSOR_ON", -1, evalAngelEyesPower)
+	sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func() { sendServiceCommand("MDROID", "restart") })
 }
 
 // Alert me when it's raining and windows are down
