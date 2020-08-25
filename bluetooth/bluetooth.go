@@ -35,7 +35,7 @@ func Setup(router *mux.Router) {
 	go startAutoRefresh()
 
 	// Connect bluetooth device on startup
-	Connect()
+	go Connect()
 
 	//
 	// Bluetooth routes
