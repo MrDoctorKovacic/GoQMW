@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -45,15 +44,7 @@ func main() {
 	settings.ParseConfig(settingsFile)
 	sessions.Setup()
 
-	settings.HL.RegisterHook("AUTO_SLEEP", autoSleepSettings)
-	settings.HL.RegisterHook("AUTO_LOCK", autoLockSettings)
-	settings.HL.RegisterHook("ANGEL_EYES", angelEyesSettings)
-	sessions.HL.RegisterHook("ACC_POWER", accPower)
-	sessions.HL.RegisterHook("LIGHT_SENSOR_REASON", lightSensorReason)
-	sessions.HL.RegisterHook("LIGHT_SENSOR_ON", lightSensorOn)
-	sessions.HL.RegisterHook("SEAT_MEMORY_1", seatMemory)
-	sessions.HL.RegisterHook("ACC_POWER", accPower)
-	log.Info().Msg(fmt.Sprintf("Enabled %d session hooks", sessions.HL.Length()))
+	addCustomHooks()
 
 	// Init router
 	router := mux.NewRouter()
