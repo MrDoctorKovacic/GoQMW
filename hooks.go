@@ -21,7 +21,7 @@ func isHome() bool {
 
 func addCustomHooks() {
 	// When ACC power state is changed
-	sessions.HL.RegisterHook("ACC_POWER", time.Second*5, evalAngelEyesPower, evalBluetoothDeviceState, evalLowPowerMode, evalAutoLock, evalAutoSleep)
+	sessions.HL.RegisterHook("ACC_POWER", time.Second*5, evalAngelEyesPower, evalBluetoothDeviceState, evalUSBHubPower, evalAutoLock, evalAutoSleep)
 
 	settings.HL.RegisterHook("AUTO_SLEEP", -1, evalAutoSleep)
 	settings.HL.RegisterHook("AUTO_LOCK", -1, evalAutoLock)
@@ -124,16 +124,9 @@ func evalAngelEyesPower() {
 }
 
 // Evaluates if the cameras and tablet should be on, and then passes that struct along as generic power module
-func evalLowPowerMode() {
-	accOn := isOnAuxPower()
-	isHome := isHome()
-	startedRecently := time.Since(sessions.GetStartTime()) < time.Minute*5
-
-	shouldBeOn := (accOn && !isHome && !startedRecently) || (isHome || startedRecently)
-	reason := fmt.Sprintf("accOn: %t, isHome: %t, startedRecently: %t", accOn, isHome, startedRecently)
-
+func evalUSBHubPower() {
 	// Pass angel module to generic power trigger
-	genericTrigger("USB_HUB", shouldBeOn, reason)
+	genericTrigger("USB_HUB", isOnAuxPower(), fmt.Sprintf("ACC_POWER: %v", isOnAuxPower()))
 }
 
 func genericTriggerWithCustomFunctions(componentName string, shouldBeOn bool, reason string, onFunction func(), offFunction func()) {
