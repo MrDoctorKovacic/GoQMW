@@ -33,11 +33,11 @@ func addCustomHooks() {
 	sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func(value interface{}) { sendServiceCommand("MDROID", "restart") })
 }
 func mainVoltage(value interface{}) {
-	sessions.Set("MAIN_VOLTAGE", value.(float64)/1024.0*16.5, true)
+	sessions.Set("MAIN_VOLTAGE", value.(float64)/1024.0*21.5, true)
 }
 
 func auxVoltage(value interface{}) {
-	sessions.Set("AUX_VOLTAGE", value.(float64)/1024.0*16.5, true)
+	sessions.Set("AUX_VOLTAGE", value.(float64)/1024.0*21.5, true)
 }
 
 // Alert me when it's raining and windows are down
