@@ -73,10 +73,6 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 
 // Publish will write the given message to the given topic and wait
 func Publish(topic string, message interface{}, publishToRemote bool) error {
-	if !IsReady() {
-		return fmt.Errorf("MQTT is not enabled or has not started yet")
-	}
-
 	timesSlept := 0
 	for !IsReady() || !IsConnected() {
 		time.Sleep(500 * time.Millisecond)
