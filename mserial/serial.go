@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -19,6 +20,8 @@ type Measurement struct {
 	Y float64 `json:"Y"`
 	Z float64 `json:"Z"`
 }
+
+var writerLock sync.Mutex
 
 // parseSerialDevices parses through other serial devices, if enabled
 /*
@@ -156,7 +159,9 @@ func write(msg *Message) error {
 		return fmt.Errorf("Empty message, not writing to serial")
 	}
 
+	writerLock.Lock()
 	n, err := msg.Device.Write([]byte(msg.Text))
+	writerLock.Unlock()
 	if err != nil {
 		return fmt.Errorf("Failed to write to serial port: %s", err.Error())
 	}

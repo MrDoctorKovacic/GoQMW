@@ -34,12 +34,12 @@ func addCustomHooks() {
 }
 func mainVoltage() {
 	mainVoltage := sessions.Data.GetFloat64("MAIN_VOLTAGE_RAW")
-	sessions.Set("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (mainVoltage/1024)*16.5), false)
+	sessions.Set("MAIN_VOLTAGE", mainVoltage/1024*16.5, false)
 }
 
 func auxVoltage() {
 	mainVoltage := sessions.Data.GetFloat64("AUX_VOLTAGE_RAW")
-	sessions.Set("AUX_VOLTAGE", fmt.Sprintf("%.3f", (mainVoltage/1024)*16.5), false)
+	sessions.Set("AUX_VOLTAGE", mainVoltage/1024*16.5, false)
 }
 
 // Alert me when it's raining and windows are down
