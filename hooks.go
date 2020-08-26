@@ -151,6 +151,10 @@ func evalUSBHubPower(value interface{}) {
 		cmd.Run()
 		cmd = exec.Command("umount", "/videos")
 		cmd.Run()
+		err := mserial.AwaitText("powerOff:USB_HUB")
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
 	}
 	genericTriggerWithCustomFunctions("USB_HUB", isOnAuxPower(), reason, on, off)
 }
