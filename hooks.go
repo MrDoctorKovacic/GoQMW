@@ -22,6 +22,8 @@ func isHome() bool {
 func addCustomHooks() {
 	// When ACC power state is changed
 	sessions.HL.RegisterHook("ACC_POWER", time.Second*5, evalAngelEyesPower, evalBluetoothDeviceState, evalUSBHubPower, evalAutoLock, evalAutoSleep)
+	sessions.HL.RegisterHook("MAIN_VOLTAGE_RAW", -1, mainVoltage)
+	sessions.HL.RegisterHook("AUX_VOLTAGE_RAW", -1, auxVoltage)
 
 	settings.HL.RegisterHook("AUTO_SLEEP", -1, evalAutoSleep)
 	settings.HL.RegisterHook("AUTO_LOCK", -1, evalAutoLock)
@@ -29,6 +31,15 @@ func addCustomHooks() {
 	sessions.HL.RegisterHook("LIGHT_SENSOR_REASON", -1, lightSensorReason)
 	sessions.HL.RegisterHook("LIGHT_SENSOR_ON", -1, evalAngelEyesPower)
 	sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func() { sendServiceCommand("MDROID", "restart") })
+}
+func mainVoltage() {
+	mainVoltage := sessions.Data.GetFloat64("MAIN_VOLTAGE_RAW")
+	sessions.Set("MAIN_VOLTAGE", fmt.Sprintf("%.3f", (mainVoltage/1024)*16.5), false)
+}
+
+func auxVoltage() {
+	mainVoltage := sessions.Data.GetFloat64("AUX_VOLTAGE_RAW")
+	sessions.Set("AUX_VOLTAGE", fmt.Sprintf("%.3f", (mainVoltage/1024)*16.5), false)
 }
 
 // Alert me when it's raining and windows are down
