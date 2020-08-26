@@ -177,7 +177,7 @@ func Set(key string, value interface{}, quiet bool) string {
 		formattedName := strings.ToLower(strings.Replace(strings.Replace(key, " ", "_", -1), ".", "/", -1))
 
 		topic := fmt.Sprintf("session/%s", formattedName)
-		go mqtt.Publish(topic, value, quiet)
+		go mqtt.Publish(topic, fmt.Sprintf("%v", value), quiet)
 
 		if db.DB != nil {
 			// Convert to a float if that suits the value, otherwise change field to value_string
