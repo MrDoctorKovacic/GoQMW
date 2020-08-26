@@ -197,13 +197,8 @@ func parseJSON(marshalledJSON interface{}) error {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			sessions.Set(key, vv, true)
 		case int:
-			sessions.Set(key, value.(int), true)
 		case float64:
-			if floatValue, ok := value.(float64); ok {
-				sessions.Set(key, floatValue, true)
-			}
 		case string:
 			sessions.Set(key, vv, true)
 		case map[string]interface{}:

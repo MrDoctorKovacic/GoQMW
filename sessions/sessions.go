@@ -167,7 +167,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set prepares a Value structure before passing it to the setter
-func Set(key string, value interface{}, quiet bool) string {
+func Set(key string, value interface{}, publishToRemote bool) string {
 	keyAlreadyExists := Data.IsSet(key)
 
 	addToSession(key, value)
@@ -177,7 +177,7 @@ func Set(key string, value interface{}, quiet bool) string {
 		formattedName := strings.ToLower(strings.Replace(strings.Replace(key, " ", "_", -1), ".", "/", -1))
 
 		topic := fmt.Sprintf("session/%s", formattedName)
-		go mqtt.Publish(topic, fmt.Sprintf("%v", value), quiet)
+		go mqtt.Publish(topic, fmt.Sprintf("%v", value), publishToRemote)
 
 		if db.DB != nil {
 			// Convert to a float if that suits the value, otherwise change field to value_string
