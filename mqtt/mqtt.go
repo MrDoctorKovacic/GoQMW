@@ -174,6 +174,7 @@ func connect() {
 	}
 
 	finishedSetup = true
+	logger.Info().Msg("Connected to MQTT successfully")
 }
 
 // Setup handles module init
