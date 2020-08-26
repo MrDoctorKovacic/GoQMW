@@ -75,6 +75,9 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 func Publish(topic string, message interface{}, publishToRemote bool) error {
 	timesSlept := 0
 	for !IsReady() || !IsConnected() {
+		if timesSlept == 0 {
+			logger.Warn().Msgf("MQTT offline, waiting to publish packet for topic %s", topic)
+		}
 		time.Sleep(500 * time.Millisecond)
 		if timesSlept > 0 && timesSlept%60 == 0 {
 			logger.Warn().Msgf("Has waited %d seconds to get this packet out, still not connected", timesSlept/2)
