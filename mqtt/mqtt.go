@@ -72,7 +72,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 }
 
 // Publish will write the given message to the given topic and wait
-func Publish(topic string, message interface{}, publishToRemote bool) error {
+func Publish(topic string, message string, publishToRemote bool) error {
 	timesSlept := 0
 	for !IsReady() || !IsConnected() {
 		if timesSlept == 0 {

@@ -114,7 +114,7 @@ func Set(key string, value interface{}) error {
 
 	// Post to MQTT
 	topic := fmt.Sprintf("settings/%s", key)
-	go mqtt.Publish(strings.ToLower(topic), value, true)
+	go mqtt.Publish(strings.ToLower(topic), fmt.Sprintf("%v", value), true)
 
 	// Log our success
 	log.Info().Msgf("Updated setting of %s to %s", key, value)
