@@ -10,7 +10,7 @@ import (
 
 type hook struct {
 	key          string
-	functions    []func()
+	functions    []func(newValue interface{})
 	lastRan      time.Time
 	throttleTime time.Duration
 }
@@ -22,7 +22,7 @@ type HookList struct {
 }
 
 // RegisterHook adds a new hook, watching for key (or all components if name is "")
-func (hl *HookList) RegisterHook(key string, throttle time.Duration, functions ...func()) {
+func (hl *HookList) RegisterHook(key string, throttle time.Duration, functions ...func(newValue interface{})) {
 	log.Info().Msgf("Adding new hook for %s", key)
 	hl.lock.Lock()
 	defer hl.lock.Unlock()
@@ -30,14 +30,14 @@ func (hl *HookList) RegisterHook(key string, throttle time.Duration, functions .
 }
 
 // RegisterHooks takes a list of componentNames to apply the same hook to
-func (hl *HookList) RegisterHooks(componentNames *[]string, throttle time.Duration, functions ...func()) {
+func (hl *HookList) RegisterHooks(componentNames *[]string, throttle time.Duration, functions ...func(newValue interface{})) {
 	for _, name := range *componentNames {
 		hl.RegisterHook(name, throttle, functions...)
 	}
 }
 
 // RunHooks all hooks registered with a specific component name
-func (hl *HookList) RunHooks(key string) {
+func (hl *HookList) RunHooks(key string, value interface{}) {
 	hl.lock.Lock()
 	defer hl.lock.Unlock()
 
@@ -55,7 +55,7 @@ func (hl *HookList) RunHooks(key string) {
 		if h.throttleTime == -1 || time.Now().Sub(h.lastRan) > h.throttleTime {
 			h.lastRan = time.Now()
 			for _, f := range h.functions {
-				go f()
+				go f(value)
 			}
 		}
 	}

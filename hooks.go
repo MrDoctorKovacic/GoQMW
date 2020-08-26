@@ -30,25 +30,23 @@ func addCustomHooks() {
 	settings.HL.RegisterHook("ANGEL_EYES", -1, evalAngelEyesPower)
 	sessions.HL.RegisterHook("LIGHT_SENSOR_REASON", -1, lightSensorReason)
 	sessions.HL.RegisterHook("LIGHT_SENSOR_ON", -1, evalAngelEyesPower)
-	sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func() { sendServiceCommand("MDROID", "restart") })
+	sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func(value interface{}) { sendServiceCommand("MDROID", "restart") })
 }
-func mainVoltage() {
-	mainVoltage := sessions.Data.GetFloat64("MAIN_VOLTAGE_RAW")
-	sessions.Set("MAIN_VOLTAGE", mainVoltage/1024.0*16.5, true)
+func mainVoltage(value interface{}) {
+	sessions.Set("MAIN_VOLTAGE", value.(float64)/1024.0*16.5, true)
 }
 
-func auxVoltage() {
-	mainVoltage := sessions.Data.GetFloat64("AUX_VOLTAGE_RAW")
-	sessions.Set("AUX_VOLTAGE", mainVoltage/1024.0*16.5, true)
+func auxVoltage(value interface{}) {
+	sessions.Set("AUX_VOLTAGE", value.(float64)/1024.0*16.5, true)
 }
 
 // Alert me when it's raining and windows are down
-func lightSensorReason() {
-	keyPosition := sessions.Data.GetString("key_position.value")
+func lightSensorReason(reason interface{}) {
+	keyPosition := sessions.Data.GetString("key_position.reason")
 	windowsOpen := sessions.Data.GetString("windows_open.value")
 	doorsLocked := sessions.Data.GetString("doors_locked.value")
 
-	if sessions.Data.GetString("light_sensor_reason.value") == "RAIN" &&
+	if reason == "RAIN" &&
 		keyPosition == "OFF" &&
 		doorsLocked == "TRUE" &&
 		windowsOpen == "TRUE" {
@@ -56,7 +54,7 @@ func lightSensorReason() {
 	}
 }
 
-func evalBluetoothDeviceState() {
+func evalBluetoothDeviceState(value interface{}) {
 	if sessions.Data.GetString("connected_bluetooth_device.value") == "" {
 		return
 	}
@@ -70,7 +68,7 @@ func evalBluetoothDeviceState() {
 }
 
 // Evaluates if the doors should be locked
-func evalAutoLock() {
+func evalAutoLock(value interface{}) {
 	if !sessions.Data.IsSet("doors_locked") {
 		// Likely just doesn't exist in session yet
 		return
@@ -105,7 +103,7 @@ func evalAutoLock() {
 }
 
 // Evaluates if the board should be put to sleep
-func evalAutoSleep() {
+func evalAutoSleep(value interface{}) {
 	// If "OFF", auto sleep is not enabled.
 	if settings.Data.GetString("mdroid.auto_sleep") != "ON" {
 		return
@@ -123,7 +121,7 @@ func evalAutoSleep() {
 }
 
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
-func evalAngelEyesPower() {
+func evalAngelEyesPower(value interface{}) {
 	hasPower := isOnAuxPower()
 	lightSensor := sessions.Data.GetString("light_sensor_on.value") == "FALSE"
 
@@ -135,7 +133,7 @@ func evalAngelEyesPower() {
 }
 
 // Evaluates if the cameras and tablet should be on, and then passes that struct along as generic power module
-func evalUSBHubPower() {
+func evalUSBHubPower(value interface{}) {
 	// Pass angel module to generic power trigger
 	genericTrigger("USB_HUB", isOnAuxPower(), fmt.Sprintf("ACC_POWER: %v", isOnAuxPower()))
 }

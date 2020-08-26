@@ -63,7 +63,7 @@ func ParseConfig(settingsFile string) {
 		if flushToMQTT {
 			go mqtt.Publish(fmt.Sprintf("settings/%s", key), Data.GetString(key), true)
 		}
-		HL.RunHooks(key)
+		HL.RunHooks(key, Data.GetString(key))
 	}
 }
 
@@ -122,7 +122,7 @@ func Set(key string, value interface{}) error {
 	Data.WriteConfig()
 
 	// Trigger hooks
-	HL.RunHooks(key)
+	HL.RunHooks(key, value)
 
 	return nil
 }

@@ -211,5 +211,5 @@ func addToSession(key string, value interface{}) {
 	Data.Set(fmt.Sprintf("%s.writes", key), oldKeyWrites+1)
 
 	// Finish post processing
-	go HL.RunHooks(key)
+	go HL.RunHooks(key, value)
 }
