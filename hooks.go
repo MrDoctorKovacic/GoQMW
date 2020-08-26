@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os/exec"
 	"time"
 
 	"github.com/qcasey/MDroid-Core/bluetooth"
@@ -21,7 +22,8 @@ func isHome() bool {
 
 func addCustomHooks() {
 	// When ACC power state is changed
-	sessions.HL.RegisterHook("ACC_POWER", time.Second*5, evalAngelEyesPower, evalBluetoothDeviceState, evalUSBHubPower, evalAutoLock, evalAutoSleep)
+	sessions.HL.RegisterHook("ACC_POWER", -1, evalAngelEyesPower, evalBluetoothDeviceState, evalUSBHubPower, evalAutoLock, evalAutoSleep)
+	sessions.HL.RegisterHook("KEY_POWER", -1, evalBluetoothDeviceState)
 	sessions.HL.RegisterHook("MAIN_VOLTAGE_RAW", -1, mainVoltage)
 	sessions.HL.RegisterHook("AUX_VOLTAGE_RAW", -1, auxVoltage)
 
@@ -135,7 +137,22 @@ func evalAngelEyesPower(value interface{}) {
 // Evaluates if the cameras and tablet should be on, and then passes that struct along as generic power module
 func evalUSBHubPower(value interface{}) {
 	// Pass angel module to generic power trigger
-	genericTrigger("USB_HUB", isOnAuxPower(), fmt.Sprintf("ACC_POWER: %v", isOnAuxPower()))
+	reason := fmt.Sprintf("ACC_POWER: %v", isOnAuxPower())
+	on := func() {
+		err := mserial.AwaitText("powerOn:USB_HUB")
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+	}
+	off := func() {
+		cmd := exec.Command("systemctl", "stop", "record")
+		cmd.Run()
+		cmd = exec.Command("systemctl", "stop", "stream")
+		cmd.Run()
+		cmd = exec.Command("umount", "/videos")
+		cmd.Run()
+	}
+	genericTriggerWithCustomFunctions("USB_HUB", isOnAuxPower(), reason, on, off)
 }
 
 func genericTriggerWithCustomFunctions(componentName string, shouldBeOn bool, reason string, onFunction func(), offFunction func()) {
