@@ -49,14 +49,14 @@ func main() {
 	// Init router
 	router := mux.NewRouter()
 
-	// Set default routes (including session)
-	SetDefaultRoutes(router)
-
 	// Setup conventional modules
-	// TODO: More modular handling of modules
 	mserial.Setup(router)
 	bluetooth.Setup(router)
 	pybus.Setup(router)
+
+	// Set default routes (including session)
+	SetDefaultRoutes(router)
+
 	db.Setup()
 
 	Start(router)
