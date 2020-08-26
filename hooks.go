@@ -143,8 +143,6 @@ func evalUSBHubPower(value interface{}) {
 		if err != nil {
 			log.Error().Msg(err.Error())
 		}
-		cmd := exec.Command("mount", "-a")
-		cmd.Run()
 	}
 	off := func() {
 		cmd := exec.Command("systemctl", "stop", "record")
