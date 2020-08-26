@@ -200,10 +200,6 @@ func parseJSON(marshalledJSON interface{}) error {
 			sessions.Set(key, vv, true)
 		case int:
 			sessions.Set(key, value.(int), true)
-		case float32:
-			if floatValue, ok := value.(float32); ok {
-				sessions.Set(key, floatValue, true)
-			}
 		case float64:
 			if floatValue, ok := value.(float64); ok {
 				sessions.Set(key, floatValue, true)
