@@ -63,7 +63,7 @@ func getConnectedAddress() string {
 		log.Info().Msg("Found new connected media device with address: " + newAddress)
 		SetAddress(newAddress)
 	}
-	sessions.Set("connected_bluetooth_address", newAddress)
+	sessions.Set("connected_bluetooth_address", newAddress, false)
 
 	return string(out)
 }

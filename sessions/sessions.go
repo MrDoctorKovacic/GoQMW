@@ -157,7 +157,7 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 
 	// Call the setter
 	newdata.Name = params["name"]
-	Set(params["name"], newdata.Value)
+	Set(params["name"], newdata.Value, true)
 
 	// Craft OK response
 	response.OK = true
@@ -167,18 +167,17 @@ func HandleSet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set prepares a Value structure before passing it to the setter
-func Set(key string, value interface{}) string {
+func Set(key string, value interface{}, quiet bool) string {
 	keyAlreadyExists := Data.IsSet(key)
-	oldKeyValue := Data.Get(fmt.Sprintf("%s.value", key))
 
 	addToSession(key, value)
 
 	// Insert into database if this is a new/updated value
-	if !keyAlreadyExists || oldKeyValue != value {
+	if !keyAlreadyExists || Data.Get(fmt.Sprintf("%s.value", key)) != value {
 		formattedName := strings.ToLower(strings.Replace(strings.Replace(key, " ", "_", -1), ".", "/", -1))
 
 		topic := fmt.Sprintf("session/%s", formattedName)
-		go mqtt.Publish(topic, value, true)
+		go mqtt.Publish(topic, value, quiet)
 
 		if db.DB != nil {
 			// Convert to a float if that suits the value, otherwise change field to value_string
@@ -201,12 +200,6 @@ func Set(key string, value interface{}) string {
 		}
 	}
 
-	return key
-}
-
-// SetQuietly adds a value to the session without publishing
-func SetQuietly(key string, value interface{}) string {
-	addToSession(key, value)
 	return key
 }
 

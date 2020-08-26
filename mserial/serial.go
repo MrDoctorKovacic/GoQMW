@@ -175,9 +175,9 @@ func parseGyros(name string, m Measurement) error {
 	}
 
 	// Skip publishing values
-	sessions.SetQuietly(fmt.Sprintf("gyros.%s.x", strings.ToLower(name)), m.X)
-	sessions.SetQuietly(fmt.Sprintf("gyros.%s.y", strings.ToLower(name)), m.Y)
-	sessions.SetQuietly(fmt.Sprintf("gyros.%s.z", strings.ToLower(name)), m.Z)
+	sessions.Set(fmt.Sprintf("gyros.%s.x", strings.ToLower(name)), m.X, false)
+	sessions.Set(fmt.Sprintf("gyros.%s.y", strings.ToLower(name)), m.Y, false)
+	sessions.Set(fmt.Sprintf("gyros.%s.z", strings.ToLower(name)), m.Z, false)
 	return nil
 }
 
@@ -192,19 +192,19 @@ func parseJSON(marshalledJSON interface{}) error {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			sessions.Set(key, vv)
+			sessions.Set(key, vv, true)
 		case int:
-			sessions.Set(key, value.(int))
+			sessions.Set(key, value.(int), true)
 		case float32:
 			if floatValue, ok := value.(float32); ok {
-				sessions.Set(key, floatValue)
+				sessions.Set(key, floatValue, true)
 			}
 		case float64:
 			if floatValue, ok := value.(float64); ok {
-				sessions.Set(key, floatValue)
+				sessions.Set(key, floatValue, true)
 			}
 		case string:
-			sessions.Set(key, vv)
+			sessions.Set(key, vv, true)
 		case map[string]interface{}:
 			var m Measurement
 			err := mapstructure.Decode(value, &m)
