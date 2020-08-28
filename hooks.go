@@ -145,11 +145,7 @@ func evalUSBHubPower(value interface{}) {
 		}
 	}
 	off := func() {
-		cmd := exec.Command("systemctl", "stop", "record")
-		cmd.Run()
-		cmd = exec.Command("systemctl", "stop", "stream")
-		cmd.Run()
-		cmd = exec.Command("umount", "/videos")
+		cmd := exec.Command("/root/MDroid/scripts/unmount-videos.sh")
 		cmd.Run()
 		err := mserial.AwaitText("powerOff:USB_HUB")
 		if err != nil {
