@@ -5,19 +5,19 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/internal/core/sessions"
-	"github.com/qcasey/MDroid-Core/internal/core/settings"
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
+	"github.com/MrDoctorKovacic/MDroid-Core/settings"
 	"github.com/qcasey/MDroid-Core/pkg/bluetooth"
 	"github.com/qcasey/MDroid-Core/pkg/mserial"
 	"github.com/rs/zerolog/log"
 )
 
 func isOnAuxPower() bool {
-	return sessions.Data.GetBool("acc_power.value")
+	return core.Sessions.GetBool("acc_power.value")
 }
 
 func isHome() bool {
-	return sessions.Data.GetBool("acc_power.value")
+	return core.Sessions.GetBool("acc_power.value")
 }
 
 func addCustomHooks() {
@@ -44,9 +44,9 @@ func auxVoltage(value interface{}) {
 
 // Alert me when it's raining and windows are down
 func lightSensorReason(reason interface{}) {
-	keyPosition := sessions.Data.GetString("key_position.reason")
-	windowsOpen := sessions.Data.GetString("windows_open.value")
-	doorsLocked := sessions.Data.GetString("doors_locked.value")
+	keyPosition := core.Sessions.GetString("key_position.reason")
+	windowsOpen := core.Sessions.GetString("windows_open.value")
+	doorsLocked := core.Sessions.GetString("doors_locked.value")
 
 	if reason == "RAIN" &&
 		keyPosition == "OFF" &&
@@ -57,7 +57,7 @@ func lightSensorReason(reason interface{}) {
 }
 
 func evalBluetoothDeviceState(value interface{}) {
-	if sessions.Data.GetString("connected_bluetooth_device.value") == "" {
+	if core.Sessions.GetString("connected_bluetooth_device.value") == "" {
 		return
 	}
 
@@ -71,18 +71,18 @@ func evalBluetoothDeviceState(value interface{}) {
 
 // Evaluates if the doors should be locked
 func evalAutoLock(value interface{}) {
-	if !sessions.Data.IsSet("doors_locked") {
+	if !core.Sessions.IsSet("doors_locked") {
 		// Likely just doesn't exist in session yet
 		return
 	}
 
 	// Instead of power trigger, evaluate here. Lock once every so often
 	if settings.Get("mdroid.autolock", "AUTO") == "AUTO" &&
-		sessions.Data.GetString("doors_locked.value") == "FALSE" &&
+		core.Sessions.GetString("doors_locked.value") == "FALSE" &&
 		!isOnAuxPower() &&
 		!isHome() {
 
-		lockToggleTime, err := time.Parse("", sessions.Data.GetString("doors_locked.write_date"))
+		lockToggleTime, err := time.Parse("", core.Sessions.GetString("doors_locked.write_date"))
 		if err != nil {
 			log.Error().Msg(err.Error())
 			return
@@ -125,7 +125,7 @@ func evalAutoSleep(value interface{}) {
 // Evaluates if the angel eyes should be on, and then passes that struct along as generic power module
 func evalAngelEyesPower(value interface{}) {
 	hasPower := isOnAuxPower()
-	lightSensor := sessions.Data.GetString("light_sensor_on.value") == "FALSE"
+	lightSensor := core.Sessions.GetString("light_sensor_on.value") == "FALSE"
 
 	shouldBeOn := lightSensor && hasPower
 	reason := fmt.Sprintf("lightSensor: %t, hasPower: %t", lightSensor, hasPower)
@@ -156,7 +156,7 @@ func evalUSBHubPower(value interface{}) {
 }
 
 func genericTriggerWithCustomFunctions(componentName string, shouldBeOn bool, reason string, onFunction func(), offFunction func()) {
-	moduleIsOn := sessions.Data.GetBool(fmt.Sprintf("%s.value", componentName))
+	moduleIsOn := core.Sessions.GetBool(fmt.Sprintf("%s.value", componentName))
 	moduleSetting := settings.Data.GetString(fmt.Sprintf("%s.power", componentName))
 
 	var triggerType string

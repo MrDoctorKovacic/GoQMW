@@ -2,62 +2,56 @@ package main
 
 import (
 	"flag"
-	"os"
-	"strconv"
-	"strings"
 
-	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/internal/core/sessions"
-	"github.com/qcasey/MDroid-Core/internal/core/settings"
-	"github.com/qcasey/MDroid-Core/pkg/bluetooth"
-	"github.com/qcasey/MDroid-Core/pkg/db"
-	"github.com/qcasey/MDroid-Core/pkg/mserial"
-	"github.com/qcasey/MDroid-Core/pkg/pybus"
-	"github.com/rs/zerolog"
+	"github.com/qcasey/MDroid-Core/internal/core"
 	"github.com/rs/zerolog/log"
 )
-
-func configureLogging(debug *bool) {
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	zerolog.CallerMarshalFunc = func(file string, line int) string {
-		fileparts := strings.Split(file, "/")
-		filename := strings.Replace(fileparts[len(fileparts)-1], ".go", "", -1)
-		return filename + ":" + strconv.Itoa(line)
-	}
-	zerolog.TimeFieldFormat = "3:04PM"
-	output := zerolog.ConsoleWriter{Out: os.Stderr}
-	log.Logger = zerolog.New(output).With().Timestamp().Caller().Logger()
-	if *debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
-}
 
 func main() {
 	log.Info().Msg("Starting MDroid Core")
 
 	var settingsFile string
 	flag.StringVar(&settingsFile, "settings-file", "", "File to recover the persistent settings.")
-	debug := flag.Bool("debug", false, "sets log level to debug")
 	flag.Parse()
-	configureLogging(debug)
 
-	settings.ParseConfig(settingsFile)
-	sessions.Setup()
+	// Create new MDroid Core program
+	core := core.New(settingsFile)
+	addRoutes(core.Router)
+
+	//settings.ParseConfig(settingsFile)
+	//sessions.Setup()
+
+	/*
+		flushToMQTT := settings.IsSet("mdroid.mqtt_address")
+		if flushToMQTT {
+			log.Info().Msg("Setting up MQTT")
+			// Set up MQTT, more dependent than other packages
+			if !settings.IsSet("mdroid.MQTT_ADDRESS") || !settings.IsSet("mdroid.MQTT_ADDRESS_FALLBACK") || !settings.IsSet("mdroid.MQTT_CLIENT_ID") || !settings.IsSet("mdroid.MQTT_USERNAME") || !settings.IsSet("mdroid.MQTT_PASSWORD") {
+				log.Warn().Msgf("Missing MQTT setup variables, skipping MQTT.")
+			} else {
+				mqtt.Setup(settings.GetString("mdroid.MQTT_ADDRESS"), settings.GetString("mdroid.MQTT_ADDRESS_FALLBACK"), settings.GetString("mdroid.MQTT_CLIENT_ID"), settings.GetString("mdroid.MQTT_USERNAME"), settings.GetString("mdroid.MQTT_PASSWORD"))
+			}
+		}
+
+		// Run hooks on all new settings
+		settings := Data.AllKeys()
+		log.Info().Msg("Settings:")
+		for _, key := range settings {
+			log.Info().Msgf("\t%s = %s", key, Data.GetString(key))
+			if flushToMQTT {
+				go mqtt.Publish(fmt.Sprintf("settings/%s", key), Data.GetString(key), true)
+			}
+			HL.RunHooks(key, Data.GetString(key))
+		}*/
 
 	addCustomHooks()
 
-	// Init router
-	router := mux.NewRouter()
-
 	// Setup conventional modules
-	mserial.Setup(router)
-	bluetooth.Setup(router)
-	pybus.Setup(router)
+	//mserial.Setup(router)
+	//bluetooth.Setup(router)
+	//pybus.Setup(router)
+	//db.Setup()
 
-	// Set default routes (including session)
-	SetDefaultRoutes(router)
-
-	db.Setup()
-
-	Start(router)
+	// Start MDroid Core
+	core.Start()
 }

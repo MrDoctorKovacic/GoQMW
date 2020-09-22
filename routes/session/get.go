@@ -5,16 +5,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/internal/core"
-	"github.com/qcasey/MDroid-Core/internal/core/sessions"
 )
 
 // HandleGet returns a specific session value
 func HandleGet(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	sessionValue := sessions.Data.Get(params["name"])
+	sessionValue := core.Sessions.Get(params["name"])
 	response := core.JSONResponse{Output: sessionValue, OK: true}
-	if !sessions.Data.IsSet(params["name"]) {
+	if !core.Sessions.IsSet(params["name"]) {
 		response.Output = "Does not exist"
 		response.OK = false
 	}
@@ -25,6 +24,6 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 func HandleGetAll(w http.ResponseWriter, r *http.Request) {
 	//requestingMin := r.URL.Query().Get("min") == "1"
 	response := core.JSONResponse{OK: true}
-	response.Output = sessions.Data.AllSettings()
+	response.Output = core.Sessions.AllSettings()
 	response.Write(&w, r)
 }

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/mitchellh/mapstructure"
-	"github.com/qcasey/MDroid-Core/internal/core/sessions"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )

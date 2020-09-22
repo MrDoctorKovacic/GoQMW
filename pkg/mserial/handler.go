@@ -1,10 +1,8 @@
 package mserial
 
 import (
-	"net/http"
 	"sync"
 
-	"github.com/gorilla/mux"
 	"github.com/qcasey/MDroid-Core/internal/core"
 	"github.com/qcasey/MDroid-Core/internal/core/settings"
 	"github.com/rs/zerolog/log"
@@ -31,7 +29,7 @@ func init() {
 }
 
 // Setup handles module init
-func Setup(router *mux.Router) {
+func Setup(core *core.Core) {
 	if !settings.Data.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
 		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
@@ -52,16 +50,6 @@ func Setup(router *mux.Router) {
 	//
 	// Serial routes
 	//
-	router.HandleFunc("/serial/{command}", WriteSerialHandler).Methods("POST", "GET")
-}
-
-// WriteSerialHandler handles messages sent through the server
-func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	if params["command"] != "" {
-		AwaitText(params["command"])
-	}
-	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Push queues a message for writing
