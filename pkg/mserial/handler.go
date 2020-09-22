@@ -2,9 +2,9 @@ package mserial
 
 import (
 	"sync"
+	"time"
 
 	"github.com/qcasey/MDroid-Core/internal/core"
-	"github.com/qcasey/MDroid-Core/internal/core/settings"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
@@ -29,17 +29,18 @@ func init() {
 }
 
 // Setup handles module init
-func Setup(core *core.Core) {
-	if !settings.Data.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
+/*
+func Setup(c *core.Core) {
+	if !c.Settings.IsSet("mdroid.HARDWARE_SERIAL_PORT") {
 		log.Warn().Msgf("No hardware serial port defined. Not setting up serial devices.")
 		return
 	}
 
-	hardwareSerialPort := settings.Data.GetString("mdroid.HARDWARE_SERIAL_PORT")
+	hardwareSerialPort := c.Settings.GetString("mdroid.HARDWARE_SERIAL_PORT")
 
 	// Start initial reader / writer
 	log.Info().Msgf("Registering %s as serial writer", hardwareSerialPort)
-	go startSerialComms(hardwareSerialPort, 115200)
+	go startSerialComms( hardwareSerialPort, 115200)
 
 	// Setup other devices
 	/*
@@ -47,9 +48,45 @@ func Setup(core *core.Core) {
 			go startSerialComms(device, baudrate)
 		}*/
 
-	//
-	// Serial routes
-	//
+//
+// Serial routes
+//
+//}
+
+// Start will set up the serial port and ReadSerial goroutine
+func Start(c *core.Core, deviceName string, baudrate int) {
+	s, err := openSerialPort(deviceName, baudrate)
+	if err != nil {
+		log.Error().Msgf("Failed to open serial port %s", deviceName)
+		log.Error().Msg(err.Error())
+		time.Sleep(time.Second * 2)
+		go Start(c, deviceName, baudrate)
+		return
+	}
+	defer s.Close()
+
+	// Use first Serial device as a R/W, all others will only be read from
+	isWriter := false
+	if Writer == nil {
+		Writer = s
+		isWriter = true
+		log.Info().Msgf("Using serial device %s as default writer", deviceName)
+	}
+
+	// Continually read from serial port
+	log.Info().Msgf("Starting new serial reader on device %s", deviceName)
+	loop(s, isWriter) // this will block until abrubtly ended
+	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
+
+	// Replace main serial writer
+	if Writer == s {
+		Writer = nil
+	}
+
+	s.Close()
+	time.Sleep(time.Second * 10)
+	log.Error().Msg("Reopening serial port...")
+	go Start(c, deviceName, baudrate)
 }
 
 // Push queues a message for writing

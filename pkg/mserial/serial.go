@@ -55,43 +55,6 @@ func openSerialPort(deviceName string, baudrate int) (*serial.Port, error) {
 	return s, nil
 }
 
-// startSerialComms will set up the serial port,
-// and start the ReadSerial goroutine
-func startSerialComms(deviceName string, baudrate int) {
-	s, err := openSerialPort(deviceName, baudrate)
-	if err != nil {
-		log.Error().Msgf("Failed to open serial port %s", deviceName)
-		log.Error().Msg(err.Error())
-		time.Sleep(time.Second * 2)
-		go startSerialComms(deviceName, baudrate)
-		return
-	}
-	defer s.Close()
-
-	// Use first Serial device as a R/W, all others will only be read from
-	isWriter := false
-	if Writer == nil {
-		Writer = s
-		isWriter = true
-		log.Info().Msgf("Using serial device %s as default writer", deviceName)
-	}
-
-	// Continually read from serial port
-	log.Info().Msgf("Starting new serial reader on device %s", deviceName)
-	loop(s, isWriter) // this will block until abrubtly ended
-	log.Error().Msg("Serial disconnected, closing port and reopening in 10 seconds")
-
-	// Replace main serial writer
-	if Writer == s {
-		Writer = nil
-	}
-
-	s.Close()
-	time.Sleep(time.Second * 10)
-	log.Error().Msg("Reopening serial port...")
-	go startSerialComms(deviceName, baudrate)
-}
-
 // loop reads serial data into the session
 func loop(device *serial.Port, isWriter bool) {
 	for {

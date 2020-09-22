@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/qcasey/viper"
 	"github.com/rs/zerolog/log"
 )
@@ -16,7 +15,6 @@ type Core struct {
 	mutex       sync.RWMutex
 	subscribers map[string][]chan Message
 
-	Router    *mux.Router
 	Settings  *viper.Viper
 	Session   *viper.Viper
 	StartTime time.Time
@@ -31,7 +29,6 @@ type Message struct {
 // New creates a publish / subscribe interface for administering the program
 func New(settingsFile string) *Core {
 	core := &Core{
-		Router:      mux.NewRouter(),
 		Settings:    viper.New(),
 		Session:     viper.New(),
 		StartTime:   time.Now(),
@@ -45,9 +42,6 @@ func New(settingsFile string) *Core {
 		log.Warn().Msg(err.Error())
 	}
 	core.Settings.WatchConfig()
-
-	// Setup router
-	core.injectRoutes()
 
 	// Enable debugging from settings
 	configureLogging(core.Settings.GetBool("mdroid.debug"))

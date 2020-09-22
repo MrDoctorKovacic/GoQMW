@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 
-	"github.com/qcasey/MDroid-Core/internal/core"
+	"github.com/qcasey/MDroid-Core/internal/server"
+	"github.com/qcasey/MDroid-Core/routes/serial"
+	"github.com/qcasey/MDroid-Core/routes/shutdown"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,8 +17,8 @@ func main() {
 	flag.Parse()
 
 	// Create new MDroid Core program
-	core := core.New(settingsFile)
-	addRoutes(core.Router)
+	srv := server.New(settingsFile)
+	addRoutes(srv)
 
 	//settings.ParseConfig(settingsFile)
 	//sessions.Setup()
@@ -44,7 +46,7 @@ func main() {
 			HL.RunHooks(key, Data.GetString(key))
 		}*/
 
-	addCustomHooks()
+	//addCustomHooks()
 
 	// Setup conventional modules
 	//mserial.Setup(router)
@@ -53,5 +55,16 @@ func main() {
 	//db.Setup()
 
 	// Start MDroid Core
-	core.Start()
+	srv.Start()
+}
+
+// addRoutes initializes an MDroid router with default system routes
+func addRoutes(srv *server.Server) {
+	log.Info().Msg("Configuring module routes...")
+
+	//
+	// Module Routes
+	//
+	srv.Router.HandleFunc("/shutdown", shutdown.Shutdown(srv.Core)).Methods("GET")
+	srv.Router.HandleFunc("/serial/{command}", serial.WriteSerial(srv.Core)).Methods("POST", "GET")
 }
