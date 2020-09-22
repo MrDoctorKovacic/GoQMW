@@ -1,4 +1,4 @@
-package response
+package core
 
 import (
 	"encoding/json"
@@ -102,7 +102,7 @@ func (response *JSONResponse) Write(w *http.ResponseWriter, r *http.Request) {
 }
 
 // WriteNew exports all known stat requests
-func WriteNew(w *http.ResponseWriter, r *http.Request, response JSONResponse) {
+func WriteNewResponse(w *http.ResponseWriter, r *http.Request, response JSONResponse) {
 	// Echo back message
 	response.Write(w, r)
 }

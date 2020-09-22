@@ -8,11 +8,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/format"
-	"github.com/qcasey/MDroid-Core/format/response"
-	"github.com/qcasey/MDroid-Core/mserial"
-	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core"
+	"github.com/qcasey/MDroid-Core/internal/core/sessions"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
+	"github.com/qcasey/MDroid-Core/pkg/mserial"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,6 +39,19 @@ func Setup(router *mux.Router) {
 	// i.e. /doors/lock
 	//
 	router.HandleFunc("/{device}/{command}", ParseCommand).Methods("GET")
+}
+
+// IsPositiveRequest helps translate UP or LOCK into true or false
+func isPositiveRequest(request string) (bool, error) {
+	switch request {
+	case "ON", "UP", "LOCK", "OPEN", "TOGGLE", "PUSH":
+		return true, nil
+	case "OFF", "DOWN", "UNLOCK", "CLOSE":
+		return false, nil
+	}
+
+	// Command didn't match any of the above, get out of here
+	return false, fmt.Errorf("Error: %s is an invalid command", request)
 }
 
 // startRepeats that will send a command only on ACC power
@@ -121,10 +133,10 @@ func StartRoutine(w http.ResponseWriter, r *http.Request) {
 		// Some commands need special timing functions
 		go PushQueue(params["command"])
 	} else {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid command", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Invalid command", OK: false})
 		return
 	}
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // repeatCommand endlessly, helps with request functions
@@ -156,17 +168,17 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(params["device"]) == 0 || len(params["command"]) == 0 {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Error: One or more required params is empty", OK: false})
 		return
 	}
 
 	// Format similarly to the rest of MDroid suite, removing plurals
 	// Formatting allows for fuzzier requests
-	device := strings.TrimSuffix(format.Name(params["device"]), "S")
-	command := strings.TrimSuffix(format.Name(params["command"]), "S")
+	device := strings.TrimSuffix(core.FormatName(params["device"]), "S")
+	command := strings.TrimSuffix(core.FormatName(params["command"]), "S")
 
 	// Parse command into a bool, make either "on" or "off" effectively
-	isPositive, err := format.IsPositiveRequest(command)
+	isPositive, err := isPositiveRequest(command)
 	cannotBeParsedIntoBoolean := err != nil
 
 	// Check if we care that the request isn't formatted into an "on" or "off"
@@ -267,11 +279,11 @@ func ParseCommand(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		log.Error().Msgf("Invalid device %s", device)
-		response := response.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
+		response := core.JSONResponse{Output: fmt.Sprintf("Invalid device %s", device), OK: false}
 		response.Write(&w, r)
 		return
 	}
 
 	// Yay
-	response.WriteNew(&w, r, response.JSONResponse{Output: device, OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: device, OK: true})
 }

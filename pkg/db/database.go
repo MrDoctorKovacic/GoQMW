@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
 	"github.com/rs/zerolog/log"
 )
 

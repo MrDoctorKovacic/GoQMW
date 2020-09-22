@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/format"
-	"github.com/qcasey/MDroid-Core/format/response"
-	"github.com/qcasey/MDroid-Core/mserial"
-	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core"
+	"github.com/qcasey/MDroid-Core/internal/core/sessions"
+	"github.com/qcasey/MDroid-Core/pkg/mserial"
+	"github.com/qcasey/MDroid-Core/routes/session"
+	"github.com/qcasey/MDroid-Core/routes/settings"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -33,7 +33,7 @@ var routes []MDroidRoute
 // Stop MDroid-Core service
 func stopMDroid(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Stopping MDroid Service as per request")
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 	os.Exit(0)
 }
 
@@ -41,24 +41,24 @@ func handleSleepMDroid(w http.ResponseWriter, r *http.Request) {
 	/*params := mux.Vars(r)
 	msToSleepString, ok := params["millis"]
 	if !ok {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Time to sleep required", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Time to sleep required", OK: false})
 		return
 	}
 
 	msToSleep, err := strconv.ParseInt(msToSleepString, 10, 64)
 	if err != nil {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid time to sleep", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Invalid time to sleep", OK: false})
 		return
 	}
 	*/
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 	sleepMDroid()
 }
 
 func sleepMDroid() {
 	log.Info().Msg("Going to sleep now! Powering down.")
 	go func() { mserial.PushText(fmt.Sprintf("putToSleep%d", -1)) }()
-	sendServiceCommand("MDROID", "shutdown")
+	//sendServiceCommand("MDROID", "shutdown")
 }
 
 // Reset network entirely
@@ -73,71 +73,36 @@ func resetNetwork() {
 	log.Info().Msg("Network reset complete.")
 }
 
-// Reboot the machine
-func handleReboot(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	machine, ok := params["machine"]
-
-	if !ok {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Machine name required", OK: false})
-		return
-	}
-
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
-	err := sendServiceCommand(format.Name(machine), "reboot")
-	if err != nil {
-		log.Error().Msg(err.Error())
-	}
-}
-
 // Shutdown the current machine
 func handleShutdown(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+	/*params := mux.Vars(r)
 	machine, ok := params["machine"]
 
-	if !ok {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Machine name required", OK: false})
-		return
-	}
+		if !ok {
+			core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Machine name required", OK: false})
+			return
+		}*/
 
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
-	err := sendServiceCommand(machine, "shutdown")
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
+	/*err := sendServiceCommand(machine, "shutdown")
 	if err != nil {
 		log.Error().Msg(err.Error())
-	}
-}
-
-// sendServiceCommand sends a command to a network machine, using a simple python server to recieve
-func sendServiceCommand(name string, command string) error {
-	machineServiceAddress := settings.Data.GetString(fmt.Sprintf("%s.address", name))
-	if machineServiceAddress == "" {
-		return fmt.Errorf("Device %s address not found, not issuing %s", name, command)
-	}
-
-	client := http.Client{
-		Timeout: 2 * time.Second,
-	}
-	resp, err := client.Get(fmt.Sprintf("http://%s:5350/%s", machineServiceAddress, command))
-	if err != nil {
-		return fmt.Errorf("Failed to command machine %s (at %s) to %s: \n%s", name, machineServiceAddress, command, err.Error())
-	}
-
-	return resp.Body.Close()
+	}*/
 }
 
 func handleSlackAlert(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	err := sessions.SlackAlert(params["message"])
 	if err != nil {
-		response.WriteNew(&w, r, response.JSONResponse{Output: err.Error(), OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: err.Error(), OK: false})
 		return
 	}
-	response.WriteNew(&w, r, response.JSONResponse{Output: params["message"], OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: params["message"], OK: true})
 }
 
 func handleChangeLogLevel(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	level := format.Name(params["level"])
+	level := core.FormatName(params["level"])
 	switch level {
 	case "INFO":
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -146,9 +111,9 @@ func handleChangeLogLevel(w http.ResponseWriter, r *http.Request) {
 	case "ERROR":
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	default:
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Invalid log level.", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Invalid log level.", OK: false})
 	}
-	response.WriteNew(&w, r, response.JSONResponse{Output: level, OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: level, OK: true})
 }
 
 func changeLogLevel(level zerolog.Level) {
@@ -167,11 +132,9 @@ func SetDefaultRoutes(router *mux.Router) {
 	// Main routes
 	//
 	router.HandleFunc("/routes", func(w http.ResponseWriter, r *http.Request) {
-		response.WriteNew(&w, r, response.JSONResponse{Output: routes, OK: true})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: routes, OK: true})
 	}).Methods("GET")
-	router.HandleFunc("/restart/{machine}", handleReboot).Methods("GET")
 	router.HandleFunc("/shutdown/{machine}", handleShutdown).Methods("GET")
-	router.HandleFunc("/{machine}/reboot", handleReboot).Methods("GET")
 	router.HandleFunc("/{machine}/shutdown", handleShutdown).Methods("GET")
 	router.HandleFunc("/stop", stopMDroid).Methods("GET")
 	router.HandleFunc("/sleep", handleSleepMDroid).Methods("GET")
@@ -182,9 +145,9 @@ func SetDefaultRoutes(router *mux.Router) {
 	//
 	// Session routes
 	//
-	router.HandleFunc("/session", sessions.HandleGetAll).Methods("GET")
-	router.HandleFunc("/session/{name}", sessions.HandleGet).Methods("GET")
-	router.HandleFunc("/session/{name}", sessions.HandleSet).Methods("POST")
+	router.HandleFunc("/session", session.HandleGetAll).Methods("GET")
+	router.HandleFunc("/session/{name}", session.HandleGet).Methods("GET")
+	router.HandleFunc("/session/{name}", session.HandleSet).Methods("POST")
 
 	//
 	// Settings routes
@@ -197,7 +160,7 @@ func SetDefaultRoutes(router *mux.Router) {
 	// Finally, welcome and meta routes
 	//
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs or /routes for applicable routes.", OK: true})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Welcome to MDroid! This port is fully operational, see the docs or /routes for applicable routes.", OK: true})
 	}).Methods("GET")
 }
 

@@ -2,7 +2,6 @@ package sessions
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,12 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/db"
-	"github.com/qcasey/MDroid-Core/format/response"
 	"github.com/qcasey/MDroid-Core/hooks"
-	"github.com/qcasey/MDroid-Core/mqtt"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
+	"github.com/qcasey/MDroid-Core/pkg/db"
+	"github.com/qcasey/MDroid-Core/pkg/mqtt"
 	"github.com/qcasey/viper"
 	"github.com/rs/zerolog/log"
 )
@@ -60,27 +57,6 @@ func Setup() {
 	}
 }
 
-// HandleGet returns a specific session value
-func HandleGet(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-
-	sessionValue := Data.Get(params["name"])
-	response := response.JSONResponse{Output: sessionValue, OK: true}
-	if !Data.IsSet(params["name"]) {
-		response.Output = "Does not exist"
-		response.OK = false
-	}
-	response.Write(&w, r)
-}
-
-// HandleGetAll responds to an HTTP request for the entire session
-func HandleGetAll(w http.ResponseWriter, r *http.Request) {
-	//requestingMin := r.URL.Query().Get("min") == "1"
-	response := response.JSONResponse{OK: true}
-	response.Output = Data.AllSettings()
-	response.Write(&w, r)
-}
-
 // GetStartTime will give the time the session started
 func GetStartTime() time.Time {
 	return session.startTime
@@ -120,50 +96,6 @@ func SlackAlert(message string) error {
 	}
 	log.Info().Msgf("response Body: %s", string(body))
 	return nil
-}
-
-// HandleSet updates or posts a new session value to the common session
-func HandleSet(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-
-	// Default to NOT OK response
-	response := response.JSONResponse{OK: false}
-
-	if err != nil {
-		log.Error().Msgf("Error reading body: %v", err)
-		http.Error(w, "can't read body", http.StatusBadRequest)
-		return
-	}
-
-	// Put body back
-	r.Body.Close() //  must close
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-
-	if len(body) == 0 {
-		response.Output = "Error: Empty body"
-		response.Write(&w, r)
-		return
-	}
-
-	params := mux.Vars(r)
-	var newdata Package
-
-	if err = json.NewDecoder(r.Body).Decode(&newdata); err != nil {
-		log.Error().Msgf("Error decoding incoming JSON:\n%s", err.Error())
-		response.Output = err.Error()
-		response.Write(&w, r)
-		return
-	}
-
-	// Call the setter
-	newdata.Name = params["name"]
-	Set(params["name"], newdata.Value, true)
-
-	// Craft OK response
-	response.OK = true
-	response.Output = newdata
-
-	response.Write(&w, r)
 }
 
 // Set prepares a Value structure before passing it to the setter

@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/qcasey/MDroid-Core/sessions"
+	"github.com/qcasey/MDroid-Core/internal/core/sessions"
 	"github.com/rs/zerolog/log"
 )
 

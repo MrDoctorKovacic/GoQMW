@@ -5,10 +5,10 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/qcasey/MDroid-Core/bluetooth"
-	"github.com/qcasey/MDroid-Core/mserial"
-	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core/sessions"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
+	"github.com/qcasey/MDroid-Core/pkg/bluetooth"
+	"github.com/qcasey/MDroid-Core/pkg/mserial"
 	"github.com/rs/zerolog/log"
 )
 
@@ -32,7 +32,7 @@ func addCustomHooks() {
 	settings.HL.RegisterHook("ANGEL_EYES", -1, evalAngelEyesPower)
 	sessions.HL.RegisterHook("LIGHT_SENSOR_REASON", -1, lightSensorReason)
 	sessions.HL.RegisterHook("LIGHT_SENSOR_ON", -1, evalAngelEyesPower)
-	sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func(value interface{}) { sendServiceCommand("MDROID", "restart") })
+	//sessions.HL.RegisterHook("SEAT_MEMORY_1", -1, func(value interface{}) { sendServiceCommand("MDROID", "restart") })
 }
 func mainVoltage(value interface{}) {
 	sessions.Set("MAIN_VOLTAGE", value.(float64)/1024.0*21.5, true)

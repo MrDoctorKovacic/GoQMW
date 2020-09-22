@@ -5,9 +5,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/format"
-	"github.com/qcasey/MDroid-Core/format/response"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
 	"github.com/rs/zerolog/log"
 	"github.com/tarm/serial"
 )
@@ -62,7 +61,7 @@ func WriteSerialHandler(w http.ResponseWriter, r *http.Request) {
 	if params["command"] != "" {
 		AwaitText(params["command"])
 	}
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Push queues a message for writing
@@ -85,23 +84,23 @@ func PushText(message string) {
 
 // Await queues a message for writing, and waits for it to be sent
 func Await(m *Message) error {
-	m.UUID, _ = format.NewShortUUID()
+	//m.UUID, _ = format.NewShortUUID()
 	m.isComplete = make(chan error)
-	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
+	//log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
 	Push(m)
 	err := <-m.isComplete
-	log.Info().Msgf("[%s] Message write is complete", m.UUID)
+	//log.Info().Msgf("[%s] Message write is complete", m.UUID)
 	return err
 }
 
 // AwaitText creates a new message with the default writer, appends it for sending, and waits for it to be sent
 func AwaitText(message string) error {
-	uuid, _ := format.NewShortUUID()
-	m := &Message{Device: Writer, Text: message, isComplete: make(chan error), UUID: uuid}
-	log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
+	//uuid, _ := format.NewShortUUID()
+	m := &Message{Device: Writer, Text: message, isComplete: make(chan error)}
+	//log.Info().Msgf("[%s] Awaiting serial message write", m.UUID)
 	Push(m)
 	err := <-m.isComplete
-	log.Info().Msgf("[%s] Message write is complete", m.UUID)
+	//log.Info().Msgf("[%s] Message write is complete", m.UUID)
 	return err
 }
 

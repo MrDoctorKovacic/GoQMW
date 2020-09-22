@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/qcasey/MDroid-Core/bluetooth"
-	"github.com/qcasey/MDroid-Core/db"
-	"github.com/qcasey/MDroid-Core/mserial"
-	"github.com/qcasey/MDroid-Core/pybus"
-	"github.com/qcasey/MDroid-Core/sessions"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core/sessions"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
+	"github.com/qcasey/MDroid-Core/pkg/bluetooth"
+	"github.com/qcasey/MDroid-Core/pkg/db"
+	"github.com/qcasey/MDroid-Core/pkg/mserial"
+	"github.com/qcasey/MDroid-Core/pkg/pybus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

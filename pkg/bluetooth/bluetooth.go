@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gosimple/slug"
-	"github.com/qcasey/MDroid-Core/format/response"
-	"github.com/qcasey/MDroid-Core/settings"
+	"github.com/qcasey/MDroid-Core/internal/core"
+	"github.com/qcasey/MDroid-Core/internal/core/settings"
 	"github.com/rs/zerolog/log"
 )
 
@@ -81,7 +81,7 @@ func SetAddress(address string) {
 // HandleConnect wrapper for connect
 func HandleConnect(w http.ResponseWriter, r *http.Request) {
 	Connect()
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Connect bluetooth device
@@ -103,9 +103,9 @@ func HandleDisconnect(w http.ResponseWriter, r *http.Request) {
 	err := Disconnect()
 	if err != nil {
 		log.Error().Msg(err.Error())
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Could not lookup user", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Could not lookup user", OK: false})
 	}
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Disconnect bluetooth device
@@ -156,23 +156,23 @@ func askMediaInfo() map[string]string {
 func GetDeviceInfo(w http.ResponseWriter, r *http.Request) {
 	deviceStatus := askDeviceInfo()
 	if deviceStatus == nil {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
 		return
 	}
-	response.WriteNew(&w, r, response.JSONResponse{Output: deviceStatus, Status: "success", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: deviceStatus, Status: "success", OK: true})
 }
 
 // GetMediaInfo attempts to get metadata about current track
 func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	deviceStatus := askDeviceInfo()
 	if deviceStatus == nil {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
 		return
 	}
 
 	resp := askMediaInfo()
 	if resp == nil {
-		response.WriteNew(&w, r, response.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
+		core.WriteNewResponse(&w, r, core.JSONResponse{Output: "Error getting media info", Status: "fail", OK: false})
 		return
 	}
 
@@ -187,27 +187,27 @@ func GetMediaInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Echo back all info
-	response.WriteNew(&w, r, response.JSONResponse{Output: resp, Status: "success", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: resp, Status: "success", OK: true})
 }
 
 // Prev skips to previous track
 func Prev(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Going to previous track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Previous"}, false, false)
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Next skips to next track
 func Next(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Going to next track...")
 	go SendDBusCommand([]string{"/org/bluez/hci0/dev_" + BluetoothAddress + "/player0", "org.bluez.MediaPlayer1.Next"}, false, false)
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // HandlePlay attempts to play bluetooth media
 func HandlePlay(w http.ResponseWriter, r *http.Request) {
 	Play()
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Play attempts to play bluetooth media
@@ -219,7 +219,7 @@ func Play() {
 // HandlePause attempts to pause bluetooth media
 func HandlePause(w http.ResponseWriter, r *http.Request) {
 	Pause()
-	response.WriteNew(&w, r, response.JSONResponse{Output: "OK", OK: true})
+	core.WriteNewResponse(&w, r, core.JSONResponse{Output: "OK", OK: true})
 }
 
 // Pause attempts to pause bluetooth media
