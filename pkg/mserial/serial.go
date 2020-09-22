@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MrDoctorKovacic/MDroid-Core/sessions"
 	"github.com/mitchellh/mapstructure"
 	"github.com/qcasey/MDroid-Core/internal/core"
 	"github.com/rs/zerolog/log"
@@ -93,7 +92,7 @@ func begin(c *core.Core, deviceName string, baudrate int) {
 			Pop(s)
 		}
 
-		err := read(s)
+		err := read(c, s)
 		if err != nil {
 			// The device is nil, break out of this read loop
 			log.Error().Msg("Failed to read from serial port")
@@ -197,7 +196,7 @@ func parseSerialDevices(settingsData map[string]map[string]string) map[string]in
 }*/
 
 // readSerial takes one line from the serial device and parses it into the session
-func read(device *serial.Port) error {
+func read(c *core.Core, device *serial.Port) error {
 	reader := bufio.NewReader(device)
 	msg, _, err := reader.ReadLine()
 	if err != nil {
@@ -224,13 +223,13 @@ func read(device *serial.Port) error {
 	for key, value := range data {
 		switch vv := value.(type) {
 		case bool:
-			sessions.Set(key, vv, true)
+			c.Session.Set(key, vv)
 		case int:
-			sessions.Set(key, vv, true)
+			c.Session.Set(key, vv)
 		case float64:
-			sessions.Set(key, vv, true)
+			c.Session.Set(key, vv)
 		case string:
-			sessions.Set(key, vv, true)
+			c.Session.Set(key, vv)
 		case map[string]interface{}:
 			var m Measurement
 			err := mapstructure.Decode(value, &m)
@@ -242,9 +241,9 @@ func read(device *serial.Port) error {
 			}
 
 			// Skip publishing values
-			sessions.Set(fmt.Sprintf("gyros.%s.x", strings.ToLower(key)), m.X, false)
-			sessions.Set(fmt.Sprintf("gyros.%s.y", strings.ToLower(key)), m.Y, false)
-			sessions.Set(fmt.Sprintf("gyros.%s.z", strings.ToLower(key)), m.Z, false)
+			c.Session.Set(fmt.Sprintf("gyros.%s.x", strings.ToLower(key)), m.X)
+			c.Session.Set(fmt.Sprintf("gyros.%s.y", strings.ToLower(key)), m.Y)
+			c.Session.Set(fmt.Sprintf("gyros.%s.z", strings.ToLower(key)), m.Z)
 		case []interface{}:
 			log.Error().Msg(key + " is an array. Data: ")
 			for i, u := range vv {
